@@ -18,7 +18,7 @@ import urllib.request
 import unicodedata
 import json
 import winreg
-from text_cleaning_utils import TextCleaner
+from .text_cleaning_utils import TextCleaner
 import yaml
 
 def resource_path(relative_path):
@@ -628,6 +628,9 @@ class CADTranslatorGUI:
         self.root.geometry("850x750")
         self.root.resizable(True, True)
         self.cleaner = TextCleaner()
+        self.root.update_idletasks()
+        self.root.minsize(1250, 960)
+        self.root.maxsize(1250, 960)
         try:
             icon_path = resource_path("ico.ico")
             self.root.iconbitmap(icon_path)
@@ -1088,10 +1091,21 @@ class CADTranslatorGUI:
         self.root.mainloop()
 
 
-def main():
-    app = CADTranslatorGUI()
-    app.run()
 
+def run_cad_gui():
+    try:
+        root = tk._default_root
+        if root is None or not root.winfo_exists():
+            app = CADTranslatorGUI()  # 内部创建 tk.Tk()
+            app.run()
+        else:
+            # 若已有 Tk 窗口在运行，则用 Toplevel 弹出新窗口
+            win = tk.Toplevel(root)
+            app = CADTranslatorGUI()
+            app.root = win
+            app.run()
+    except Exception as e:
+        print(f"[CAD GUI 打开失败] {e}")
 
 if __name__ == '__main__':
-    main()
+    run_cad_gui()

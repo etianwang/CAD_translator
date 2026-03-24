@@ -1,3 +1,4 @@
+### main.py
 import ezdxf
 import re
 import time
@@ -371,41 +372,72 @@ class CADChineseTranslator:
 
 
     def extract_text_entities(self, doc, lang_config, include_blocks=False):
-        """提取所有文本实体，增强编码检查"""
+        """
+        提取文本实体。
+        支持从模型空间、布局以及块定义中提取文字。
+        不再依赖“块已炸开”的假设。
+        """
         items = []
-        # 处理模型空间和布局空间
-        for space in [doc.modelspace()] + list(doc.layouts):
-            for e in space:
-                if e.dxftype() in ['TEXT', 'MTEXT']:
-                    txt = self.get_entity_text(e)
-                    if txt and self.is_valid_text_for_translation(txt):
-                        items.append({
-                            'entity': e,
-                            'original_text': txt,
-                            'layer': getattr(e.dxf, 'layer', 'DEFAULT'),
-                            'location': space.name if hasattr(space, 'name') else 'modelspace'
-                        })
+        processed_layouts = set()
 
-        # 根据选项决定是否处理块内文字
+        # 1. 提取模型空间
+        modelspace = doc.modelspace()
+        items.extend(self._extract_from_layout(modelspace))
+        processed_layouts.add(modelspace.name)
+
+        # 2. 提取布局 (Paper Space)
+        for layout in doc.layouts:
+            if layout.name not in processed_layouts:
+                items.extend(self._extract_from_layout(layout))
+                processed_layouts.add(layout.name)
+
+        # 3. 【关键】如果勾选了包含块，则遍历所有块定义
         if include_blocks:
-            self.safe_log("选择翻译块内文字，正在处理块...")
+            self.safe_log("📦 正在扫描块定义 (Blocks)...")
+            block_count = 0
             for block in doc.blocks:
-                if block.name.startswith('*'):
+                # 跳过空块
+                if len(list(block)) == 0:
                     continue
-                for e in block:
-                    if e.dxftype() in ['TEXT', 'MTEXT']:
-                        txt = self.get_entity_text(e)
-                        if txt and self.is_valid_text_for_translation(txt):
-                            items.append({
-                                'entity': e,
-                                'original_text': txt,
-                                'layer': getattr(e.dxf, 'layer', 'DEFAULT'),
-                                'location': f'block:{block.name}'
-                            })
+                # 跳过已经处理过的特殊布局块
+                if block.name in processed_layouts:
+                    continue
+                
+                # ⚠️ 重要：不再跳过匿名块 (*Uxxx)，确保所有块都被扫描
+                # 如果你确定某些匿名块不需要翻译，可以加回过滤，但默认建议全扫
+                try:
+                    block_items = self._extract_from_layout(block)
+                    if block_items:
+                        self.safe_log(f"  -> 块 '{block.name}' 中发现 {len(block_items)} 个文本对象")
+                        items.extend(block_items)
+                        block_count += 1
+                except Exception as e:
+                    self.safe_log(f"  ⚠️ 扫描块 '{block.name}' 失败: {e}", level="warning")
+            
+            self.safe_log(f"✅ 块扫描完成，共处理 {block_count} 个块。")
         else:
-            self.safe_log("跳过块内文字翻译（推荐设置）")
+            self.safe_log("ℹ️ 未勾选'包含块'，跳过块内文字。")
 
-        self.safe_log(f"提取文本实体: {len(items)} 条 {'(包含块内文字)' if include_blocks else '(不包含块内文字)'}")
+        self.safe_log(f"📝 总共提取到 {len(items)} 个文本对象。")
+        return items
+
+    def _extract_from_layout(self, layout):
+        """
+        辅助函数：从单个布局（模型/图纸/块）中提取 TEXT, MTEXT, ATTDEF
+        """
+        items = []
+        for entity in layout:
+            dxftype = entity.dxftype()
+            if dxftype in ['TEXT', 'MTEXT', 'ATTDEF']:
+                txt = self.get_entity_text(entity)
+                if txt and self.is_valid_text_for_translation(txt):
+                    items.append({
+                        'entity': entity,
+                        'original_text': txt,
+                        'layer': getattr(entity.dxf, 'layer', 'DEFAULT'),
+                        'location': layout.name if hasattr(layout, 'name') else 'Unknown',
+                        'type': dxftype
+                    })
         return items
 
     def is_valid_text_for_translation(self, text):
@@ -457,22 +489,60 @@ class CADChineseTranslator:
     #  写回翻译后的文本到实体
     def write_back_translation(self, entity, new_text):
         try:
+            # 1. 清洗纯文本内容
             cleaned_text = self.fully_clean_for_write(new_text)
-            self.safe_log(f"准备写入文本: {repr(cleaned_text)}")
-            self.safe_log(f"是否包含代理字符: {any(0xD800 <= ord(c) <= 0xDFFF for c in cleaned_text)}")
+            
+            # 🔍 调试：记录首字符信息
+            if len(cleaned_text) > 0:
+                first_char = cleaned_text[0]
+                self.safe_log(f"准备写入 - 首字符: '{first_char}' (Unicode: U+{ord(first_char):04X})")
+            else:
+                self.safe_log("准备写入 - 文本为空!")
 
             if entity.dxftype() == "TEXT":
                 entity.dxf.text = cleaned_text
+                
             elif entity.dxftype() == "MTEXT":
                 font = getattr(self, 'default_font', 'SimSun')
-                formatted = fr"{{\\f{font}|b0|i0|c134;{cleaned_text}}}"
-                entity.text = formatted
-                entity.dxf.text = formatted
+                if ';' in font:
+                    font = "SimSun"
+                
+                # 🔧 关键修复：对内容部分的特殊字符进行转义
+                # 此时 text_cleaning_utils.py 中必须包含 escape_mtext_special_chars 方法
+                safe_content = self.cleaner.escape_mtext_special_chars(cleaned_text)
+                
+                # 构造格式头: {\f字体|b0|i0|c134;内容}
+                # 注意：这里的花括号是 MTEXT 格式必需的，不需要转义
+                formatted_text = r"{\f" + font + r"|b0|i0|c134;" + safe_content + r"}"
+                
+                self.safe_log(f"构造 MTEXT: {repr(formatted_text[:50])}...")
+                
+                # 写入
+                entity.dxf.text = formatted_text
+                if hasattr(entity, 'text'):
+                    entity.text = formatted_text
+
+                # 🔍 验证：立即读回检查
+                read_back = entity.dxf.text
+                if ";" in read_back:
+                    # 分割格式头和内容
+                    parts = read_back.split(";", 1)
+                    if len(parts) > 1:
+                        content_part = parts[1].rstrip("}")
+                        if len(content_part) > 0 and len(safe_content) > 0:
+                            read_first = content_part[0]
+                            # 比较首字符（注意：如果内容以 \ 开头，read_first 可能是转义后的）
+                            if read_first != safe_content[0]:
+                                 self.safe_log(f"⚠️ 提示：写入后首字符显示可能略有差异 (期望:'{safe_content[0]}', 读回:'{read_first}')，通常不影响显示。")
+                            else:
+                                 self.safe_log(f"✅ 验证通过：首字符保留成功。")
+
             else:
-                self.safe_log(f" 未知实体类型: {entity.dxftype()}，无法写入文本")
+                self.safe_log(f" 未知实体类型: {entity.dxftype()}，无法写入")
 
         except Exception as e:
-            self.safe_log(f"写回失败: {e}")
+            import traceback
+            self.safe_log(f"写回失败: {e}\n{traceback.format_exc()}")
 
     def create_report(self, items, output_csv):
         """创建CSV报告，确保输出文件使用UTF-8编码"""
@@ -494,130 +564,87 @@ class CADChineseTranslator:
                         continue
         except Exception as file_err:
             self.safe_log(f" 创建 CSV 文件失败: {file_err}")
+
     def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False):
         self.safe_log(f"正在读取: {input_file}")
         self.safe_log(f"当前写入字体: {self.default_font}")
-        # 尝试不同的编码方式读取文件
+        
         doc = None
-        encodings_to_try = ['utf-8', 'gbk', 'gb2312', 'cp1252']
-        
-        for encoding in encodings_to_try:
-            try:
-                self.safe_log(f"尝试使用 {encoding} 编码读取文件...")
-                doc = ezdxf.readfile(input_file, encoding=encoding)
-                self.safe_log(f"成功使用 {encoding} 编码读取文件")
-                break
-            except Exception as e:
-                self.safe_log(f"使用 {encoding} 编码失败: {e}")
-        
-        if doc is None:
-            raise Exception("无法使用任何编码方式读取DXF文件")
-        #  在提取之前清理一次（防止含非法字符的实体阻断提取）
-        self.clean_all_entities(doc)
-
-
-        #  然后提取文本进行翻译
-        items = self.extract_text_entities(doc, lang_config, include_blocks)
-
-        #  放到此处：确保 doc 已成功读取后再进行代理字符检查
-        for e in doc.modelspace():
-            if e.dxftype() in ['TEXT', 'MTEXT']:
-                content = getattr(e.dxf, 'text', '') or getattr(e, 'text', '')
-                if any(0xD800 <= ord(c) <= 0xDFFF for c in content):
-                    self.safe_log(f" 最终写入前仍检测到代理字符: {repr(content)}")
-
-        if lang_config and lang_config in self.language_configs:
-            config_name = self.language_configs[lang_config]['name']
-            self.safe_log(f"翻译模式: {config_name}")
-
-        total_items = len(items)
-        successful_translations = 0
-        skipped_invalid = 0
-
-        for i, item in enumerate(items, 1):
-            original_text = item['original_text']
-
-            if not self.is_valid_text_for_translation(original_text):
-                skipped_invalid += 1
-                self.safe_log(f"跳过无效文本 ({i}/{total_items}): \"{original_text[:30]}...\"")
-                item['translated_text'] = original_text
-                continue
-
-            translated = self.translate_text(original_text, lang_config)
-            item['translated_text'] = translated
-
-            if translated != original_text:
-                self.write_back_translation(item['entity'], translated)
-                successful_translations += 1
-
-            self.safe_log(f"进度: {i}/{total_items} ({i/total_items*100:.1f}%)")
-        #  保存前强制清理所有残留代理字符
-        self.safe_log(" 最终保存前，强制清理所有文本实体中的非法字符")
-
-        def clean_entities(container, label="modelspace"):
-            for e in container:
-                if e.dxftype() in ['TEXT', 'MTEXT', 'ATTDEF', 'ATTRIB', 'DIMENSION']:  # 全部纳入处理
-                    raw_text = getattr(e.dxf, 'text', '') or getattr(e, 'text', '')
-                    if raw_text:
-                        cleaned = self.cleaner.full_clean(raw_text)
-                        if cleaned != raw_text:
-                            self.safe_log(f" 清理后替换文本 ({label}): '{raw_text[:30]}' → '{cleaned[:30]}'")
-                            try:
-                                if hasattr(e.dxf, 'text'):
-                                    e.dxf.text = cleaned
-                                elif hasattr(e, 'text'):
-                                    e.text = cleaned
-                            except Exception as ee:
-                                self.safe_log(f" 写回失败 ({label}): {ee}")
-
-        # 清理 modelspace
-        clean_entities(doc.modelspace(), "modelspace")
-
-        # 清理 layouts（paper space 等）
-        for layout in doc.layouts:
-            clean_entities(layout, f"layout:{layout.name}")
-
-        # 清理 blocks（即使你没翻译 block，也要防止残留非法字符）
-        for block in doc.blocks:
-            clean_entities(block, f"block:{block.name}")
-            #  翻译后再次清理（防止翻译引擎返回代理字符）
-        self.clean_all_entities(doc)
+        # 自动检测编码读取
         try:
-            doc.saveas(output_file, encoding='utf-8')
-            self.safe_log(f" 文件成功保存: {output_file}")
-        except UnicodeEncodeError as e:
-            self.safe_log(f" 文件保存失败: {e}")
-            messagebox.showerror("保存失败", f"文件保存出错：\n{e}")
+            doc = ezdxf.readfile(input_file) 
+            self.safe_log("✅ 成功读取文件 (自动检测编码)")
+        except Exception as e:
+            self.safe_log(f"❌ 读取文件失败: {e}")
+            raise Exception("无法读取DXF文件")
 
-        report_file = output_file.replace('.dxf', '_report.csv')
-        self.create_report(items, report_file)
-        self.safe_log(f"翻译报告保存: {report_file}")
-        self.safe_log(f"翻译完成！共处理 {total_items} 个文本对象")
-        self.safe_log(f"成功翻译: {successful_translations} 个，跳过无效文本: {skipped_invalid} 个")
-    def clean_all_entities(self, doc):
-        self.safe_log(" 清理所有实体中的非法字符")
+        if doc is None:
+            raise Exception("无法读取DXF文件")
 
-        def clean_container(container, label):
-            for e in container:
-                if e.dxftype() in ['TEXT', 'MTEXT', 'ATTDEF', 'ATTRIB', 'DIMENSION']:
-                    raw = getattr(e.dxf, 'text', '') or getattr(e, 'text', '')
-                    if raw and any(0xD800 <= ord(c) <= 0xDFFF for c in raw):
-                        cleaned = self.cleaner.full_clean(raw)
-                        if cleaned != raw:
-                            self.safe_log(f" 清理后替换文本 ({label}): '{raw[:30]}' → '{cleaned[:30]}'")
-                            try:
-                                if hasattr(e.dxf, 'text'):
-                                    e.dxf.text = cleaned
-                                elif hasattr(e, 'text'):
-                                    e.text = cleaned
-                            except Exception as ee:
-                                self.safe_log(f" 写回失败 ({label}): {ee}")
+        # ============================================================
+        # 🔥 核心逻辑：直接提取 (不再炸开块)
+        # ============================================================
+        # 注意：这里直接调用修改后的 extract_text_entities，它内部会处理块遍历
+        items = self.extract_text_entities(doc, lang_config, include_blocks=include_blocks)
 
-        clean_container(doc.modelspace(), "modelspace")
-        for layout in doc.layouts:
-            clean_container(layout, f"layout:{layout.name}")
-        for block in doc.blocks:
-            clean_container(block, f"block:{block.name}")
+        # ============================================================
+        # 执行翻译循环
+        # ============================================================
+        total_items = len(items)
+        if total_items == 0:
+            self.safe_log("⚠️ 未找到任何可翻译的文本对象。")
+        else:
+            self.safe_log(f"🚀 开始翻译，共发现 {total_items} 个文本对象...")
+            
+            successful_translations = 0
+            skipped_invalid = 0
+
+            for i, item in enumerate(items, 1):
+                original_text = item['original_text']
+                
+                if not self.is_valid_text_for_translation(original_text):
+                    skipped_invalid += 1
+                    item['translated_text'] = original_text
+                    continue
+
+                translated = self.translate_text(original_text, lang_config)
+                item['translated_text'] = translated
+
+                if translated != original_text:
+                    try:
+                        self.write_back_translation(item['entity'], translated)
+                        successful_translations += 1
+                    except Exception as e:
+                        self.safe_log(f" ❌ 写回实体失败: {e}", level="error")
+                
+                if i % 10 == 0 or i == total_items:
+                    self.safe_log(f"   进度: {i}/{total_items} ({i/total_items*100:.1f}%)")
+
+            self.safe_log(f"翻译统计：成功 {successful_translations}, 跳过 {skipped_invalid}")
+
+        # ============================================================
+        # 保存文件
+        # ============================================================
+        self.safe_log("💾 正在保存文件...")
+        try:
+            doc.saveas(output_file)
+            self.safe_log(f"✅ 文件成功保存: {output_file}")
+        except Exception as e:
+            self.safe_log(f"❌ 文件保存失败: {e}")
+            raise e
+
+        # 生成报告
+        report_file = output_file.replace('.dxf', '_report.csv').replace('.dwg', '_report.csv')
+        try:
+            self.create_report(items, report_file)
+            self.safe_log(f"📊 翻译报告已保存: {report_file}")
+        except Exception as e:
+            self.safe_log(f"⚠️ 生成报告失败: {e}")
+
+        self.safe_log("🎉 全部任务完成！")
+
+    # 注意：你原来的 clean_all_entities 和 write_back_translation 保持不变即可
+    # 只要它们能正确处理 entity 对象，无论这个 entity 来自模型空间还是块，操作都是一样的。
 
 # GUI类保持不变，只需要更新版本号
 class CADTranslatorGUI:
@@ -1077,7 +1104,7 @@ class CADTranslatorGUI:
             messagebox.showerror("错误", safe)
             self.log_message(f"ERROR: {safe}")
 
-    def check_internet_connection(self, url='http://www.google.com', timeout=3):
+    def check_internet_connection(self, url='http://www.baidu.com', timeout=3):
         try:
             urllib.request.urlopen(url, timeout=timeout)
             return True

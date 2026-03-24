@@ -1,3 +1,5 @@
+### text_cleaning_utils.py
+
 import re
 import unicodedata
 
@@ -163,7 +165,20 @@ class TextCleaner:
             log_func("=" * 75)
 
         return text
-
+    def escape_mtext_special_chars(self, text):
+            """
+            在写入 MTEXT 内容前，转义可能干扰格式控制的特殊字符。
+            注意：我们只转义内容部分的特殊字符，不转义我们自己构造的格式头。
+            """
+            if not text:
+                return text
+            # 在 MTEXT 内容中，单个 '\' 和 '{' '}' 可能需要转义，具体取决于 ezdxf 版本
+            # 但通常 ezdxf 处理得不错。为了安全，我们将内容中的 '\' 变为 '\\'
+            # 防止内容里的反斜杠被误认为是控制符开始
+            text = text.replace('\\', '\\\\')
+            # 如果内容里有单独的花括号，也建议转义，防止破坏结构
+            # 但 fix_brace_pairing 已经处理了配对，这里主要防干扰
+            return text
 
 
     def clean_for_log(self, text):

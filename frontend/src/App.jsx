@@ -1,8 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import Iridescence from './components/Iridescence'
 import './App.css'
 
 const API = ''
+
+const IRIDESCENCE_COLOR = [0.22, 0.38, 0.92]
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.12 },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 22, scale: 0.97 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 260, damping: 22 },
+  },
+}
 
 async function api(path, options) {
   const res = await fetch(`${API}${path}`, {
@@ -20,15 +41,30 @@ function usePywebview() {
   return typeof window !== 'undefined' && window.pywebview?.api
 }
 
+function modeOutputPrefix(mode) {
+  return mode === 'zh_to_fr' ? 'fr' : 'zh'
+}
+
+function swapOutputNamePrefix(name, mode) {
+  if (!name?.trim()) return name
+  const target = modeOutputPrefix(mode)
+  const opposite = mode === 'zh_to_fr' ? 'zh' : 'fr'
+  if (name.startsWith(`${opposite}_`)) {
+    return `${target}_${name.slice(opposite.length + 1)}`
+  }
+  if (name.startsWith(`${target}_`)) {
+    return name
+  }
+  return name
+}
+
 export default function App() {
   const pyApi = usePywebview()
   const logRef = useRef(null)
-  const [tab, setTab] = useState('translate')
   const [logs, setLogs] = useState([])
   const [status, setStatus] = useState('idle')
   const [statusMsg, setStatusMsg] = useState('就绪')
   const [running, setRunning] = useState(false)
-  const [changelog, setChangelog] = useState([])
 
   const [inputFile, setInputFile] = useState('')
   const [outputDir, setOutputDir] = useState('')
@@ -39,7 +75,6 @@ export default function App() {
 
   useEffect(() => {
     api('/api/config').then((c) => setDeeplKey(c.deepl_key || '')).catch(() => {})
-    api('/api/changelog').then((d) => setChangelog(d.changelog || [])).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -78,7 +113,7 @@ export default function App() {
       if (r.path) {
         setInputFile(r.path)
         if (!outputDir) setOutputDir(r.dir)
-        const prefix = mode === 'zh_to_fr' ? 'fr' : 'zh'
+        const prefix = modeOutputPrefix(mode)
         const ts = new Date().toLocaleString('en-GB').replace(/[/,: ]/g, '-').slice(0, 16)
         setOutputName(`${prefix}_${r.base}_${ts}`)
       }
@@ -100,6 +135,12 @@ export default function App() {
       if (r.path) setOutputDir(r.path)
     }
   }, [pyApi])
+
+  const selectMode = useCallback((nextMode) => {
+    if (nextMode === mode) return
+    setMode(nextMode)
+    setOutputName((prev) => swapOutputNamePrefix(prev, nextMode))
+  }, [mode])
 
   const startTranslate = async () => {
     try {
@@ -134,132 +175,170 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="bg-orbs">
-        <motion.div className="orb orb-a" animate={{ x: [0, 40, 0], y: [0, -30, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div className="orb orb-b" animate={{ x: [0, -50, 0], y: [0, 40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div className="orb orb-c" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-      </div>
+      <Iridescence
+        color={IRIDESCENCE_COLOR}
+        speed={0.85}
+        amplitude={0.14}
+        mouseReact
+      />
+      <div className="bg-vignette" aria-hidden />
+      <div className="bg-noise" aria-hidden />
 
-      <motion.header className="glass topbar" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-        <div className="brand">
-          <motion.span className="brand-icon" animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}>⬡</motion.span>
-          <div>
-            <h1>Honsen CAD 中法互译</h1>
-            <p>DeepL · 半透明毛玻璃界面</p>
+      <motion.header
+        className="glass topbar"
+        initial={{ y: -28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 24, delay: 0.05 }}
+      >
+        <div className="topbar-inner pywebview-drag-region">
+          <div className="brand">
+            <motion.span
+              className="brand-icon"
+              animate={{ rotate: 360, scale: [1, 1.06, 1] }}
+              transition={{ rotate: { duration: 18, repeat: Infinity, ease: 'linear' }, scale: { duration: 3, repeat: Infinity } }}
+            >
+              ⬡
+            </motion.span>
+            <div className="brand-text">
+              <h1>Honsen CAD <span className="brand-accent">中法互译</span></h1>
+            </div>
           </div>
-        </div>
-        <div className="tabs">
-          {['translate', 'changelog'].map((t) => (
-            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'translate' ? '翻译' : '更新日志'}
-            </button>
-          ))}
+          <div className="topbar-spacer" aria-hidden />
+          {pyApi ? (
+            <div className="window-controls">
+              <button type="button" className="win-btn" title="最小化" onClick={() => pyApi.minimize_window?.()}>
+                <img src="/icons/minimize.png" alt="" draggable={false} />
+              </button>
+              <button type="button" className="win-btn win-btn-close" title="关闭" onClick={() => pyApi.close_window?.()}>
+                <img src="/icons/close.png" alt="" draggable={false} />
+              </button>
+            </div>
+          ) : (
+            <div className="window-controls-spacer" aria-hidden />
+          )}
         </div>
       </motion.header>
 
       <main className="main-area">
-        <AnimatePresence mode="wait">
-          {tab === 'translate' ? (
-            <motion.div key="translate" className="translate-grid" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.35 }}>
-              <section className="glass panel">
-                <h2>文件</h2>
-                <Field label="DXF 输入">
-                  <div className="row">
-                    <input readOnly value={inputFile} placeholder="选择 .dxf 文件" />
-                    <motion.button className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={pickInput}>浏览</motion.button>
+        <motion.div
+          className="workspace-layout"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+        >
+              <motion.aside className="glass workspace-side" variants={itemVariants}>
+                <div className="workspace-side-body">
+                  <div className="workspace-section">
+                    <h2>文件</h2>
+                    <Field label="DXF 输入">
+                      <div className="row">
+                        <input readOnly value={inputFile} placeholder="选择 .dxf 文件" />
+                        <motion.button type="button" className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={pickInput}>浏览</motion.button>
+                      </div>
+                    </Field>
+                    <Field label="输出目录">
+                      <div className="row">
+                        <input readOnly value={outputDir} placeholder="选择输出文件夹" />
+                        <motion.button type="button" className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={pickOutput}>浏览</motion.button>
+                      </div>
+                    </Field>
+                    <Field label="输出文件名">
+                      <div className="row suffix-row">
+                        <input value={outputName} onChange={(e) => setOutputName(e.target.value)} placeholder="translated_cad" />
+                        <span className="suffix">.dxf</span>
+                      </div>
+                    </Field>
                   </div>
-                </Field>
-                <Field label="输出目录">
-                  <div className="row">
-                    <input readOnly value={outputDir} placeholder="选择输出文件夹" />
-                    <motion.button className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={pickOutput}>浏览</motion.button>
-                  </div>
-                </Field>
-                <Field label="输出文件名">
-                  <div className="row suffix-row">
-                    <input value={outputName} onChange={(e) => setOutputName(e.target.value)} placeholder="translated_cad" />
-                    <span className="suffix">.dxf</span>
-                  </div>
-                </Field>
-              </section>
 
-              <section className="glass panel">
-                <h2>选项</h2>
-                <div className="mode-group">
-                  {[
-                    { v: 'zh_to_fr', l: '中文 → 法语' },
-                    { v: 'fr_to_zh', l: '法语 → 中文' },
-                  ].map((m) => (
-                    <motion.button key={m.v} className={`chip ${mode === m.v ? 'on' : ''}`} whileTap={{ scale: 0.96 }} onClick={() => setMode(m.v)}>
-                      {m.l}
-                    </motion.button>
-                  ))}
+                  <div className="workspace-section">
+                    <h2>翻译设置</h2>
+                    <div className="mode-group mode-group-stack">
+                      {[
+                        { v: 'zh_to_fr', l: '中文 → 法语' },
+                        { v: 'fr_to_zh', l: '法语 → 中文' },
+                      ].map((m) => (
+                        <motion.button
+                          key={m.v}
+                          type="button"
+                          className={`chip ${mode === m.v ? 'on' : ''}`}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => selectMode(m.v)}
+                        >
+                          {mode === m.v && <motion.span layoutId="mode-glow" className="chip-glow" transition={{ type: 'spring', stiffness: 400, damping: 28 }} />}
+                          <span>{m.l}</span>
+                        </motion.button>
+                      ))}
+                    </div>
+                    <label className="check">
+                      <input type="checkbox" checked={translateBlocks} onChange={(e) => setTranslateBlocks(e.target.checked)} />
+                      <span>翻译所有块定义（含未使用的符号块）</span>
+                    </label>
+                    <p className="hint">图框/标题栏会自动从块引用提取，通常无需勾选</p>
+                  </div>
+
+                  <div className="workspace-section">
+                    <h2>DeepL API</h2>
+                    <Field label="API Key">
+                      <input type="password" value={deeplKey} onChange={(e) => setDeeplKey(e.target.value)} placeholder="输入 DeepL API Key" />
+                    </Field>
+                  </div>
                 </div>
-                <label className="check">
-                  <input type="checkbox" checked={translateBlocks} onChange={(e) => setTranslateBlocks(e.target.checked)} />
-                  <span>翻译所有块定义（含未使用的符号块）</span>
-                </label>
-                <p className="hint">图框/标题栏会自动从块引用提取，通常无需勾选</p>
-              </section>
 
-              <section className="glass panel">
-                <h2>DeepL API</h2>
-                <Field label="API Key">
-                  <input type="password" value={deeplKey} onChange={(e) => setDeeplKey(e.target.value)} placeholder="输入 DeepL API Key" />
-                </Field>
-                <motion.button className="btn primary full" disabled={running} whileHover={running ? {} : { scale: 1.02, boxShadow: '0 8px 32px rgba(56,189,248,0.35)' }} whileTap={running ? {} : { scale: 0.98 }} onClick={startTranslate}>
-                  {running ? (
-                    <span className="loading"><span className="dot" /><span className="dot" /><span className="dot" />翻译中...</span>
-                  ) : '开始翻译'}
-                </motion.button>
-              </section>
+                <div className="workspace-side-foot">
+                  <motion.button
+                    type="button"
+                    className={`btn primary full ${running ? 'is-running' : ''}`}
+                    disabled={running}
+                    whileHover={running ? {} : { scale: 1.02, y: -1 }}
+                    whileTap={running ? {} : { scale: 0.98 }}
+                    onClick={startTranslate}
+                  >
+                    {running ? (
+                      <span className="loading"><span className="dot" /><span className="dot" /><span className="dot" />翻译中...</span>
+                    ) : '开始翻译'}
+                  </motion.button>
+                </div>
+              </motion.aside>
 
-              <section className="glass panel log-panel">
+              <motion.section className="glass workspace-log" variants={itemVariants}>
                 <div className="log-head">
-                  <h2>实时日志</h2>
-                  <button className="btn ghost" onClick={() => setLogs([])}>清除</button>
+                  <div>
+                    <h2>实时日志</h2>
+                    <p className="log-sub">翻译进度与结果输出</p>
+                  </div>
+                  <button type="button" className="btn ghost" onClick={() => setLogs([])}>清除</button>
                 </div>
                 <div className="log-box" ref={logRef}>
                   <AnimatePresence initial={false}>
                     {logs.map((line, i) => (
-                      <motion.div key={`${i}-${line.slice(0, 24)}`} className="log-line" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }}>
+                      <motion.div
+                        key={`${i}-${line.slice(0, 32)}`}
+                        className="log-line"
+                        initial={{ opacity: 0, x: -12, filter: 'blur(4px)' }}
+                        animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                        transition={{ duration: 0.28 }}
+                      >
                         {line}
                       </motion.div>
                     ))}
                   </AnimatePresence>
                   {logs.length === 0 && <p className="log-empty">等待任务...</p>}
                 </div>
-              </section>
-            </motion.div>
-          ) : (
-            <motion.div key="changelog" className="glass panel changelog-panel" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <h2>版本更新历史</h2>
-              <div className="changelog-list">
-                {changelog.map((entry, idx) => (
-                  <motion.article key={entry.version} className="changelog-item" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.06 }}>
-                    <header>
-                      <strong>v{entry.version}</strong>
-                      <span>{entry.date}</span>
-                      {entry.title && <em>{entry.title}</em>}
-                    </header>
-                    <ul>
-                      {(entry.content || []).filter(Boolean).map((line, i) => (
-                        <li key={i}>{line}</li>
-                      ))}
-                    </ul>
-                  </motion.article>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.section>
+        </motion.div>
       </main>
 
-      <footer className="glass statusbar">
-        <motion.span className="status-dot" animate={{ backgroundColor: statusColor }} />
+      <motion.footer
+        className="glass statusbar"
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, type: 'spring', stiffness: 240, damping: 22 }}
+      >
+        <motion.span className="status-dot" animate={{ backgroundColor: statusColor, boxShadow: `0 0 12px ${statusColor}` }} />
         <span>{statusMsg || '就绪'}</span>
         <span className="footer-meta">Etienne · etn@live.com</span>
-      </footer>
+      </motion.footer>
     </div>
   )
 }

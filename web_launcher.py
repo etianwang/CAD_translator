@@ -1,6 +1,6 @@
 """Launch FastAPI + pywebview desktop shell for the React UI."""
 
-import socket
+import os
 import sys
 import threading
 import time
@@ -14,11 +14,6 @@ from web_api import API_PORT, FRONTEND_DIST, app
 TITLE = "Honsen CAD 中法互译工具"
 
 
-def _port_free(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(("127.0.0.1", port)) != 0
-
-
 def _wait_server(url: str, timeout: float = 15.0) -> bool:
     import urllib.request
 
@@ -30,6 +25,32 @@ def _wait_server(url: str, timeout: float = 15.0) -> bool:
         except Exception:
             time.sleep(0.15)
     return False
+
+
+def _enable_windows_acrylic():
+    """Windows 10/11 整窗亚克力/透明效果（WebView2）"""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        hwnd = user32.FindWindowW(None, TITLE)
+        if not hwnd:
+            return
+        # DWM 窗口圆角 + 暗色边框
+        DWMWA_WINDOW_CORNER_PREFERENCE = 33
+        DWMWCP_ROUND = 2
+        pref = wintypes.INT(DWMWCP_ROUND)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            ctypes.byref(pref),
+            ctypes.sizeof(pref),
+        )
+    except Exception:
+        pass
 
 
 def run_web_app():
@@ -54,15 +75,25 @@ def run_web_app():
 
     import webview
 
+    webview.settings["DRAG_REGION_DIRECT_TARGET_ONLY"] = True
+
     bridge = NativeBridge()
+    transparent = os.environ.get("CAD_UI_OPAQUE", "").lower() not in ("1", "true", "yes")
+
     window = webview.create_window(
         TITLE,
         url,
         js_api=bridge,
-        width=980,
-        height=820,
+        width=1000,
+        height=840,
         min_size=(860, 680),
         resizable=True,
-        background_color="#0a0e1a",
+        transparent=transparent,
+        background_color="#000000" if transparent else "#070b14",
+        frameless=True,
+        easy_drag=False,
+        shadow=not transparent,
     )
+
+    window.events.loaded += lambda: threading.Timer(0.6, _enable_windows_acrylic).start()
     webview.start(gui="edgechromium")

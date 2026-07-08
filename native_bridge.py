@@ -4,6 +4,8 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 
+import webview
+
 
 class NativeBridge:
     def pick_dxf_file(self) -> dict:
@@ -30,3 +32,11 @@ class NativeBridge:
         path = filedialog.askdirectory(title="选择输出目录")
         root.destroy()
         return {"path": path or ""}
+
+    def minimize_window(self) -> None:
+        if webview.windows:
+            webview.windows[0].minimize()
+
+    def close_window(self) -> None:
+        if webview.windows:
+            webview.windows[0].destroy()

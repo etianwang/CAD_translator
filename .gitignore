@@ -8,5 +8,6 @@ dist/
 venv/
 .env
 *.log
+cad_translator_config.json
 frontend/dist/
 frontend/node_modules/

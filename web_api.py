@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import queue
+import sys
 import threading
 import urllib.request
 from datetime import datetime
@@ -18,7 +19,15 @@ from pydantic import BaseModel
 
 from main import CADChineseTranslator, CONFIG_PATH, resource_path
 
-FRONTEND_DIST = Path(__file__).parent / "frontend" / "dist"
+
+def _frontend_dist() -> Path:
+    bundled = Path(resource_path("frontend/dist"))
+    if bundled.is_dir():
+        return bundled
+    return Path(__file__).parent / "frontend" / "dist"
+
+
+FRONTEND_DIST = _frontend_dist()
 API_PORT = 8765
 
 
@@ -51,7 +60,8 @@ class TranslationService:
         if q in self._log_queues:
             self._log_queues.remove(q)
 
-    def emit_log(self, message: str):
+    def emit_log(self, message: str, level: str = "INFO"):
+        _ = level  # 兼容 main.safe_log；UI 暂不按级别分色
         for q in list(self._log_queues):
             try:
                 q.put_nowait(message)
@@ -65,6 +75,8 @@ class TranslationService:
         for q in list(self._log_queues):
             try:
                 q.put_nowait(f"__EVENT__:{payload}")
+            except queue.Full:
+                pass
 
     def save_config(self, deepl_key: str):
         config = {"deepl_key": deepl_key.strip()}

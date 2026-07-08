@@ -19,6 +19,13 @@ cd ..
 python main.py
 ```
 
+整窗透明模式默认开启（WebView2 毛玻璃 + Iridescence 背景）。若透明窗口显示异常，可关闭：
+
+```bash
+set CAD_UI_OPAQUE=1
+python main.py
+```
+
 开发模式（热更新 UI）：
 
 ```bash
@@ -48,10 +55,31 @@ python main.py --legacy
    内置了机电行业的常用词汇表，翻译更专业。使用前请配置 DeepL API Key（界面中填写，或设置环境变量 `DEEPL_API_KEY`）。
 4. **支持的文字类型：** TEXT、MTEXT、块属性（ATTDEF/ATTRIB，含提示 Prompt）、多重引线（MULTILEADER）。
 
-### 打包为 exe（可选）
+### 打包为 exe
 
-```bash
+**环境要求：** Windows 10/11，目标机器需已安装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)（Win11 通常自带）。
+
+**步骤：**
+
+```powershell
+# 1. 安装 Python 依赖
+pip install -r requirements.txt
+pip install pyinstaller
+
+# 2. 构建 React 前端（必须，否则无法打包）
+cd frontend
+npm install
+npm run build
+cd ..
+
+# 3. 打包（可选：根目录放 ico.ico 作为程序图标）
 pyinstaller Honsen_CAD_Translator_v2.2.spec
 ```
 
-打包前请将 `ico.ico` 放在项目根目录（可选，用于程序图标）。
+生成的 exe 位于 `dist/Honsen_CAD_Translator_v2.2.exe`。
+
+**说明：**
+- 默认打包的是 **React 新界面**（`python main.py`），不是 Tkinter 旧版
+- 首次运行较慢（PyInstaller 解压临时文件）
+- 若双击无反应，可临时把 spec 里 `console=False` 改为 `console=True` 查看报错
+- 旧版界面：`Honsen_CAD_Translator_v2.2.exe --legacy`

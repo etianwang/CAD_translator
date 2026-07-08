@@ -1,12 +1,26 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 
+spec_dir = os.path.dirname(os.path.abspath(SPEC))
+
+_data_files = [
+    'translation_abbreviations.yaml',
+    'translation_context.yaml',
+    'translation_context_fr_to_zh.yaml',
+    'translation_corrections.yaml',
+    'changelog.json',
+]
+datas = [(os.path.join(spec_dir, f), '.') for f in _data_files if os.path.exists(os.path.join(spec_dir, f))]
+
+_icon = os.path.join(spec_dir, 'ico.ico')
+_icon_arg = [_icon] if os.path.exists(_icon) else []
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=[spec_dir],
     binaries=[],
-    datas=[('text_cleaning_utils.py', '.'), ('gui.py', '.'), ('translator.py', '.'), ('config_manager.py', '.'), ('logger.py', '.'), ('cad_file_manager.py', '.'), ('text_cleaner.py', '.'), ('translation_abbreviations.yaml', '.'), ('translation_context_fr_to_zh.yaml', '.'), ('translation_context.yaml', '.'), ('translation_corrections.yaml', '.'), ('changelog.json', '.'), ('background.png', '.'), ('icon.ico', '.')],
-    hiddenimports=['googletrans', 'deepl', 'ezdxf', 'openai', 'httpx', 'yaml'],
+    datas=datas,
+    hiddenimports=['ezdxf', 'deepl', 'yaml', 'text_cleaning_utils'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,5 +49,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['ico.ico'],
+    icon=_icon_arg,
 )

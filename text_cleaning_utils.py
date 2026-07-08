@@ -3,6 +3,12 @@
 import re
 import unicodedata
 
+try:
+    from ezdxf.tools.text import plain_mtext as ezdxf_plain_mtext
+except ImportError:
+    ezdxf_plain_mtext = None
+
+
 class TextCleaner:
     def __init__(self):
         self.french_char_pattern = re.compile(r'[éèêàçôùûîÉÈÊÀÇÔÙÛÎ]', re.IGNORECASE)
@@ -16,7 +22,15 @@ class TextCleaner:
             u"\U000024C2-\U0001F251"
             "]+", flags=re.UNICODE
         )
-
+        # MTEXT 行内格式码（带分号参数），不含 \P 换行
+        self._mtext_inline_code = re.compile(
+            r'\\(?:'
+            r'[fFhHwWcCqQtTaA][^;]*;|'   # 字体/高度/颜色等
+            r'[pl][^;]*;|'               # 段落属性 \pl1; \pi0;
+            r'[LoOkK]'                   # 下划线/上划线/删除线开关
+            r')',
+            re.IGNORECASE,
+        )
     def remove_surrogates(self, text):
         return ''.join(c for c in text if not (0xD800 <= ord(c) <= 0xDFFF))
 
@@ -43,7 +57,7 @@ class TextCleaner:
             if unicodedata.category(char).startswith('L'):  # 所有可打印的字母
                 return True
             return char.isprintable()
-        except:
+        except (TypeError, ValueError, UnicodeError):
             return False
 
     def is_chinese(self, c):
@@ -54,13 +68,67 @@ class TextCleaner:
             0x20000 <= code <= 0x2A6DF
         )
 
+    def decode_autocad_percent_codes(self, text):
+        """AutoCAD 特殊编码：%%p→±, %%d→°, %%c→Ø 等"""
+        if not text:
+            return text
+        text = text.replace('%%%', '\x00PERCENT\x00')
+        text = re.sub(r'%%[pP]', '±', text)
+        text = re.sub(r'%%[dD]', '°', text)
+        text = re.sub(r'%%[cC]', 'Ø', text)
+        text = re.sub(r'%%[uU]', '', text)
+        text = re.sub(r'%%[oO]', '', text)
+        return text.replace('\x00PERCENT\x00', '%')
+
+    def decode_mtext_fallback(self, text):
+        """无 ezdxf 时的 MTEXT 解码回退"""
+        if not text:
+            return text
+        text = self.decode_autocad_percent_codes(text)
+        # 去掉 {...} 格式块（可能嵌套，循环剥离外层）
+        prev = None
+        while prev != text and '{' in text:
+            prev = text
+            text = re.sub(r'\{[^{}]*\}', '', text)
+        text = re.sub(r'\\P', '\n', text, flags=re.IGNORECASE)
+        text = re.sub(r'\\~', ' ', text)
+        text = re.sub(r'\\N', '\n', text, flags=re.IGNORECASE)
+        text = self._mtext_inline_code.sub('', text)
+        text = text.replace('\\\\', '\\')
+        text = text.replace('\\{', '{').replace('\\}', '}')
+        return text
+
+    def decode_cad_text(self, text):
+        """
+        将 CAD/MTEXT 原始字符串转为可翻译的纯文本。
+        处理 \\P 换行、%%p 等特殊符号、字体/颜色等控制码。
+        """
+        if not text:
+            return ''
+        raw = str(text)
+        if ezdxf_plain_mtext is not None:
+            try:
+                decoded = ezdxf_plain_mtext(raw, split=False, tabsize=4)
+                if isinstance(decoded, list):
+                    decoded = '\n'.join(decoded)
+                if decoded:
+                    return decoded
+            except Exception:
+                pass
+        return self.decode_mtext_fallback(raw)
+
+    def normalize_whitespace(self, text):
+        """规整空白，保留换行"""
+        if not text:
+            return text
+        lines = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+        normalized = [re.sub(r'[^\S ]+', ' ', line).strip() for line in lines]
+        return '\n'.join(normalized).strip()
+
     def clean_format_control(self, text):
-        # 清除 CAD 样式控制符（如 \f宋体;），不动任何花括号和中文结构
-        text = re.sub(r'\\[fFcCpPhHwWqQaA][^;]*;', '', text)
-        text = re.sub(r'\\[nNtT]', ' ', text)
-        text = re.sub(r'\\\\', r'\\', text)
-        return re.sub(r'\s+', ' ', text).strip()
-    
+        """兼容旧接口：解码 CAD 控制符"""
+        return self.normalize_whitespace(self.decode_cad_text(text))
+
     def fix_brace_pairing(self, text):
         """自动闭合单边花括号 {xxx → {xxx} 或 xxx} → {xxx}"""
         if text.count('{') > text.count('}'):
@@ -99,7 +167,7 @@ class TextCleaner:
     def safe_utf8(self, text):
         try:
             return text.encode('utf-8', 'ignore').decode('utf-8')
-        except:
+        except (UnicodeEncodeError, UnicodeDecodeError):
             return ''
 
     def fix_common_encoding_errors(self, text):
@@ -155,7 +223,6 @@ class TextCleaner:
             logs.append("[UTF-8修复] 重新编码清理")
         text = safe.strip()
         text = self.normalize_french_punctuation(text)
-        text = self.fix_brace_pairing(text)
         if debug and log_func and text != original:
             log_func("=" * 30 + " 清洗日志 " + "=" * 30)
             log_func(f"清洗前: {repr(original)}")
@@ -165,21 +232,22 @@ class TextCleaner:
             log_func("=" * 75)
 
         return text
-    def escape_mtext_special_chars(self, text):
-            """
-            在写入 MTEXT 内容前，转义可能干扰格式控制的特殊字符。
-            注意：我们只转义内容部分的特殊字符，不转义我们自己构造的格式头。
-            """
-            if not text:
-                return text
-            # 在 MTEXT 内容中，单个 '\' 和 '{' '}' 可能需要转义，具体取决于 ezdxf 版本
-            # 但通常 ezdxf 处理得不错。为了安全，我们将内容中的 '\' 变为 '\\'
-            # 防止内容里的反斜杠被误认为是控制符开始
-            text = text.replace('\\', '\\\\')
-            # 如果内容里有单独的花括号，也建议转义，防止破坏结构
-            # 但 fix_brace_pairing 已经处理了配对，这里主要防干扰
+    def prepare_mtext_for_write(self, text):
+        """
+        将翻译后的纯文本转为 MTEXT 可写入格式。
+        换行 → \\P，转义反斜杠和花括号；± 等 Unicode 符号直接保留。
+        """
+        if not text:
             return text
+        text = str(text).replace('\r\n', '\n').replace('\r', '\n')
+        text = text.replace('\\', '\\\\')
+        text = text.replace('{', '\\{')
+        text = text.replace('}', '\\}')
+        return text.replace('\n', '\\P')
 
+    def escape_mtext_special_chars(self, text):
+        """兼容旧接口，统一走 prepare_mtext_for_write"""
+        return self.prepare_mtext_for_write(text)
 
     def clean_for_log(self, text):
         if not text:

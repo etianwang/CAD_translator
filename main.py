@@ -3,24 +3,25 @@ import ezdxf
 import re
 import time
 import os
-import shutil
 import csv
-from pathlib import Path
-from googletrans import Translator
+import sys
+import json
+import threading
+import queue
+import urllib.request
+from datetime import datetime
+
 import deepl
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import threading
-import queue
-from datetime import datetime
-import os
-import sys
-import urllib.request
-import unicodedata
-import json
-import winreg
-from text_cleaning_utils import TextCleaner
 import yaml
+
+from text_cleaning_utils import TextCleaner
+
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 def resource_path(relative_path):
     """
@@ -41,6 +42,8 @@ def load_yaml_data(filename):
 
 def get_installed_fonts():
     fonts = set()
+    if winreg is None:
+        return fonts
     try:
         reg_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
@@ -69,28 +72,6 @@ def pick_available_font():
 
 CONFIG_PATH = os.path.expanduser("~/.cad_translator_config.json")
 
-def remove_emoji(text):
-    import re
-    emoji_pattern = re.compile(
-        "["
-        u"\U0001F600-\U0001F64F"  # emoticons
-        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-        u"\U0001F680-\U0001F6FF"  # transport & map symbols
-        u"\U0001F1E0-\U0001F1FF"  # flags
-        u"\U00002702-\U000027B0"  # dingbats
-        u"\U000024C2-\U0001F251"  # enclosed characters
-        "]+",
-        flags=re.UNICODE
-    )
-    return emoji_pattern.sub(r'', text)
-def resource_path(relative_path):
-    """返回资源文件的正确路径（兼容 .py 和 .exe）"""
-    try:
-        base_path = sys._MEIPASS  # PyInstaller 临时目录
-    except AttributeError:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
 
 class CADChineseTranslator:
 
@@ -106,25 +87,15 @@ class CADChineseTranslator:
             return f"[完全清洗失败: {e}]"
 
     def __init__(self, log_callback=None):
-        self.translator = Translator()
         self.translated_cache = {}
         self.default_font = pick_available_font()
         self.log_callback = log_callback
-        self.use_engine = 'google'  # 默认引擎，可选：'google'、'deepl'、'chatgpt'
-        self.deepl_api_key = os.environ.get("DEEPL_API_KEY")  # 或你手动赋值
+        self.deepl_api_key = os.environ.get("DEEPL_API_KEY")
         self.deepl_translator = None
         self.cleaner = TextCleaner()
         abbrev_data = load_yaml_data("translation_abbreviations.yaml")
         self.abbrev_map_fr_to_zh = abbrev_data.get("abbrev_map", {})
 
-        # if self.deepl_api_key:
-        #     try:
-        #         self.deepl_translator = deepl.Translator(self.deepl_api_key)
-        #         self.safe_log(" DeepL 引擎已就绪")
-        #     except Exception as e:
-        #         self.safe_log(f" 初始化 DeepL 失败: {e}")
-        # 语言配置 - 只保留中法互译
-# 加载上下文与修正表
         context_zh_to_fr = load_yaml_data("translation_context.yaml").get("context_zh_to_fr", {})
         context_fr_to_zh = load_yaml_data("translation_context_fr_to_zh.yaml").get("context_fr_to_zh", {})
         corrections_fr_to_zh = load_yaml_data("translation_corrections.yaml").get("corrections_fr_to_zh", {})
@@ -147,8 +118,6 @@ class CADChineseTranslator:
                 'context': self.context_fr_to_zh
             }
         }
-        self.chatgpt_api_key = None  # placeholder
-        # 如果传入了 deepl_key 后初始化 translator：
         if self.deepl_api_key:
             try:
                 self.deepl_translator = deepl.Translator(self.deepl_api_key)
@@ -164,17 +133,16 @@ class CADChineseTranslator:
         self._deepl_api_key = value
         if value:
             try:
-                import deepl
                 self.deepl_translator = deepl.Translator(value)
             except Exception as e:
-                self.safe_log(f" DeepL 初始化失败: {e}")    
-    def safe_log(self, message):
+                self.safe_log(f" DeepL 初始化失败: {e}")
+    def safe_log(self, message, level="INFO"):
         if not self.log_callback:
-            print("[无日志回调]:", message)
+            print(f"[{level}][无日志回调]:", message)
             return
         try:
             cleaned = self.cleaner.clean_for_log(message)
-            self.log_callback(cleaned)
+            self.log_callback(cleaned, level=level)
         except Exception as e:
             print("[日志记录失败]", e)
             print("原始日志内容:", repr(message))
@@ -253,7 +221,7 @@ class CADChineseTranslator:
         for wrong, right in corrections.items():
             text = re.sub(rf'\b{re.escape(wrong)}\b', right, text)
 
-        return re.sub(r'\s+', ' ', text).strip()
+        return self.cleaner.normalize_whitespace(text)
    
     def translate_text(self, text, lang_config_key):
         if not text or not lang_config_key:
@@ -311,39 +279,15 @@ class CADChineseTranslator:
             if context != cleaned:
                 self.safe_log(f"提示术语: {context}")
 
-            # Step 5: 发送翻译请求
-            translated_result = ""
-            if self.use_engine == 'google':
-                result = self.translator.translate(cleaned, src=lang_config['source'], dest=lang_config['target'])
-                translated_result = result.text
-            elif self.use_engine == 'deepl':
-                deepl_result = self.deepl_translator.translate_text(
-                    cleaned,
-                    source_lang=lang_config['source'].split('-')[0].upper(),
-                    target_lang=lang_config['target'].split('-')[0].upper()
-                )
-                translated_result = deepl_result.text
-            elif self.use_engine == 'chatgpt':
-                if not self.chatgpt_api_key:
-                    raise Exception("ChatGPT API Key 未配置")
-
-                import openai
-                openai.api_key = self.chatgpt_api_key
-
-                try:
-                    prompt = f"请将以下内容从{lang_config['name']}翻译成对应语言，不要解释：\n\"{cleaned}\""
-                    response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.2
-                    )
-                    translated_result = response.choices[0].message['content'].strip()
-                except Exception as e:
-                    raise Exception(f"ChatGPT 翻译失败: {e}")
-            else:
-                raise Exception("未配置可用的翻译引擎")
+            # Step 5: DeepL 翻译
+            if not self.deepl_translator:
+                raise Exception("DeepL 未初始化，请配置 API Key")
+            deepl_result = self.deepl_translator.translate_text(
+                cleaned,
+                source_lang=lang_config['source'].split('-')[0].upper(),
+                target_lang=lang_config['target'].split('-')[0].upper(),
+            )
+            translated_result = deepl_result.text
 
             # Step 6: 翻译结果后处理
             if self.contains_surrogates(translated_result):
@@ -361,12 +305,12 @@ class CADChineseTranslator:
                 final = self.cleaner.safe_utf8(final)
 
             self.translated_cache[text] = final
-            self.safe_log(f"✔ 翻译完成 ({self.use_engine}): \"{cleaned}\" → \"{final}\"")
+            self.safe_log(f"✔ 翻译完成 (DeepL): \"{cleaned}\" → \"{final}\"")
             time.sleep(0.5)
             return final
 
         except Exception as e:
-            self.safe_log(f"翻译失败 ({self.use_engine}): {e} → 原文: \"{cleaned}\"")
+            self.safe_log(f"翻译失败 (DeepL): {e} → 原文: \"{cleaned}\"")
             fallback = self.cleaner.full_clean(self.cleaner.safe_utf8(text))
             return fallback
 
@@ -382,13 +326,13 @@ class CADChineseTranslator:
 
         # 1. 提取模型空间
         modelspace = doc.modelspace()
-        items.extend(self._extract_from_layout(modelspace))
+        items.extend(self._extract_from_layout(modelspace, include_blocks))
         processed_layouts.add(modelspace.name)
 
         # 2. 提取布局 (Paper Space)
         for layout in doc.layouts:
             if layout.name not in processed_layouts:
-                items.extend(self._extract_from_layout(layout))
+                items.extend(self._extract_from_layout(layout, include_blocks))
                 processed_layouts.add(layout.name)
 
         # 3. 【关键】如果勾选了包含块，则遍历所有块定义
@@ -406,7 +350,7 @@ class CADChineseTranslator:
                 # ⚠️ 重要：不再跳过匿名块 (*Uxxx)，确保所有块都被扫描
                 # 如果你确定某些匿名块不需要翻译，可以加回过滤，但默认建议全扫
                 try:
-                    block_items = self._extract_from_layout(block)
+                    block_items = self._extract_from_layout(block, include_blocks=True, in_block_def=True)
                     if block_items:
                         self.safe_log(f"  -> 块 '{block.name}' 中发现 {len(block_items)} 个文本对象")
                         items.extend(block_items)
@@ -421,23 +365,223 @@ class CADChineseTranslator:
         self.safe_log(f"📝 总共提取到 {len(items)} 个文本对象。")
         return items
 
-    def _extract_from_layout(self, layout):
+    SUPPORTED_TEXT_TYPES = ['TEXT', 'MTEXT', 'ATTDEF', 'ATTRIB', 'MULTILEADER']
+
+    def _clean_entity_text(self, text):
+        """清洗实体中的原始文本"""
+        if not text:
+            return ""
+        return self.cleaner.full_clean(str(text))
+
+    def _get_multileader_mtext(self, entity):
+        if hasattr(entity, 'get_mtext_content'):
+            try:
+                return entity.get_mtext_content() or ""
+            except Exception:
+                pass
+        context = getattr(entity, 'context', None)
+        mtext = getattr(context, 'mtext', None) if context else None
+        if mtext is not None:
+            return getattr(mtext, 'default_content', '') or ""
+        return ""
+
+    def _get_multileader_block_content(self, entity):
+        if hasattr(entity, 'get_block_content'):
+            try:
+                return dict(entity.get_block_content() or {})
+            except Exception:
+                pass
+        return {}
+
+    def _append_text_item(self, items, entity, layout, field, raw_text):
+        if not raw_text or not str(raw_text).strip():
+            return
+        if not self.is_valid_text_for_translation(str(raw_text)):
+            return
+        cleaned = self._clean_entity_text(raw_text)
+        if not cleaned:
+            return
+        items.append({
+            'entity': entity,
+            'field': field,
+            'original_text': cleaned,
+            'raw_source': str(raw_text).strip(),
+            'layer': getattr(entity.dxf, 'layer', 'DEFAULT'),
+            'location': layout.name if hasattr(layout, 'name') else 'Unknown',
+            'type': entity.dxftype(),
+        })
+
+    def _should_translate_attdef_tag(self, tag, default_text):
         """
-        辅助函数：从单个布局（模型/图纸/块）中提取 TEXT, MTEXT, ATTDEF
+        判断是否翻译属性标记(Tag)。
+        短编码如 MJ01、P2 不翻译；含中文或长说明性文字则翻译。
+        """
+        tag = (tag or '').strip()
+        text = (default_text or '').strip()
+        if not tag:
+            return False
+        if re.fullmatch(r'[A-Za-z0-9_\-]{1,15}', tag):
+            return False
+        tag_norm = self._clean_entity_text(tag)
+        text_norm = self._clean_entity_text(text)
+        if text_norm and tag_norm == text_norm:
+            return False
+        if re.search(r'[\u4e00-\u9fff]', tag):
+            return True
+        if not text and len(tag) > 3:
+            return True
+        return False
+
+    def _sync_attrib_tags(self, doc, old_tag, new_tag):
+        """ATTDEF 标记变更后，同步更新图上所有 ATTRIB 实例的标记"""
+        if not old_tag or old_tag == new_tag:
+            return
+        count = 0
+        layouts = [doc.modelspace()]
+        layout_names = {doc.modelspace().name}
+        for layout in doc.layouts:
+            if layout.name not in layout_names:
+                layouts.append(layout)
+                layout_names.add(layout.name)
+        for layout in layouts:
+            for insert in layout.query('INSERT'):
+                for attrib in getattr(insert, 'attribs', []) or []:
+                    if getattr(attrib.dxf, 'tag', '') == old_tag:
+                        attrib.dxf.tag = new_tag[:255]
+                        count += 1
+        if count:
+            self.safe_log(f"  已同步 {count} 个 ATTRIB 标记: {old_tag!r} → {new_tag!r}")
+
+    def collect_entity_text_items(self, entity, layout):
+        """收集实体上所有可翻译字段（含 ATTDEF 提示、多重引线）"""
+        items = []
+        dxftype = entity.dxftype()
+
+        if dxftype in ('TEXT', 'ATTRIB'):
+            text_val = ""
+            if hasattr(entity.dxf, 'text'):
+                text_val = entity.dxf.text or ''
+            elif hasattr(entity, 'text'):
+                text_val = entity.text or ''
+            self._append_text_item(items, entity, layout, 'text', text_val)
+            if dxftype == 'ATTRIB':
+                tag_val = getattr(entity.dxf, 'tag', '') or ''
+                if self._should_translate_attdef_tag(tag_val, text_val):
+                    self._append_text_item(items, entity, layout, 'tag', tag_val)
+
+        elif dxftype == 'MTEXT':
+            raw = ""
+            try:
+                raw = entity.plain_text(fast=False)
+            except Exception:
+                raw = getattr(entity.dxf, 'text', '') or ''
+            self._append_text_item(items, entity, layout, 'text', raw)
+
+        elif dxftype == 'ATTDEF':
+            text_val = getattr(entity.dxf, 'text', '') or ''
+            prompt_val = getattr(entity.dxf, 'prompt', '') or ''
+            tag_val = getattr(entity.dxf, 'tag', '') or ''
+            self._append_text_item(items, entity, layout, 'text', text_val)
+            self._append_text_item(items, entity, layout, 'prompt', prompt_val)
+            if self._should_translate_attdef_tag(tag_val, text_val):
+                self._append_text_item(items, entity, layout, 'tag', tag_val)
+
+        elif dxftype == 'MULTILEADER':
+            mtext_content = self._get_multileader_mtext(entity)
+            if mtext_content.strip():
+                self._append_text_item(items, entity, layout, 'mtext', mtext_content)
+            else:
+                for tag, value in self._get_multileader_block_content(entity).items():
+                    self._append_text_item(items, entity, layout, f'block:{tag}', value)
+
+        return items
+
+    def _entity_key(self, entity, field='text'):
+        handle = getattr(entity.dxf, 'handle', None)
+        if handle:
+            return (handle, field)
+        return (id(entity), field)
+
+    def _extract_from_block_layout(self, block_layout, layout, block_name, items, seen, depth=0):
+        """直接扫描块定义内的文字（含嵌套块），用于图框/标题栏等块参照"""
+        if depth > 15:
+            return 0
+        found = 0
+        for entity in block_layout:
+            dxftype = entity.dxftype()
+            if dxftype == 'INSERT':
+                try:
+                    nested_layout = entity.block()
+                    nested_name = getattr(entity.dxf, 'name', '?')
+                    if nested_layout is not None:
+                        found += self._extract_from_block_layout(
+                            nested_layout,
+                            layout,
+                            f"{block_name}>{nested_name}",
+                            items,
+                            seen,
+                            depth + 1,
+                        )
+                except Exception:
+                    pass
+                continue
+            if dxftype not in self.SUPPORTED_TEXT_TYPES:
+                continue
+            for it in self.collect_entity_text_items(entity, layout):
+                key = self._entity_key(it['entity'], it['field'])
+                if key in seen:
+                    continue
+                seen.add(key)
+                it['location'] = f"{layout.name}|块:{block_name}"
+                items.append(it)
+                found += 1
+        return found
+
+    def _extract_from_insert(self, insert, layout, include_blocks, items, seen):
+        """从块引用提取属性文字，以及图框/标题栏等块内可见文字"""
+        block_name = getattr(insert.dxf, 'name', '?')
+
+        for attrib in getattr(insert, 'attribs', []) or []:
+            for it in self.collect_entity_text_items(attrib, layout):
+                key = self._entity_key(it['entity'], it['field'])
+                if key in seen:
+                    continue
+                seen.add(key)
+                items.append(it)
+
+        if include_blocks:
+            return
+
+        try:
+            block_layout = insert.block()
+        except Exception as e:
+            self.safe_log(f"  ⚠️ 无法打开块 '{block_name}': {e}", level="warning")
+            return
+        if block_layout is None:
+            return
+
+        found = self._extract_from_block_layout(block_layout, layout, block_name, items, seen)
+        if found:
+            self.safe_log(f"  -> 块参照 '{block_name}' 中发现 {found} 个块内文字")
+
+    def _extract_from_layout(self, layout, include_blocks=False, in_block_def=False):
+        """
+        从布局提取 TEXT/MTEXT/ATTRIB 等，并扫描 INSERT 块引用（图框/标题栏）。
+        未勾选「翻译块内文字」时，仍会通过 INSERT 提取当前图纸可见的块内文字。
         """
         items = []
+        seen = set()
         for entity in layout:
             dxftype = entity.dxftype()
-            if dxftype in ['TEXT', 'MTEXT', 'ATTDEF']:
-                txt = self.get_entity_text(entity)
-                if txt and self.is_valid_text_for_translation(txt):
-                    items.append({
-                        'entity': entity,
-                        'original_text': txt,
-                        'layer': getattr(entity.dxf, 'layer', 'DEFAULT'),
-                        'location': layout.name if hasattr(layout, 'name') else 'Unknown',
-                        'type': dxftype
-                    })
+            if dxftype == 'INSERT' and not in_block_def:
+                self._extract_from_insert(entity, layout, include_blocks, items, seen)
+            elif dxftype in self.SUPPORTED_TEXT_TYPES:
+                for it in self.collect_entity_text_items(entity, layout):
+                    key = self._entity_key(it['entity'], it['field'])
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    items.append(it)
         return items
 
     def is_valid_text_for_translation(self, text):
@@ -466,79 +610,71 @@ class CADChineseTranslator:
             return False
 
         return True
-    def get_entity_text(self, entity):
+
+    def _write_mtext_entity(self, entity, cleaned_text):
+        font = getattr(self, 'default_font', 'SimSun')
+        if ';' in font:
+            font = "SimSun"
+
+        safe_content = self.cleaner.escape_mtext_special_chars(cleaned_text)
+        formatted_text = r"{\f" + font + r"|b0|i0|c134;" + safe_content + r"}"
+
+        self.safe_log(f"构造 MTEXT: {repr(formatted_text[:50])}...")
+        entity.dxf.text = formatted_text
+        if hasattr(entity, 'text'):
+            entity.text = formatted_text
+
+    def write_back_translation(self, entity, new_text, field='text'):
         try:
-            if hasattr(entity.dxf, 'text'):
-                text = entity.dxf.text
-            elif hasattr(entity, 'text'):
-                text = entity.text
-            else:
-                return ""
-            
-            # 安全解码获取的文本
-            decoded = self.cleaner.full_clean(text)
-            
-            # 如果解码后为空或无效，记录警告
-            if not decoded or decoded != text:
-                self.safe_log(f"文本解码修复: \"{text}\" → \"{decoded}\"")
-            decoded = self.cleaner.full_clean(text, debug=True, log_func=self.safe_log)
-            return decoded
-        except Exception as e:
-            self.safe_log(f"获取文本失败: {e}")
-            return ""
-    #  写回翻译后的文本到实体
-    def write_back_translation(self, entity, new_text):
-        try:
-            # 1. 清洗纯文本内容
             cleaned_text = self.fully_clean_for_write(new_text)
-            
-            # 🔍 调试：记录首字符信息
+            dxftype = entity.dxftype()
+            field_label = {
+                'text': '文本', 'prompt': '属性提示', 'tag': '属性标记', 'mtext': '多重引线',
+            }.get(field, field.replace('block:', '块属性:'))
+
             if len(cleaned_text) > 0:
                 first_char = cleaned_text[0]
-                self.safe_log(f"准备写入 - 首字符: '{first_char}' (Unicode: U+{ord(first_char):04X})")
+                self.safe_log(
+                    f"准备写入 [{dxftype}/{field_label}] - 首字符: "
+                    f"'{first_char}' (Unicode: U+{ord(first_char):04X})"
+                )
             else:
-                self.safe_log("准备写入 - 文本为空!")
+                self.safe_log(f"准备写入 [{dxftype}/{field_label}] - 文本为空!")
 
-            if entity.dxftype() == "TEXT":
+            if field == 'text' and dxftype in ("TEXT", "ATTRIB", "ATTDEF"):
                 entity.dxf.text = cleaned_text
-                
-            elif entity.dxftype() == "MTEXT":
-                font = getattr(self, 'default_font', 'SimSun')
-                if ';' in font:
-                    font = "SimSun"
-                
-                # 🔧 关键修复：对内容部分的特殊字符进行转义
-                # 此时 text_cleaning_utils.py 中必须包含 escape_mtext_special_chars 方法
-                safe_content = self.cleaner.escape_mtext_special_chars(cleaned_text)
-                
-                # 构造格式头: {\f字体|b0|i0|c134;内容}
-                # 注意：这里的花括号是 MTEXT 格式必需的，不需要转义
-                formatted_text = r"{\f" + font + r"|b0|i0|c134;" + safe_content + r"}"
-                
-                self.safe_log(f"构造 MTEXT: {repr(formatted_text[:50])}...")
-                
-                # 写入
-                entity.dxf.text = formatted_text
-                if hasattr(entity, 'text'):
-                    entity.text = formatted_text
 
-                # 🔍 验证：立即读回检查
-                read_back = entity.dxf.text
-                if ";" in read_back:
-                    # 分割格式头和内容
-                    parts = read_back.split(";", 1)
-                    if len(parts) > 1:
-                        content_part = parts[1].rstrip("}")
-                        if len(content_part) > 0 and len(safe_content) > 0:
-                            read_first = content_part[0]
-                            # 比较首字符（注意：如果内容以 \ 开头，read_first 可能是转义后的）
-                            if read_first != safe_content[0]:
-                                 self.safe_log(f"⚠️ 提示：写入后首字符显示可能略有差异 (期望:'{safe_content[0]}', 读回:'{read_first}')，通常不影响显示。")
-                            else:
-                                 self.safe_log(f"✅ 验证通过：首字符保留成功。")
+            elif field == 'prompt' and dxftype == "ATTDEF":
+                entity.dxf.prompt = cleaned_text
+
+            elif field == 'tag' and dxftype in ("ATTDEF", "ATTRIB"):
+                entity.dxf.tag = cleaned_text[:255]
+
+            elif field == 'text' and dxftype == "MTEXT":
+                self._write_mtext_entity(entity, cleaned_text)
+
+            elif field == 'mtext' and dxftype == "MULTILEADER":
+                if hasattr(entity, 'set_mtext_content'):
+                    entity.set_mtext_content(cleaned_text)
+                else:
+                    context = getattr(entity, 'context', None)
+                    mtext = getattr(context, 'mtext', None) if context else None
+                    if mtext is not None:
+                        mtext.default_content = cleaned_text
+                    else:
+                        raise Exception("无法写入 MULTILEADER 文字内容")
+
+            elif field.startswith('block:') and dxftype == "MULTILEADER":
+                tag = field[6:]
+                content = self._get_multileader_block_content(entity)
+                content[tag] = cleaned_text
+                if hasattr(entity, 'set_block_content'):
+                    entity.set_block_content(content)
+                else:
+                    raise Exception("无法写入 MULTILEADER 块属性")
 
             else:
-                self.safe_log(f" 未知实体类型: {entity.dxftype()}，无法写入")
+                self.safe_log(f" 未知写入目标: {dxftype}/{field}，无法写入")
 
         except Exception as e:
             import traceback
@@ -548,13 +684,18 @@ class CADChineseTranslator:
         """创建CSV报告，确保输出文件使用UTF-8编码"""
         try:
             with open(output_csv, 'w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(f, fieldnames=['layer', 'location', 'original_text', 'translated_text'])
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=['layer', 'location', 'type', 'field', 'original_text', 'translated_text'],
+                )
                 writer.writeheader()
                 for item in items:
                     try:
                         row = {
                             'layer': self.fully_clean_for_write(item.get('layer', '')),
                             'location': self.fully_clean_for_write(item.get('location', '')),
+                            'type': self.fully_clean_for_write(item.get('type', '')),
+                            'field': self.fully_clean_for_write(item.get('field', 'text')),
                             'original_text': self.fully_clean_for_write(item.get('original_text', '')),
                             'translated_text': self.fully_clean_for_write(item.get('translated_text', '')),
                         }
@@ -612,7 +753,17 @@ class CADChineseTranslator:
 
                 if translated != original_text:
                     try:
-                        self.write_back_translation(item['entity'], translated)
+                        self.write_back_translation(
+                            item['entity'],
+                            translated,
+                            item.get('field', 'text'),
+                        )
+                        if item.get('field') == 'tag':
+                            self._sync_attrib_tags(
+                                doc,
+                                item.get('raw_source', original_text),
+                                translated,
+                            )
                         successful_translations += 1
                     except Exception as e:
                         self.safe_log(f" ❌ 写回实体失败: {e}", level="error")
@@ -661,7 +812,6 @@ class CADTranslatorGUI:
         except:
             pass  # 如果图标文件不存在，忽略错误
         self.deepl_key = tk.StringVar()
-        self.chatgpt_key = tk.StringVar()
         # 日志队列
         self.log_queue = queue.Queue()
         
@@ -673,14 +823,13 @@ class CADTranslatorGUI:
         self.output_name = tk.StringVar(value=default_filename)
         self.translate_blocks = tk.BooleanVar(value=False)  # 默认不翻译块内文字
         self.translation_mode = tk.StringVar(value='zh_to_fr')  # 默认中文→法语
-        self.load_api_keys()
+        self._save_job = None
         self.setup_ui()
+        self.load_api_keys()
         self.check_log_queue()
     def _create_translator(self):
         translator = CADChineseTranslator(log_callback=self.log_message)
-        translator.use_engine = self.translation_engine.get().strip()
         translator.deepl_api_key = self.deepl_key.get().strip()
-        translator.chatgpt_api_key = self.chatgpt_key.get().strip()
         return translator
     def safe_text_for_tkinter(self, text):
         """
@@ -766,28 +915,25 @@ class CADTranslatorGUI:
         ttk.Radiobutton(mode_frame, text="法语→中文", variable=self.translation_mode, value='fr_to_zh').grid(row=0, column=1, sticky=tk.W, padx=(15, 0))
 
         ttk.Checkbutton(options_frame, text="翻译CAD块(Block)内的文字", variable=self.translate_blocks).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
-        note_label = tk.Label(options_frame, text="注意：块内文字通常是标准图块符号，建议保持原样", font=('宋体', 9), fg='gray')
+        note_label = tk.Label(options_frame, text="注意：勾选后将翻译所有块定义（含未使用的标准符号块）", font=('宋体', 9), fg='gray')
         note_label.grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=(5, 0))
+        mleader_note = tk.Label(
+            options_frame,
+            text="图框/标题栏文字会自动从块引用中提取，无需勾选",
+            font=('宋体', 9),
+            fg='gray',
+        )
+        mleader_note.grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(2, 0))
 
-        ttk.Label(options_frame, text="翻译引擎:").grid(row=4, column=0, sticky=tk.W, pady=5)
-        self.translation_engine = tk.StringVar(value='google')
-        engine_dropdown = ttk.Combobox(options_frame, textvariable=self.translation_engine, state='readonly', values=['google', 'deepl', 'chatgpt'], width=20)
-        engine_dropdown.grid(row=4, column=1, sticky=tk.W)
-        engine_note = tk.Label(options_frame, text="DeepL/ChatGPT 需配置 API Key", font=('宋体', 9), fg='gray')
-        engine_note.grid(row=5, column=0, columnspan=2, sticky=tk.W)
-
-        api_frame = ttk.LabelFrame(options_api_container, text="API Key 设置（可选）", padding="10")
+        api_frame = ttk.LabelFrame(options_api_container, text="DeepL API Key", padding="10")
         api_frame.grid(row=0, column=1, sticky=(tk.N, tk.EW))
-        ttk.Label(api_frame, text="DeepL API Key:").grid(row=0, column=0, sticky=tk.W, pady=3)
+        ttk.Label(api_frame, text="API Key:").grid(row=0, column=0, sticky=tk.W, pady=3)
         ttk.Entry(api_frame, textvariable=self.deepl_key, width=40, show="*").grid(
             row=0, column=1, sticky=(tk.W, tk.E), padx=5
         )
-        ttk.Label(api_frame, text="ChatGPT API Key:").grid(row=1, column=0, sticky=tk.W, pady=3)
-        ttk.Entry(api_frame, textvariable=self.chatgpt_key, width=40, show="*").grid(
-            row=1, column=1, sticky=(tk.W, tk.E), padx=5
-        )
+        api_note = tk.Label(api_frame, text="翻译需联网并配置有效的 DeepL API Key", font=('宋体', 9), fg='gray')
+        api_note.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(5, 0))
         self.deepl_key.trace_add("write", lambda *args: self.save_api_keys())
-        self.chatgpt_key.trace_add("write", lambda *args: self.save_api_keys())
 
         # 添加按钮组到 api_frame 下方
         style = ttk.Style()
@@ -832,8 +978,6 @@ class CADTranslatorGUI:
 
     def setup_changelog_tab(self):
         """设置版本更新日志标签页，内容读取自 changelog.json 文件"""
-        import json
-
         changelog_main_frame = ttk.Frame(self.changelog_frame, padding="15")
         changelog_main_frame.pack(fill='both', expand=True)
 
@@ -864,8 +1008,8 @@ class CADTranslatorGUI:
         self.changelog_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         changelog_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
 
-        # 尝试从外部 JSON 文件加载 changelog 内容
-        changelog_path = os.path.join(os.getcwd(), "changelog.json")
+        # 从资源路径加载 changelog（兼容打包后的 exe）
+        changelog_path = resource_path("changelog.json")
         try:
             with open(changelog_path, 'r', encoding='utf-8') as f:
                 changelog_data = json.load(f)
@@ -923,29 +1067,15 @@ class CADTranslatorGUI:
         directory = filedialog.askdirectory(title="选择输出目录")
         if directory:
             self.output_dir.set(directory)
-    def safe_log(self, message):
-        """安全日志记录（防止 surrogate 字符或日志回调死循环）"""
-        if not self.log_callback:
-            print("[无日志回调]:", message)
-            return
-
-        try:
-            cleaned = self.cleaner.full_clean(str(message))
-            self.log_callback(cleaned)
-        except Exception as e:
-            print("[日志记录失败]", e)
-            print("原始日志内容:", repr(message))
-
     def log_message(self, message, level="INFO"):
+        """将日志放入队列，由主线程 check_log_queue 写入 UI（线程安全）"""
         try:
             if hasattr(self, 'translator') and hasattr(self.translator, 'cleaner'):
                 cleaned = self.translator.cleaner.clean_for_log(message)
             else:
-                cleaned = str(message)
+                cleaned = self.cleaner.clean_for_log(str(message))
             safe_message = self.safe_text_for_tkinter(cleaned)
-            if self.log_text and self.log_text.winfo_exists():
-                self.log_text.insert(tk.END, safe_message + '\n')
-                self.log_text.see(tk.END)
+            self.log_queue.put(safe_message)
         except Exception as e:
             print("[日志处理异常]:", e)
             print("原始内容:", repr(message))
@@ -1002,6 +1132,10 @@ class CADTranslatorGUI:
         if not self.output_name.get().strip():
             messagebox.showerror("错误", "请输入输出文件名")
             return False
+
+        if not self.deepl_key.get().strip():
+            messagebox.showerror("错误", "请配置 DeepL API Key")
+            return False
         
         return True
 
@@ -1013,21 +1147,26 @@ class CADTranslatorGUI:
                 with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                     self.deepl_key.set(config.get("deepl_key", ""))
-                    self.chatgpt_key.set(config.get("chatgpt_key", ""))
-                    self.log_message(" 已加载保存的 API Key")
+                    self.log_message(" 已加载保存的 DeepL API Key")
             except Exception as e:
                 self.log_message(f" 加载配置失败: {e}")
 
     def save_api_keys(self):
-        """保存 API Key 到本地配置文件"""
+        """防抖保存 API Key，避免每次按键都写盘"""
+        if not hasattr(self, 'root'):
+            return
+        if self._save_job:
+            self.root.after_cancel(self._save_job)
+        self._save_job = self.root.after(800, self._save_api_keys_impl)
+
+    def _save_api_keys_impl(self):
+        self._save_job = None
         try:
             config = {
                 "deepl_key": self.deepl_key.get().strip(),
-                "chatgpt_key": self.chatgpt_key.get().strip()
             }
             with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2)
-            self.log_message(" API Key 已保存")
         except Exception as e:
             self.log_message(f" 保存配置失败: {e}")
     
@@ -1042,23 +1181,10 @@ class CADTranslatorGUI:
             self.progress.stop()
             self.start_button.config(state='normal')
             return
-        translator = CADChineseTranslator(log_callback=self.log_message)
-        translator.use_engine = self.translation_engine.get().strip()
-
-        # 设置用户输入的 API Key
-        translator.deepl_api_key = self.deepl_key.get().strip()
-        translator.chatgpt_api_key = self.chatgpt_key.get().strip()
-        if translator.deepl_api_key:
-            import deepl
-            try:
-                translator.deepl_translator = deepl.Translator(translator.deepl_api_key)
-                self.log_message(" DeepL 引擎初始化成功")
-            except Exception as e:
-                self.log_message(f" DeepL 初始化失败: {e}")
-                messagebox.showerror("错误", "翻译失败: 未正确配置 DeepL API Key 或初始化失败")
-                return
-        # 主线程中创建翻译器并传入线程
         self.translator = self._create_translator()
+        if not self.translator.deepl_translator:
+            messagebox.showerror("错误", "DeepL 初始化失败，请检查 API Key 是否有效")
+            return
         # 禁用开始按钮
         self.start_button.config(state='disabled')
         self.progress.start()
@@ -1073,17 +1199,17 @@ class CADTranslatorGUI:
         # 在新线程中执行翻译
         def translation_thread():
             try:
-                translator.translate_cad_file(
+                self.translator.translate_cad_file(
                     self.input_file.get(),
                     output_file,
                     self.translation_mode.get(),
-                    self.translate_blocks.get()
+                    self.translate_blocks.get(),
                 )
                 self.root.after(0, self.translation_complete, True, "翻译完成！")
-            except Exception as e:
+            except Exception:
                 import traceback
                 err = traceback.format_exc()
-                error_msg = f"翻译失败: {translator.cleaner.safe_utf8(err)}"
+                error_msg = f"翻译失败: {self.translator.cleaner.safe_utf8(err)}"
                 self.log_message(error_msg)
                 self.root.after(0, self.translation_complete, False, error_msg)
 
@@ -1116,8 +1242,13 @@ class CADTranslatorGUI:
 
 
 def main():
-    app = CADTranslatorGUI()
-    app.run()
+    import sys
+    if "--legacy" in sys.argv:
+        app = CADTranslatorGUI()
+        app.run()
+    else:
+        from web_launcher import run_web_app
+        run_web_app()
 
 
 if __name__ == '__main__':

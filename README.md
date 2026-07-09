@@ -2,7 +2,9 @@
 
 ### 项目简介
 这是一个基于 `ezdxf` 的 CAD 翻译小工具，专为机电专业设计。  
-能帮你快速搞定图纸里的外文翻译，省去手动查词、手动修改的麻烦。
+支持 **DXF** 与 **DWG** 图纸翻译，能帮你快速搞定图纸里的外文翻译，省去手动查词、手动修改的麻烦。
+
+> **DWG 说明：** 翻译 `.dwg` 文件需配合 **[ODA File Converter](https://www.opendesign.com/guestfiles/oda_file_converter)** 使用。程序会自动调用 ODA 将 DWG 转为 DXF 进行翻译，完成后写回原格式。若未安装 ODA，仍可直接翻译 **DXF** 文件。
 
 ---
 
@@ -45,27 +47,50 @@ python main.py --legacy
 
 ---
 
-### 注意事项 (必读)
+### 文件格式与 ODA（必读）
 
-1. **支持 DXF / DWG：** 可直接选择 `.dxf` 或 `.dwg`。DWG 会通过本机 **ODA File Converter**（ezdxf odafc 插件）自动转为 DXF R2010 翻译，完成后按原 DWG 版本写回。
-2. **ODA 安装：** 安装包会将 ODA 与主程序放在**同一目录**。推荐结构：
+| 格式 | 是否支持 | 说明 |
+|------|----------|------|
+| **DXF** | ✅ 直接支持 | 选择 `.dxf` 即可翻译，无需额外组件 |
+| **DWG** | ✅ 需 ODA | 必须安装 **ODA File Converter**，由程序自动完成 DWG → DXF → 翻译 → DWG |
+
+**DWG 工作流程：**
+
+1. 程序检测到 `.dwg` 文件
+2. 调用 ODA File Converter 转为 DXF R2010
+3. 在 DXF 上执行翻译并写回文字
+4. 再经 ODA 转回与原文件相同版本的 DWG
+
+**ODA 安装方式（任选其一）：**
+
+1. **与主程序同目录（推荐）** — 适合 exe 分发与安装包：
 
    ```
    安装目录/
-     Honsen_CAD_Translator_v2.2.exe
+     Honsen_CAD_Translator_v5.5.exe
      ODAFileConverter/
        ODAFileConverter.exe
-       （ODA 自带 DLL 等文件）
+       （ODA 自带全部 DLL 等文件）
    ```
 
-   程序会**优先**使用同目录下的 ODA，找不到时再尝试系统路径 `C:\Program Files\ODA\...`。  
-   也可通过环境变量 `CAD_ODA_EXEC` 指定完整 exe 路径。  
-   单独安装：[ODA File Converter 下载](https://www.opendesign.com/guestfiles/oda_file_converter)
-3. **天正软件的坑：**  
+2. **系统安装** — 安装到默认路径后程序会自动识别：  
+   `C:\Program Files\ODA\ODAFileConverter\ODAFileConverter.exe`
+
+3. **环境变量** — 通过 `CAD_ODA_EXEC` 指定 ODA 可执行文件的完整路径
+
+**下载 ODA：** [ODA File Converter](https://www.opendesign.com/guestfiles/oda_file_converter)
+
+> 界面中会显示 ODA 是否已就绪。未检测到 ODA 时，**DWG 无法翻译**，请改用 DXF，或在 AutoCAD 中将 DWG「另存为 DXF」后再翻译。
+
+---
+
+### 注意事项
+
+1. **天正软件的坑：**  
    天正导出的 DXF 偶尔会有文字乱码问题，这是软件编码差异导致的，请见谅。
-4. **DeepL 翻译：**  
+2. **DeepL 翻译：**  
    内置了机电行业的常用词汇表，翻译更专业。使用前请配置 DeepL API Key（界面中填写，或设置环境变量 `DEEPL_API_KEY`）。
-5. **支持的文字类型：** TEXT、MTEXT、块属性（ATTDEF/ATTRIB，含提示 Prompt）、多重引线（MULTILEADER）。
+3. **支持的文字类型：** TEXT、MTEXT、块属性（ATTDEF/ATTRIB，含提示 Prompt）、多重引线（MULTILEADER）。
 
 ### 打包为 exe
 
@@ -122,4 +147,4 @@ C:\Program Files\Honsen CAD Translator\
 - 默认打包的是 **React 新界面**（`python main.py`），不是 Tkinter 旧版
 - 首次运行较慢（PyInstaller 解压临时文件）
 - 若双击无反应，可临时把 spec 里 `console=False` 改为 `console=True` 查看报错
-- 旧版界面：`Honsen_CAD_Translator_v2.2.exe --legacy`
+- 旧版界面：`Honsen_CAD_Translator_v5.5.exe --legacy`

@@ -3,7 +3,6 @@ import ezdxf
 import re
 import time
 import os
-import csv
 import sys
 import json
 import threading
@@ -22,6 +21,8 @@ try:
     import winreg
 except ImportError:
     winreg = None
+
+APP_VERSION = "5.5"
 
 def resource_path(relative_path):
     """
@@ -680,34 +681,23 @@ class CADChineseTranslator:
             import traceback
             self.safe_log(f"写回失败: {e}\n{traceback.format_exc()}")
 
-    def create_report(self, items, output_csv):
-        """创建CSV报告，确保输出文件使用UTF-8编码"""
-        try:
-            with open(output_csv, 'w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(
-                    f,
-                    fieldnames=['layer', 'location', 'type', 'field', 'original_text', 'translated_text'],
-                )
-                writer.writeheader()
-                for item in items:
-                    try:
-                        row = {
-                            'layer': self.fully_clean_for_write(item.get('layer', '')),
-                            'location': self.fully_clean_for_write(item.get('location', '')),
-                            'type': self.fully_clean_for_write(item.get('type', '')),
-                            'field': self.fully_clean_for_write(item.get('field', 'text')),
-                            'original_text': self.fully_clean_for_write(item.get('original_text', '')),
-                            'translated_text': self.fully_clean_for_write(item.get('translated_text', '')),
-                        }
-                        writer.writerow(row)
-                    except Exception as line_err:
-                        self.safe_log(f" 写入一行报告时出错: {line_err}")
-                        continue
-        except Exception as file_err:
-            self.safe_log(f" 创建 CSV 文件失败: {file_err}")
-
     def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False):
-        self.safe_log(f"正在读取: {input_file}")
+        from cad_convert import CadConversionSession
+
+        with CadConversionSession(input_file, self.safe_log) as session:
+            work_input = session.work_input
+            work_output = session.work_output_path() or output_file
+            self._translate_cad_file_dxf(
+                work_input, work_output, lang_config, include_blocks, input_file
+            )
+            if session.meta.is_dwg:
+                session.finalize(work_output, output_file)
+
+    def _translate_cad_file_dxf(
+        self, input_file, output_file, lang_config, include_blocks=False, source_label=None
+    ):
+        display_name = source_label or input_file
+        self.safe_log(f"正在读取: {display_name}")
         self.safe_log(f"当前写入字体: {self.default_font}")
         
         doc = None
@@ -784,14 +774,6 @@ class CADChineseTranslator:
             self.safe_log(f"❌ 文件保存失败: {e}")
             raise e
 
-        # 生成报告
-        report_file = output_file.replace('.dxf', '_report.csv').replace('.dwg', '_report.csv')
-        try:
-            self.create_report(items, report_file)
-            self.safe_log(f"📊 翻译报告已保存: {report_file}")
-        except Exception as e:
-            self.safe_log(f"⚠️ 生成报告失败: {e}")
-
         self.safe_log("🎉 全部任务完成！")
 
     # 注意：你原来的 clean_all_entities 和 write_back_translation 保持不变即可
@@ -802,7 +784,7 @@ class CADTranslatorGUI:
     def __init__(self):
         self.log_text = None
         self.root = tk.Tk()
-        self.root.title("Honsen内部 CAD中法互译工具 v2.2 - 编码问题修复版")
+        self.root.title(f"Honsen内部 CAD中法互译工具 v{APP_VERSION}")
         self.root.geometry("850x750")
         self.root.resizable(True, True)
         self.cleaner = TextCleaner()
@@ -879,11 +861,11 @@ class CADTranslatorGUI:
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(7, weight=1)
 
-        title_label = tk.Label(main_frame, text="Honsen非洲内部 CAD中法互译工具 v2.2\n编码问题修复版 - 先将dwg文件转换为dxf文件", 
+        title_label = tk.Label(main_frame, text=f"Honsen CAD 中法互译工具 v{APP_VERSION}\n支持 DXF / DWG（DWG 需 ODA File Converter）", 
                             font=('宋体', 16, 'bold'))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 
-        ttk.Label(main_frame, text="选择dxf文件:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="选择 CAD 文件:").grid(row=1, column=0, sticky=tk.W, pady=5)
         ttk.Entry(main_frame, textvariable=self.input_file, width=50).grid(
             row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 5))
         ttk.Button(main_frame, text="浏览", command=self.browse_input_file).grid(row=1, column=2, pady=5)
@@ -898,7 +880,8 @@ class CADTranslatorGUI:
         name_frame.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 5))
         name_frame.columnconfigure(0, weight=1)
         ttk.Entry(name_frame, textvariable=self.output_name).grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
-        ttk.Label(name_frame, text=".dxf").grid(row=0, column=1)
+        self.output_ext_label = ttk.Label(name_frame, text=".dxf")
+        self.output_ext_label.grid(row=0, column=1)
 
         options_api_container = ttk.Frame(main_frame)
         options_api_container.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
@@ -1035,13 +1018,18 @@ class CADTranslatorGUI:
         bottom_frame.pack(fill='x', pady=(15, 0))
 
         info_label = tk.Label(bottom_frame, 
-                            text="© 2025 Honsen非洲 - CAD中法互译工具 v2.2 | 编码问题修复版", 
+                            text=f"© 2025 Honsen - CAD中法互译工具 v{APP_VERSION}", 
                             font=('Microsoft YaHei', 9), fg='gray')
         info_label.pack()
     def browse_input_file(self):
         filename = filedialog.askopenfilename(
-            title="选择DXF文件",
-            filetypes=[("DXF files", "*.dxf"), ("All files", "*.*")]
+            title="选择 CAD 文件",
+            filetypes=[
+                ("CAD files", "*.dxf;*.dwg"),
+                ("DXF files", "*.dxf"),
+                ("DWG files", "*.dwg"),
+                ("All files", "*.*"),
+            ],
         )
         if filename:
             self.input_file.set(filename)
@@ -1052,6 +1040,9 @@ class CADTranslatorGUI:
 
             # 自动根据选择的文件名和翻译模式设置输出名
             base_name = os.path.splitext(os.path.basename(filename))[0]
+            out_ext = os.path.splitext(filename)[1].lower() or ".dxf"
+            if hasattr(self, "output_ext_label"):
+                self.output_ext_label.config(text=out_ext)
             now = datetime.now()
             timestamp = now.strftime('%Hh%M_%d-%m-%y')
             
@@ -1117,9 +1108,14 @@ class CADTranslatorGUI:
             messagebox.showerror("错误", "输入文件不存在")
             return False
         
-        if not self.input_file.get().lower().endswith('.dxf'):
-            messagebox.showerror("错误", "请选择DXF文件")
+        if not self.input_file.get().lower().endswith(('.dxf', '.dwg')):
+            messagebox.showerror("错误", "请选择 DXF 或 DWG 文件")
             return False
+        if self.input_file.get().lower().endswith('.dwg'):
+            from cad_convert import dwg_unavailable_message, odafc_available
+            if not odafc_available():
+                messagebox.showerror("无法处理 DWG", dwg_unavailable_message())
+                return False
         
         if not self.output_dir.get():
             messagebox.showerror("错误", "请选择输出目录")
@@ -1190,11 +1186,19 @@ class CADTranslatorGUI:
         self.progress.start()
         self.status_var.set("翻译中...")
         
-        # 构建输出文件路径
-        output_file = os.path.join(
-            self.output_dir.get(), 
-            self.output_name.get().strip() + '.dxf'
-        )
+        # 构建输出文件路径（扩展名与输入一致）
+        from cad_convert import analyze_source, output_path_for
+
+        try:
+            meta = analyze_source(self.input_file.get())
+            output_file = output_path_for(
+                meta, self.output_dir.get(), self.output_name.get().strip()
+            )
+        except ValueError:
+            output_file = os.path.join(
+                self.output_dir.get(),
+                self.output_name.get().strip() + ".dxf",
+            )
         
         # 在新线程中执行翻译
         def translation_thread():
@@ -1243,6 +1247,11 @@ class CADTranslatorGUI:
 
 def main():
     import sys
+
+    from cad_convert import configure_odafc
+
+    configure_odafc()
+
     if "--legacy" in sys.argv:
         app = CADTranslatorGUI()
         app.run()

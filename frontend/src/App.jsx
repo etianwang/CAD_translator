@@ -69,6 +69,7 @@ export default function App() {
   const [inputFile, setInputFile] = useState('')
   const [outputDir, setOutputDir] = useState('')
   const [outputName, setOutputName] = useState('')
+  const [outputExt, setOutputExt] = useState('.dxf')
   const [deeplKey, setDeeplKey] = useState('')
   const [mode, setMode] = useState('zh_to_fr')
   const [translateBlocks, setTranslateBlocks] = useState(false)
@@ -111,7 +112,19 @@ export default function App() {
     if (pyApi?.pick_dxf_file) {
       const r = await pyApi.pick_dxf_file()
       if (r.path) {
+        const ext = r.ext || (r.path.toLowerCase().endsWith('.dwg') ? '.dwg' : '.dxf')
+        if (ext === '.dwg') {
+          const st = await api('/api/odafc-status').catch(() => ({ installed: false }))
+          if (!st.installed) {
+            const msg = st.message || '未检测到 ODA，无法处理 DWG；请安装 ODA 或将 DWG 另存为 DXF'
+            setStatus('error')
+            setStatusMsg('无法处理 DWG')
+            setLogs((p) => [...p, ...msg.split('\n').map((line) => (line ? `提示: ${line}` : '')).filter(Boolean)])
+            return
+          }
+        }
         setInputFile(r.path)
+        setOutputExt(ext)
         if (!outputDir) setOutputDir(r.dir)
         const prefix = modeOutputPrefix(mode)
         const ts = new Date().toLocaleString('en-GB').replace(/[/,: ]/g, '-').slice(0, 16)
@@ -121,10 +134,14 @@ export default function App() {
     }
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.dxf'
+    input.accept = '.dxf,.dwg'
     input.onchange = () => {
       const f = input.files?.[0]
-      if (f) setInputFile(f.name)
+      if (f) {
+        const ext = f.name.toLowerCase().endsWith('.dwg') ? '.dwg' : '.dxf'
+        setInputFile(f.name)
+        setOutputExt(ext)
+      }
     }
     input.click()
   }, [pyApi, mode, outputDir])
@@ -230,9 +247,9 @@ export default function App() {
                 <div className="workspace-side-body">
                   <div className="workspace-section">
                     <h2>文件</h2>
-                    <Field label="DXF 输入">
-                      <div className="row">
-                        <input readOnly value={inputFile} placeholder="选择 .dxf 文件" />
+                  <Field label="CAD 输入 (DXF / DWG)">
+                    <div className="row">
+                      <input readOnly value={inputFile} placeholder="选择 .dxf 或 .dwg 文件" />
                         <motion.button type="button" className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={pickInput}>浏览</motion.button>
                       </div>
                     </Field>
@@ -245,7 +262,7 @@ export default function App() {
                     <Field label="输出文件名">
                       <div className="row suffix-row">
                         <input value={outputName} onChange={(e) => setOutputName(e.target.value)} placeholder="translated_cad" />
-                        <span className="suffix">.dxf</span>
+                        <span className="suffix">{outputExt}</span>
                       </div>
                     </Field>
                   </div>

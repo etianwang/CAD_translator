@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from cad_convert import analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
 from main import CADChineseTranslator, CONFIG_PATH, resource_path
 
 
@@ -102,8 +103,10 @@ class TranslationService:
             return "请选择输入文件"
         if not os.path.exists(body.input_file):
             return "输入文件不存在"
-        if not body.input_file.lower().endswith(".dxf"):
-            return "请选择 DXF 文件"
+        if not body.input_file.lower().endswith((".dxf", ".dwg")):
+            return "请选择 DXF 或 DWG 文件"
+        if body.input_file.lower().endswith(".dwg") and not odafc_available():
+            return dwg_unavailable_short()
         if not body.output_dir:
             return "请选择输出目录"
         if not os.path.exists(body.output_dir):
@@ -139,8 +142,11 @@ class TranslationService:
                 self.set_status("error", "DeepL 初始化失败")
                 return
 
-            output_file = os.path.join(body.output_dir, body.output_name.strip() + ".dxf")
             try:
+                meta = analyze_source(body.input_file)
+                output_file = output_path_for(
+                    meta, body.output_dir, body.output_name.strip()
+                )
                 translator.translate_cad_file(
                     body.input_file,
                     output_file,
@@ -197,6 +203,11 @@ def get_changelog():
 @app.get("/api/status")
 def get_status():
     return {"status": service.status, "message": service.last_message}
+
+
+@app.get("/api/odafc-status")
+def get_odafc_status():
+    return odafc_status()
 
 
 @app.post("/api/translate")

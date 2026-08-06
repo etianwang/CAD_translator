@@ -42,20 +42,20 @@ function usePywebview() {
 }
 
 function modeOutputPrefix(mode) {
-  return mode === 'zh_to_fr' ? 'fr' : 'zh'
+  return {
+    zh_to_fr: 'fr',
+    fr_to_zh: 'zh',
+    zh_to_en: 'en',
+    en_to_zh: 'zh',
+  }[mode] || 'fr'
 }
 
 function swapOutputNamePrefix(name, mode) {
   if (!name?.trim()) return name
   const target = modeOutputPrefix(mode)
-  const opposite = mode === 'zh_to_fr' ? 'zh' : 'fr'
-  if (name.startsWith(`${opposite}_`)) {
-    return `${target}_${name.slice(opposite.length + 1)}`
-  }
-  if (name.startsWith(`${target}_`)) {
-    return name
-  }
-  return name
+  return /^(fr|zh|en)_/.test(name)
+    ? `${target}_${name.slice(3)}`
+    : `${target}_${name}`
 }
 
 export default function App() {
@@ -217,7 +217,7 @@ export default function App() {
               ⬡
             </motion.span>
             <div className="brand-text">
-              <h1>Honsen CAD <span className="brand-accent">中法互译</span></h1>
+              <h1>Honsen CAD <span className="brand-accent">中法英互译</span></h1>
             </div>
           </div>
           <div className="topbar-spacer" aria-hidden />
@@ -269,10 +269,12 @@ export default function App() {
 
                   <div className="workspace-section">
                     <h2>翻译设置</h2>
-                    <div className="mode-group mode-group-stack">
+                    <div className="mode-group mode-group-grid">
                       {[
                         { v: 'zh_to_fr', l: '中文 → 法语' },
                         { v: 'fr_to_zh', l: '法语 → 中文' },
+                        { v: 'zh_to_en', l: '中文 → 英语' },
+                        { v: 'en_to_zh', l: '英语 → 中文' },
                       ].map((m) => (
                         <motion.button
                           key={m.v}
@@ -354,7 +356,7 @@ export default function App() {
       >
         <motion.span className="status-dot" animate={{ backgroundColor: statusColor, boxShadow: `0 0 12px ${statusColor}` }} />
         <span>{statusMsg || '就绪'}</span>
-        <span className="footer-meta">Etienne · etn@live.com</span>
+        <span className="footer-meta">v6.0 · Etienne · etn@live.com</span>
       </motion.footer>
     </div>
   )

@@ -19,13 +19,13 @@ context_zh_to_fr:
   强电: courant fort
   报警: alarme
   排水管: évacuation d'eau
-  排烟: évacuation fumée
+  排烟: désenfumage
   排风: extraction d'air
   控制: contrôle
   控制屏: écran de contrôle
   插座: prise
-  新风: ventilation
-  新风机: unité de ventilation
+  新风: air neuf
+  新风机: centrale de traitement d'air
   机房: local des machines
   桥架: chemin de câbles
   楼梯: escalier
@@ -41,7 +41,25 @@ context_zh_to_fr:
   走廊: couloir
   配电箱: tableau de distribution
   门窗: portes et fenêtres
-  风口: grille d'air
+  风口: bouche d'air
   风机: ventilateur
   风机盘管: ventilo-convecteur
   风管: conduite d'air
+  楼板: dalle
+  钢板: tôle d'acier
+  剪力墙: voile de contreventement
+  梁: poutre
+  钢梁: poutre en acier
+  柱: poteau
+  基础: fondation
+  独立基础: semelle isolée
+  标高: cote
+  轴线: axe
+  栏杆: garde-corps
+  线槽: goulotte de câbles
+  接地: mise à la terre
+  套管: fourreau
+  预留洞: réservation
+  保温: isolation thermique
+  给排水: plomberie
+  水泵: pompe à eau

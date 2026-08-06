@@ -1,13 +1,14 @@
-# Honsen CAD 中法互译工具
+# Honsen CAD 中法英互译工具 v6.0
 
-面向机电与建筑图纸的桌面翻译工具：读取 CAD 图纸中的文字，调用 DeepL 完成**中文 ↔ 法语**翻译后写回新文件。默认提供 React 桌面界面，也保留 Tkinter 旧版界面。
+面向机电与建筑图纸的桌面翻译工具：读取 CAD 图纸中的文字，调用 DeepL 完成**中文、法语、英语**之间的双向翻译后写回新文件。默认提供 React 桌面界面，也保留 Tkinter 旧版界面。
 
 ![界面预览](images/demo.png)
 
 ## 功能
 
 - 支持 `.dxf` 直接翻译；安装 ODA File Converter 后支持 `.dwg`。
-- 支持中文→法语、法语→中文两种方向。
+- 支持中文→法语、法语→中文、中文→英语和英语→中文四种方向。
+- 内置中法、法中、中英和英中的 CAD 术语表；完整匹配的图纸标签会直接采用术语表译文，其他文本交由 DeepL 翻译。
 - 翻译模型空间、布局中的 `TEXT`、`MTEXT`、`ATTDEF`、`ATTRIB` 和 `MULTILEADER` 文字；可选择继续扫描块定义中的文字。
 - 针对 CAD/MTEXT 格式控制符、乱码字符、尺寸和缩写进行清洗，内置机电常用术语、法语缩写和译文修正规则。
 - DWG 会自动执行“DWG → DXF → 翻译 → DWG”，并尽量按原始 DWG 版本输出。
@@ -78,10 +79,10 @@ cd frontend
 npm install
 npm run build
 cd ..
-pyinstaller Honsen_CAD_Translator_v5.5.spec
+pyinstaller Honsen_CAD_Translator_v6.0.spec
 ```
 
-生成的程序位于 `dist/Honsen_CAD_Translator_v5.5.exe`。若希望安装包开箱支持 DWG，请将 ODA File Converter 的完整目录放到 `dist/ODAFileConverter/`。
+生成的程序位于 `dist/Honsen_CAD_Translator_v6.0.exe`。若希望安装包开箱支持 DWG，请将 ODA File Converter 的完整目录放到 `dist/ODAFileConverter/`。
 
 安装 Inno Setup 6 后，可一键生成安装包：
 
@@ -89,7 +90,7 @@ pyinstaller Honsen_CAD_Translator_v5.5.spec
 .\installer\build_installer.ps1
 ```
 
-输出为 `installer_output/Honsen_CAD_Translator_v5.5_Setup.exe`。
+输出为 `installer_output/Honsen_CAD_Translator_v6.0_Setup.exe`。
 
 ## 项目结构
 
@@ -106,5 +107,6 @@ installer/              Inno Setup 安装包脚本
 ## 注意事项
 
 - 翻译依赖网络和 DeepL API；API 配额、费用和支持的语言以 DeepL 的规则为准。
+- 术语表适合标准化图纸标签（如“天花图”“桥架”“剪力墙”）；包含多个语义的长句仍应在输出图纸中复核。
 - 图纸格式复杂、含自定义实体或由特定 CAD 软件导出时，建议先备份原图并检查输出结果。
 - 本工具只写入输出文件，不会直接覆盖所选的源图纸。

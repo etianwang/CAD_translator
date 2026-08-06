@@ -11,7 +11,7 @@ import uvicorn
 from native_bridge import NativeBridge
 from web_api import API_PORT, FRONTEND_DIST, app
 
-TITLE = "Honsen CAD 中法互译工具"
+TITLE = "Honsen CAD 中法英互译工具 v6.0"
 
 
 def _wait_server(url: str, timeout: float = 15.0) -> bool:

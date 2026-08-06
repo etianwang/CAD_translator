@@ -22,7 +22,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "5.5"
+APP_VERSION = "6.0"
 
 def resource_path(relative_path):
     """
@@ -72,6 +72,16 @@ def pick_available_font():
 
 
 CONFIG_PATH = os.path.expanduser("~/.cad_translator_config.json")
+OUTPUT_PREFIXES = {
+    "zh_to_fr": "fr",
+    "fr_to_zh": "zh",
+    "zh_to_en": "en",
+    "en_to_zh": "zh",
+}
+
+
+def output_prefix(mode):
+    return OUTPUT_PREFIXES.get(mode, "fr")
 
 
 class CADChineseTranslator:
@@ -99,10 +109,14 @@ class CADChineseTranslator:
 
         context_zh_to_fr = load_yaml_data("translation_context.yaml").get("context_zh_to_fr", {})
         context_fr_to_zh = load_yaml_data("translation_context_fr_to_zh.yaml").get("context_fr_to_zh", {})
+        context_zh_to_en = load_yaml_data("translation_context_zh_to_en.yaml").get("context_zh_to_en", {})
+        context_en_to_zh = load_yaml_data("translation_context_en_to_zh.yaml").get("context_en_to_zh", {})
         corrections_fr_to_zh = load_yaml_data("translation_corrections.yaml").get("corrections_fr_to_zh", {})
 
         self.context_zh_to_fr = context_zh_to_fr
         self.context_fr_to_zh = context_fr_to_zh
+        self.context_zh_to_en = context_zh_to_en
+        self.context_en_to_zh = context_en_to_zh
         self.corrections_fr_to_zh = corrections_fr_to_zh
 
         self.language_configs = {
@@ -117,8 +131,24 @@ class CADChineseTranslator:
                 'target': 'zh-cn',
                 'name': '法语→中文',
                 'context': self.context_fr_to_zh
+            },
+            'zh_to_en': {
+                'source': 'zh-cn',
+                'target': 'en-us',
+                'name': '中文→英语',
+                'context': self.context_zh_to_en
+            },
+            'en_to_zh': {
+                'source': 'en',
+                'target': 'zh-cn',
+                'name': '英语→中文',
+                'context': self.context_en_to_zh
             }
         }
+        for config in self.language_configs.values():
+            config['glossary'] = {
+                term.casefold(): translation for term, translation in config['context'].items()
+            }
         if self.deepl_api_key:
             try:
                 self.deepl_translator = deepl.Translator(self.deepl_api_key)
@@ -194,6 +224,9 @@ class CADChineseTranslator:
         if hints:
             return f"建筑术语: {'; '.join(hints[:3])}."
         return text
+
+    def get_glossary_translation(self, text, lang_config_key):
+        return self.language_configs[lang_config_key]['glossary'].get(text.strip().casefold())
     
     def post_process_translation(self, text, original, lang_config_key):
         if '建筑术语:' in text and '原文:' in text:
@@ -258,14 +291,8 @@ class CADChineseTranslator:
         cleaned = self.preprocess_abbreviations(cleaned, lang_config_key)
         cleaned = self.cleaner.safe_utf8(cleaned)
 
-        if lang_config_key == "zh_to_fr" and not re.search(r'[\u4e00-\u9fff]', cleaned):
+        if lang_config_key.startswith("zh_to_") and not re.search(r'[\u4e00-\u9fff]', cleaned):
             self.safe_log(f"跳过非中文内容（疑似编号）: \"{cleaned}\"")
-            return self.cleaner.safe_utf8(text)
-
-        # Step 4: 可读性检查
-        printable_chars = sum(1 for char in cleaned if char.isprintable() or '\u4e00' <= char <= '\u9fff')
-        if len(cleaned) > 0 and printable_chars / len(cleaned) < 0.5:
-            self.safe_log(f"跳过损坏文本(可读字符比例过低): \"{cleaned}\"")
             return self.cleaner.safe_utf8(text)
 
         if lang_config_key not in self.language_configs:
@@ -273,6 +300,18 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(text)
 
         lang_config = self.language_configs[lang_config_key]
+        glossary_translation = self.get_glossary_translation(cleaned, lang_config_key)
+        if glossary_translation:
+            final = self.cleaner.safe_utf8(self.cleaner.full_clean(glossary_translation)).strip()
+            self.translated_cache[text] = final
+            self.safe_log(f"✔ 术语表命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
+            return final
+
+        # Step 4: 可读性检查
+        printable_chars = sum(1 for char in cleaned if char.isprintable() or '\u4e00' <= char <= '\u9fff')
+        if len(cleaned) > 0 and printable_chars / len(cleaned) < 0.5:
+            self.safe_log(f"跳过损坏文本(可读字符比例过低): \"{cleaned}\"")
+            return self.cleaner.safe_utf8(text)
 
         try:
             context = self.get_contextual_translation(cleaned, lang_config_key)
@@ -286,7 +325,11 @@ class CADChineseTranslator:
             deepl_result = self.deepl_translator.translate_text(
                 cleaned,
                 source_lang=lang_config['source'].split('-')[0].upper(),
-                target_lang=lang_config['target'].split('-')[0].upper(),
+                target_lang=(
+                    lang_config['target'].upper()
+                    if lang_config['target'].startswith('en-')
+                    else lang_config['target'].split('-')[0].upper()
+                ),
             )
             translated_result = deepl_result.text
 
@@ -784,7 +827,7 @@ class CADTranslatorGUI:
     def __init__(self):
         self.log_text = None
         self.root = tk.Tk()
-        self.root.title(f"Honsen内部 CAD中法互译工具 v{APP_VERSION}")
+        self.root.title(f"Honsen CAD中法英互译工具 v{APP_VERSION}")
         self.root.geometry("850x750")
         self.root.resizable(True, True)
         self.cleaner = TextCleaner()
@@ -861,7 +904,7 @@ class CADTranslatorGUI:
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(7, weight=1)
 
-        title_label = tk.Label(main_frame, text=f"Honsen CAD 中法互译工具 v{APP_VERSION}\n支持 DXF / DWG（DWG 需 ODA File Converter）", 
+        title_label = tk.Label(main_frame, text=f"Honsen CAD 中法英互译工具 v{APP_VERSION}\n支持 DXF / DWG（DWG 需 ODA File Converter）",
                             font=('宋体', 16, 'bold'))
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 
@@ -894,8 +937,14 @@ class CADTranslatorGUI:
         ttk.Label(options_frame, text="翻译模式:").grid(row=0, column=0, sticky=tk.W, pady=5)
         mode_frame = ttk.Frame(options_frame)
         mode_frame.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0))
-        ttk.Radiobutton(mode_frame, text="中文→法语", variable=self.translation_mode, value='zh_to_fr').grid(row=0, column=0, sticky=tk.W)
-        ttk.Radiobutton(mode_frame, text="法语→中文", variable=self.translation_mode, value='fr_to_zh').grid(row=0, column=1, sticky=tk.W, padx=(15, 0))
+        for column, (label, value) in enumerate((
+            ("中文→法语", "zh_to_fr"), ("法语→中文", "fr_to_zh"),
+            ("中文→英语", "zh_to_en"), ("英语→中文", "en_to_zh"),
+        )):
+            ttk.Radiobutton(
+                mode_frame, text=label, variable=self.translation_mode, value=value,
+                command=self._update_output_name_prefix,
+            ).grid(row=column // 2, column=column % 2, sticky=tk.W, padx=(0, 15), pady=2)
 
         ttk.Checkbutton(options_frame, text="翻译CAD块(Block)内的文字", variable=self.translate_blocks).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
         note_label = tk.Label(options_frame, text="注意：勾选后将翻译所有块定义（含未使用的标准符号块）", font=('宋体', 9), fg='gray')
@@ -1018,7 +1067,7 @@ class CADTranslatorGUI:
         bottom_frame.pack(fill='x', pady=(15, 0))
 
         info_label = tk.Label(bottom_frame, 
-                            text=f"© 2025 Honsen - CAD中法互译工具 v{APP_VERSION}", 
+                            text=f"© 2025 Honsen - CAD中法英互译工具 v{APP_VERSION}",
                             font=('Microsoft YaHei', 9), fg='gray')
         info_label.pack()
     def browse_input_file(self):
@@ -1046,13 +1095,18 @@ class CADTranslatorGUI:
             now = datetime.now()
             timestamp = now.strftime('%Hh%M_%d-%m-%y')
             
-            # 根据翻译模式设置前缀
-            if self.translation_mode.get() == 'zh_to_fr':
-                prefix = 'fr'
-            else:
-                prefix = 'zh'
-            
-            self.output_name.set(f"{prefix}_{base_name}_{timestamp}")
+            self.output_name.set(f"{output_prefix(self.translation_mode.get())}_{base_name}_{timestamp}")
+
+    def _update_output_name_prefix(self):
+        name = self.output_name.get().strip()
+        if not name:
+            return
+        prefix = output_prefix(self.translation_mode.get())
+        if re.match(r"^(fr|zh|en)_", name):
+            name = re.sub(r"^(fr|zh|en)_", f"{prefix}_", name)
+        else:
+            name = f"{prefix}_{name}"
+        self.output_name.set(name)
     
     def browse_output_dir(self):
         directory = filedialog.askdirectory(title="选择输出目录")

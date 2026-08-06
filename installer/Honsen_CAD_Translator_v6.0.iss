@@ -1,10 +1,10 @@
-; Honsen CAD 中法互译 — Inno Setup 安装脚本
+; Honsen CAD 中法英互译 — Inno Setup 安装脚本
 ; 构建前请先运行 PyInstaller，并将 ODA（可选）放入 dist\ODAFileConverter\
 
-#define MyAppName "Honsen CAD 中法互译"
-#define MyAppVersion "5.5"
+#define MyAppName "Honsen CAD 中法英互译"
+#define MyAppVersion "6.0"
 #define MyAppPublisher "Honsen"
-#define MyAppExeName "Honsen_CAD_Translator_v5.5.exe"
+#define MyAppExeName "Honsen_CAD_Translator_v6.0.exe"
 #define MyAppURL "https://github.com/"
 
 [Setup]

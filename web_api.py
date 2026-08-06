@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from cad_convert import analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
-from main import CADChineseTranslator, CONFIG_PATH, resource_path
+from main import CADChineseTranslator, CONFIG_PATH, output_prefix, resource_path
 
 
 def _frontend_dist() -> Path:
@@ -241,7 +241,7 @@ async def stream_logs():
 
 @app.get("/api/default-output-name")
 def default_output_name(mode: str = "zh_to_fr", base: str = ""):
-    prefix = "fr" if mode == "zh_to_fr" else "zh"
+    prefix = output_prefix(mode)
     ts = datetime.now().strftime("%Hh%M_%d-%m-%y")
     name = f"{prefix}_{base}_{ts}" if base else f"translated_cad_{ts}"
     return {"name": name}

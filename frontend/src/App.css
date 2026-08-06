@@ -393,8 +393,9 @@ input:focus {
   margin-bottom: 14px;
 }
 
-.mode-group-stack {
-  flex-direction: column;
+.mode-group-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .chip {
@@ -404,11 +405,11 @@ input:focus {
   background: rgba(0, 0, 0, 0.16);
   color: rgba(248, 250, 252, 0.88);
   border-radius: 11px;
-  padding: 12px 14px;
+  padding: 9px 10px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  text-align: left;
+  text-align: center;
   overflow: hidden;
 }
 

@@ -10,9 +10,9 @@ npm run build
 Pop-Location
 
 Write-Host "==> PyInstaller 打包..." -ForegroundColor Cyan
-pyinstaller Honsen_CAD_Translator_v5.5.spec
+pyinstaller Honsen_CAD_Translator_v6.0.spec
 
-$exe = Join-Path $Root "dist\Honsen_CAD_Translator_v5.5.exe"
+$exe = Join-Path $Root "dist\Honsen_CAD_Translator_v6.0.exe"
 if (-not (Test-Path $exe)) {
     throw "未找到 $exe，PyInstaller 打包失败"
 }
@@ -46,9 +46,9 @@ if (-not $iscc) {
 }
 
 Write-Host "==> Inno Setup 生成安装包..." -ForegroundColor Cyan
-& $iscc (Join-Path $Root "installer\Honsen_CAD_Translator_v5.5.iss")
+& $iscc (Join-Path $Root "installer\Honsen_CAD_Translator_v6.0.iss")
 
-$setup = Join-Path $Root "installer_output\Honsen_CAD_Translator_v5.5_Setup.exe"
+$setup = Join-Path $Root "installer_output\Honsen_CAD_Translator_v6.0_Setup.exe"
 if (Test-Path $setup) {
     Write-Host "完成: $setup" -ForegroundColor Green
 } else {

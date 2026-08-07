@@ -11,7 +11,7 @@ import uvicorn
 from native_bridge import NativeBridge
 from web_api import API_PORT, FRONTEND_DIST, app, service
 
-TITLE = "Honsen CAD 中法英互译工具 v1.7.0"
+TITLE = "Honsen CAD 中法英互译工具 v1.7.1"
 
 
 def _wait_server(url: str, timeout: float = 15.0) -> bool:
@@ -92,7 +92,7 @@ def run_web_app():
         background_color="#000000" if transparent else "#070b14",
         frameless=True,
         easy_drag=False,
-        shadow=not transparent,
+        shadow=True,
     )
 
     window.events.loaded += lambda: threading.Timer(0.6, _enable_windows_acrylic).start()

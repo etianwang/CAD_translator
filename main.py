@@ -22,7 +22,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
 
 def resource_path(relative_path):
     """

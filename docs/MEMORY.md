@@ -1,9 +1,9 @@
 # Project memory
 
-- Current development branch: `english`; application version: 1.7.0.
+- Current development branch: `main`; application version: 1.7.1.
 - CAD translation supports Chinese, French and English in four directions. Exact full-label glossary entries bypass DeepL; non-matching text uses DeepL.
 - DWG conversion requires the local `ODAFileConverter/` directory beside the application. It is a local tool directory and must not be committed.
-- Packaging uses `Honsen_CAD_Translator_v1.7.0.spec`; the current output executable is `dist/Honsen_CAD_Translator_v1.7.0.exe`. The local `ODAFileConverter/` directory remains beside the EXE and is not bundled or committed.
+- Packaging uses `Honsen_CAD_Translator_v1.7.1.spec`; the current output executable is `dist/Honsen_CAD_Translator_v1.7.1.exe`. The local `ODAFileConverter/` directory remains beside the EXE and is not bundled or committed.
 - Documentation lives in this folder. Batch queue requirements and acceptance criteria live in `BATCH_TRANSLATION_HARNESS.md`.
 - Accepted batch-queue layout: left top queue (70%), left bottom live log (30%), right full-height translation settings; one target language per batch.
 - 2026-08-07: Batch-queue preview and harness were updated to the 70/30 left-column split. Every completed task must append its state and decisions to this file before handoff.
@@ -27,3 +27,11 @@
 - 2026-08-07: Prepared the complete 1.7.0 batch-queue implementation, updated documentation, and current package configuration on `english` for promotion to `main`; local ODA binaries and Python caches remain excluded.
 - 2026-08-07: Promoted `english` to `main` at commit `24b9a53` and pushed `main` to both GitHub (`origin`) and Gitee (`gitee`). The local `ODAFileConverter/` directory remains intentionally untracked.
 - 2026-08-07: Replaced `images/demo.png` with the current 1.7.0 batch-queue screenshot and rewrote the README to document queue workflow, persistence, retry, safe concurrency, output formats/versions, ODA setup, source launch, and packaging. Documentation-only change; no rebuild required.
+- 2026-08-07: UI polish: reduced the live-log heading/subtitle footprint, removed the email from the footer, and added blue, purple-magenta, and blue-pink theme controls beside the app title. Themes reuse the installed animated OGL background and update primary controls, progress, selected modes, checkboxes, and custom menus together. `npm run build` passed.
+- 2026-08-07: Rebuilt the current theme-enabled application with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.7.0.spec`; the EXE build completed successfully. The known Python 3.14/Pydantic-v1 warning remains.
+- 2026-08-07: Replaced the blue-pink theme with a purple-pink-orange palette, using the supplied Grainient palette as the color reference. `npm run build` passed.
+- 2026-08-07: Released build version 1.7.1: application, frontend, package metadata, installer, documentation, and spec now use `Honsen_CAD_Translator_v1.7.1`. Frontend build and `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.7.1.spec` passed; the output is `dist/Honsen_CAD_Translator_v1.7.1.exe`.
+- 2026-08-07: Replaced the third theme with the distinct forest palette: deep green background, teal controls, and amber highlights. Frontend build and the 1.7.1 PyInstaller rebuild passed.
+- 2026-08-07: Enhanced the default blue theme with deep blue background, cyan accents, and indigo highlights. Frontend build and the 1.7.1 PyInstaller rebuild passed.
+- 2026-08-07: Enabled native pywebview window shadow even in transparent mode and added a subtle outer edge transition. Frontend build passed; rebuilding the default EXE is pending because active `Honsen_CAD_Translator_v1.7.1.exe` processes lock it.
+- 2026-08-07: After the running application closed, the native-window-shadow build completed successfully with `Honsen_CAD_Translator_v1.7.1.spec`.

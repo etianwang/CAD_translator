@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Iridescence from "./components/Iridescence";
 import "./App.css";
-const IRIDESCENCE_COLOR = [0.22, 0.38, 0.92];
+const THEMES = {
+  blue: { label: "蓝", color: [0.07, 0.23, 0.54] },
+  magenta: { label: "紫", color: [0.68, 0.12, 0.5] },
+  forest: { label: "绿", color: [0.05, 0.42, 0.37] },
+};
 const versions = [
   ["", "保持默认"],
   ["ACAD9", "AutoCAD R9"],
@@ -85,6 +89,7 @@ function SelectMenu({ value, onChange, options }) {
   );
 }
 export default function App() {
+  const [theme, setTheme] = useState("blue");
   const pyApi = usePywebview();
   const [batch, setBatch] = useState({
     tasks: [],
@@ -191,9 +196,9 @@ export default function App() {
     status
   ];
   return (
-    <div className="app-shell">
+    <div className={`app-shell theme-${theme}`}>
       <Iridescence
-        color={IRIDESCENCE_COLOR}
+        color={THEMES[theme].color}
         speed={0.85}
         amplitude={0.14}
         mouseReact
@@ -221,6 +226,11 @@ export default function App() {
             </div>
           </div>
           <div className="topbar-spacer" />
+          <div className="theme-switcher" aria-label="主题切换">
+            {Object.entries(THEMES).map(([name, item]) => (
+              <button type="button" className={theme === name ? "active" : ""} aria-label={`${item.label}色主题`} title={`${item.label}色主题`} key={name} onClick={() => setTheme(name)} />
+            ))}
+          </div>
           {pyApi ? (
             <div className="window-controls">
               <button
@@ -437,7 +447,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.7.0 · Etienne · etn@live.com</span>
+        <span className="footer-meta">v1.7.1 · Etienne</span>
       </motion.footer>
     </div>
   );

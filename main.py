@@ -22,7 +22,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "6.0"
+APP_VERSION = "1.7.0"
 
 def resource_path(relative_path):
     """
@@ -82,6 +82,14 @@ OUTPUT_PREFIXES = {
 
 def output_prefix(mode):
     return OUTPUT_PREFIXES.get(mode, "fr")
+
+
+def wait_for_translation(resume_event=None, cancel_event=None):
+    while resume_event and not resume_event.wait(0.1):
+        if cancel_event and cancel_event.is_set():
+            raise InterruptedError("translation cancelled")
+    if cancel_event and cancel_event.is_set():
+        raise InterruptedError("translation cancelled")
 
 
 class CADChineseTranslator:
@@ -724,20 +732,21 @@ class CADChineseTranslator:
             import traceback
             self.safe_log(f"写回失败: {e}\n{traceback.format_exc()}")
 
-    def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False):
+    def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False, output_format="source", output_version="", resume_event=None, cancel_event=None):
         from cad_convert import CadConversionSession
 
-        with CadConversionSession(input_file, self.safe_log) as session:
+        wait_for_translation(resume_event, cancel_event)
+        with CadConversionSession(input_file, self.safe_log, output_format, output_version) as session:
             work_input = session.work_input
             work_output = session.work_output_path() or output_file
-            self._translate_cad_file_dxf(
-                work_input, work_output, lang_config, include_blocks, input_file
-            )
-            if session.meta.is_dwg:
+            wait_for_translation(resume_event, cancel_event)
+            self._translate_cad_file_dxf(work_input, work_output, lang_config, include_blocks, input_file, "", resume_event, cancel_event)
+            if session.meta.is_dwg or output_version or output_format == "dwg":
+                wait_for_translation(resume_event, cancel_event)
                 session.finalize(work_output, output_file)
 
     def _translate_cad_file_dxf(
-        self, input_file, output_file, lang_config, include_blocks=False, source_label=None
+        self, input_file, output_file, lang_config, include_blocks=False, source_label=None, output_version="", resume_event=None, cancel_event=None
     ):
         display_name = source_label or input_file
         self.safe_log(f"正在读取: {display_name}")
@@ -774,6 +783,7 @@ class CADChineseTranslator:
             skipped_invalid = 0
 
             for i, item in enumerate(items, 1):
+                wait_for_translation(resume_event, cancel_event)
                 original_text = item['original_text']
                 
                 if not self.is_valid_text_for_translation(original_text):
@@ -811,6 +821,9 @@ class CADChineseTranslator:
         # ============================================================
         self.safe_log("💾 正在保存文件...")
         try:
+            wait_for_translation(resume_event, cancel_event)
+            if output_version and output_file.lower().endswith(".dxf"):
+                doc.dxfversion = output_version
             doc.saveas(output_file)
             self.safe_log(f"✅ 文件成功保存: {output_file}")
         except Exception as e:

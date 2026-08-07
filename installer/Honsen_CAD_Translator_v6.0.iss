@@ -2,9 +2,9 @@
 ; 构建前请先运行 PyInstaller，并将 ODA（可选）放入 dist\ODAFileConverter\
 
 #define MyAppName "Honsen CAD 中法英互译"
-#define MyAppVersion "6.0"
+#define MyAppVersion "1.7.0"
 #define MyAppPublisher "Honsen"
-#define MyAppExeName "Honsen_CAD_Translator_v6.0.exe"
+#define MyAppExeName "Honsen_CAD_Translator_v1.7.0.exe"
 #define MyAppURL "https://github.com/"
 
 [Setup]

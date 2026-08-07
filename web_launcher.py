@@ -9,9 +9,9 @@ from pathlib import Path
 import uvicorn
 
 from native_bridge import NativeBridge
-from web_api import API_PORT, FRONTEND_DIST, app
+from web_api import API_PORT, FRONTEND_DIST, app, service
 
-TITLE = "Honsen CAD 中法英互译工具 v6.0"
+TITLE = "Honsen CAD 中法英互译工具 v1.7.0"
 
 
 def _wait_server(url: str, timeout: float = 15.0) -> bool:
@@ -96,4 +96,7 @@ def run_web_app():
     )
 
     window.events.loaded += lambda: threading.Timer(0.6, _enable_windows_acrylic).start()
+    window.events.closing += lambda *_: service.shutdown()
     webview.start(gui="edgechromium")
+    service.shutdown()
+    os._exit(0)

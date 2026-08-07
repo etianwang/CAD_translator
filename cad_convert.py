@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 WORK_DXF_VERSION = "R2010"
+ODA_OUTPUT_VERSIONS = ("ACAD9", "ACAD10", "ACAD12", "ACAD13", "ACAD14", "ACAD2000", "ACAD2004", "ACAD2007", "ACAD2010", "ACAD2013", "ACAD2018")
 
 # 安装包推荐目录结构（与主程序 exe 同级）：
 #   Honsen_CAD_Translator_v2.2.exe
@@ -201,15 +202,20 @@ def work_dxf_to_dwg(
 class CadConversionSession:
     """管理 DWG 往返转换的临时目录。"""
 
-    def __init__(self, input_file: str, log: LogFn = None):
+    def __init__(self, input_file: str, log: LogFn = None, output_format: str = "source", output_version: str = ""):
         self.meta = analyze_source(input_file)
         self.log = log
+        self.output_is_dwg = output_format == "dwg" or (output_format == "source" and self.meta.is_dwg)
+        self.output_version = output_version
+        self.output_needs_oda = self.output_is_dwg or bool(output_version)
         self._tmp: Optional[str] = None
         self.work_input: str = input_file
 
     def __enter__(self) -> CadConversionSession:
-        if self.meta.is_dwg:
+        if self.meta.is_dwg or self.output_needs_oda:
             require_odafc(self.log)
+            if not self.meta.is_dwg:
+                return self
             self._tmp = tempfile.mkdtemp(prefix="cad_tr_")
             self.work_input = os.path.join(self._tmp, "work_input.dxf")
             _log(
@@ -224,12 +230,20 @@ class CadConversionSession:
             shutil.rmtree(self._tmp, ignore_errors=True)
 
     def work_output_path(self) -> str:
+        if self.output_needs_oda and not self._tmp:
+            self._tmp = tempfile.mkdtemp(prefix="cad_tr_")
         if self._tmp:
             return os.path.join(self._tmp, "work_output.dxf")
         return ""
 
     def finalize(self, translated_dxf: str, final_output: str) -> None:
-        if self.meta.is_dwg:
+        if self.output_is_dwg:
+            if self.output_version:
+                self.meta.oda_version = self.output_version
             work_dxf_to_dwg(translated_dxf, final_output, self.meta, self.log)
+        elif self.output_version:
+            from ezdxf.addons import odafc
+            require_odafc(self.log)
+            odafc.convert(translated_dxf, final_output, version=self.output_version, audit=True, replace=True)
         elif os.path.abspath(translated_dxf) != os.path.abspath(final_output):
             shutil.copy2(translated_dxf, final_output)

@@ -21,3 +21,7 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 
 - No second translation provider, automatic terminology extraction, or generic dictionary.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
+
+## Current task: batch translation queue
+
+Status (2026-08-07): complete. The confirmed UI is the clockwise rotated-triangle layout: queue at upper-left (70% of the left column), live log at lower-left (30%), and translation settings filling the right column. One batch has one shared target language; it supports Chinese ↔ French and Chinese ↔ English, persists state, serializes ODA conversion, and limits work to two files per DeepL key and three globally.

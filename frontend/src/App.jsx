@@ -1,195 +1,195 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import Iridescence from './components/Iridescence'
-import './App.css'
-
-const API = ''
-
-const IRIDESCENCE_COLOR = [0.22, 0.38, 0.92]
-
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Iridescence from "./components/Iridescence";
+import "./App.css";
+const IRIDESCENCE_COLOR = [0.22, 0.38, 0.92];
+const versions = [
+  ["", "保持默认"],
+  ["ACAD9", "AutoCAD R9"],
+  ["ACAD10", "AutoCAD R10"],
+  ["ACAD12", "AutoCAD R12"],
+  ["ACAD13", "AutoCAD R13"],
+  ["ACAD14", "AutoCAD R14"],
+  ["ACAD2000", "AutoCAD 2000"],
+  ["ACAD2004", "AutoCAD 2004"],
+  ["ACAD2007", "AutoCAD 2007"],
+  ["ACAD2010", "AutoCAD 2010"],
+  ["ACAD2013", "AutoCAD 2013"],
+  ["ACAD2018", "AutoCAD 2018"],
+];
+const modes = [
+  ["zh_to_fr", "中文 → 法语"],
+  ["fr_to_zh", "法语 → 中文"],
+  ["zh_to_en", "中文 → 英语"],
+  ["en_to_zh", "英语 → 中文"],
+];
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
     transition: { staggerChildren: 0.08, delayChildren: 0.12 },
   },
-}
-
+};
 const itemVariants = {
   hidden: { opacity: 0, y: 22, scale: 0.97 },
   show: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: 'spring', stiffness: 260, damping: 22 },
+    transition: { type: "spring", stiffness: 260, damping: 22 },
   },
-}
-
+};
 async function api(path, options) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
     ...options,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail || res.statusText)
-  }
-  return res.json()
+  });
+  if (!res.ok)
+    throw new Error(
+      (await res.json().catch(() => ({}))).detail || res.statusText,
+    );
+  return res.json();
 }
-
 function usePywebview() {
-  return typeof window !== 'undefined' && window.pywebview?.api
+  return typeof window !== "undefined" && window.pywebview?.api;
 }
-
-function modeOutputPrefix(mode) {
-  return {
-    zh_to_fr: 'fr',
-    fr_to_zh: 'zh',
-    zh_to_en: 'en',
-    en_to_zh: 'zh',
-  }[mode] || 'fr'
+function Field({ label, children }) {
+  return (
+    <div className="field">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
 }
-
-function swapOutputNamePrefix(name, mode) {
-  if (!name?.trim()) return name
-  const target = modeOutputPrefix(mode)
-  return /^(fr|zh|en)_/.test(name)
-    ? `${target}_${name.slice(3)}`
-    : `${target}_${name}`
+function SelectMenu({ value, onChange, options }) {
+  const selected = options.find(([optionValue]) => optionValue === value)?.[1];
+  return (
+    <details className="select-menu">
+      <summary>{selected}<span aria-hidden="true">⌄</span></summary>
+      <div className="select-options" role="listbox">
+        {options.map(([optionValue, optionLabel]) => (
+          <button
+            type="button"
+            className={optionValue === value ? "selected" : ""}
+            key={optionValue}
+            onClick={(event) => {
+              onChange(optionValue);
+              event.currentTarget.closest("details").removeAttribute("open");
+            }}
+          >
+            {optionLabel}
+          </button>
+        ))}
+      </div>
+    </details>
+  );
 }
-
 export default function App() {
-  const pyApi = usePywebview()
-  const logRef = useRef(null)
-  const [logs, setLogs] = useState([])
-  const [status, setStatus] = useState('idle')
-  const [statusMsg, setStatusMsg] = useState('就绪')
-  const [running, setRunning] = useState(false)
-
-  const [inputFile, setInputFile] = useState('')
-  const [outputDir, setOutputDir] = useState('')
-  const [outputName, setOutputName] = useState('')
-  const [outputExt, setOutputExt] = useState('.dxf')
-  const [deeplKey, setDeeplKey] = useState('')
-  const [mode, setMode] = useState('zh_to_fr')
-  const [translateBlocks, setTranslateBlocks] = useState(false)
-
+  const pyApi = usePywebview();
+  const [batch, setBatch] = useState({
+    tasks: [],
+    progress: 0,
+    paused: false,
+    started: false,
+    resumable: false,
+  });
+  const [logs, setLogs] = useState([]);
+  const [outputDir, setOutputDir] = useState("");
+  const [mode, setMode] = useState("zh_to_fr");
+  const [format, setFormat] = useState("source");
+  const [version, setVersion] = useState("");
+  const [blocks, setBlocks] = useState(false);
+  const [key, setKey] = useState("");
+  const logRef = useRef();
+  const refresh = useCallback(
+    () =>
+      api("/api/batch")
+        .then(setBatch)
+        .catch(() => {}),
+    [],
+  );
   useEffect(() => {
-    api('/api/config').then((c) => setDeeplKey(c.deepl_key || '')).catch(() => {})
-  }, [])
-
+    api("/api/config")
+      .then((c) => {
+        setKey(c.deepl_key || "");
+        setOutputDir(c.output_dir || "");
+      })
+      .catch(() => {});
+    refresh();
+    const t = setInterval(refresh, 1000);
+    return () => clearInterval(t);
+  }, [refresh]);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      api('/api/config', { method: 'POST', body: JSON.stringify({ deepl_key: deeplKey }) }).catch(() => {})
-    }, 600)
-    return () => clearTimeout(timer)
-  }, [deeplKey])
-
-  useEffect(() => {
-    const es = new EventSource(`${API}/api/logs/stream`)
+    const es = new EventSource("/api/logs/stream");
     es.onmessage = (e) => {
       try {
-        const data = JSON.parse(e.data)
-        if (data.type === 'status') {
-          setStatus(data.status)
-          setStatusMsg(data.message || '')
-          setRunning(data.status === 'running')
-        } else if (data.type === 'log') {
-          setLogs((prev) => [...prev.slice(-500), data.message])
-        }
-      } catch {
-        /* ignore */
-      }
-    }
-    return () => es.close()
-  }, [])
-
+        const d = JSON.parse(e.data);
+        if (d.type === "log") setLogs((p) => [...p.slice(-499), d.message]);
+      } catch {}
+    };
+    return () => es.close();
+  }, []);
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
-  }, [logs])
-
-  const pickInput = useCallback(async () => {
-    if (pyApi?.pick_dxf_file) {
-      const r = await pyApi.pick_dxf_file()
-      if (r.path) {
-        const ext = r.ext || (r.path.toLowerCase().endsWith('.dwg') ? '.dwg' : '.dxf')
-        if (ext === '.dwg') {
-          const st = await api('/api/odafc-status').catch(() => ({ installed: false }))
-          if (!st.installed) {
-            const msg = st.message || '未检测到 ODA，无法处理 DWG；请安装 ODA 或将 DWG 另存为 DXF'
-            setStatus('error')
-            setStatusMsg('无法处理 DWG')
-            setLogs((p) => [...p, ...msg.split('\n').map((line) => (line ? `提示: ${line}` : '')).filter(Boolean)])
-            return
-          }
-        }
-        setInputFile(r.path)
-        setOutputExt(ext)
-        if (!outputDir) setOutputDir(r.dir)
-        const prefix = modeOutputPrefix(mode)
-        const ts = new Date().toLocaleString('en-GB').replace(/[/,: ]/g, '-').slice(0, 16)
-        setOutputName(`${prefix}_${r.base}_${ts}`)
-      }
-      return
-    }
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.dxf,.dwg'
-    input.onchange = () => {
-      const f = input.files?.[0]
-      if (f) {
-        const ext = f.name.toLowerCase().endsWith('.dwg') ? '.dwg' : '.dxf'
-        setInputFile(f.name)
-        setOutputExt(ext)
-      }
-    }
-    input.click()
-  }, [pyApi, mode, outputDir])
-
-  const pickOutput = useCallback(async () => {
-    if (pyApi?.pick_output_dir) {
-      const r = await pyApi.pick_output_dir()
-      if (r.path) setOutputDir(r.path)
-    }
-  }, [pyApi])
-
-  const selectMode = useCallback((nextMode) => {
-    if (nextMode === mode) return
-    setMode(nextMode)
-    setOutputName((prev) => swapOutputNamePrefix(prev, nextMode))
-  }, [mode])
-
-  const startTranslate = async () => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [logs]);
+  const action = async (path, body) => {
     try {
-      setRunning(true)
-      setStatus('running')
-      setLogs((p) => [...p, '提交翻译任务...'])
-      await api('/api/translate', {
-        method: 'POST',
-        body: JSON.stringify({
-          input_file: inputFile,
-          output_dir: outputDir,
-          output_name: outputName,
-          translation_mode: mode,
-          translate_blocks: translateBlocks,
-          deepl_key: deeplKey,
-        }),
-      })
+      await api(path, {
+        method: "POST",
+        ...(body && { body: JSON.stringify(body) }),
+      });
+      refresh();
     } catch (e) {
-      setRunning(false)
-      setStatus('error')
-      setStatusMsg(e.message)
-      setLogs((p) => [...p, `ERROR: ${e.message}`])
+      setLogs((p) => [...p, `ERROR: ${e.message}`]);
     }
-  }
-
-  const statusColor = {
-    idle: '#94a3b8',
-    running: '#38bdf8',
-    success: '#34d399',
-    error: '#f87171',
-  }[status] || '#94a3b8'
-
+  };
+  const settings = () => ({
+    output_dir: outputDir,
+    translation_mode: mode,
+    translate_blocks: blocks,
+    output_format: format,
+    output_version: version,
+    deepl_key: key,
+  });
+  const chooseFiles = async () => {
+    const r = await pyApi?.pick_cad_files?.();
+    if (r?.paths?.length)
+      action("/api/batch/add", { files: r.paths, ...settings() });
+  };
+  const chooseOutput = async () => {
+    const r = await pyApi?.pick_output_dir?.();
+    if (r?.path) {
+      setOutputDir(r.path);
+      api("/api/config", {
+        method: "POST",
+        body: JSON.stringify({ deepl_key: key, output_dir: r.path }),
+      }).catch(() => {});
+    }
+  };
+  const toggle = () =>
+    batch.started
+      ? action(`/api/batch/pause?paused=${!batch.paused}`)
+      : action("/api/batch/start", settings());
+  const canStart = batch.tasks.some((t) =>
+    ["queued", "retrying", "cancelled"].includes(t.status),
+  );
+  const canClear =
+    !batch.started && !batch.tasks.some((t) => t.status === "running");
+  const mainLabel = !batch.started
+    ? batch.resumable
+      ? "继续"
+      : "开始翻译"
+    : batch.paused
+      ? "继续"
+      : "暂停";
+  const status = batch.tasks.some((t) => t.status === "running")
+    ? "running"
+    : batch.tasks.some((t) => t.status === "failed")
+      ? "error"
+      : "idle";
+  const statusColor = { idle: "#94a3b8", running: "#38bdf8", error: "#f87171" }[
+    status
+  ];
   return (
     <div className="app-shell">
       <Iridescence
@@ -198,175 +198,247 @@ export default function App() {
         amplitude={0.14}
         mouseReact
       />
-      <div className="bg-vignette" aria-hidden />
-      <div className="bg-noise" aria-hidden />
-
+      <div className="bg-vignette" />
+      <div className="bg-noise" />
       <motion.header
         className="glass topbar"
         initial={{ y: -28, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 24, delay: 0.05 }}
       >
         <div className="topbar-inner pywebview-drag-region">
           <div className="brand">
             <motion.span
               className="brand-icon"
-              animate={{ rotate: 360, scale: [1, 1.06, 1] }}
-              transition={{ rotate: { duration: 18, repeat: Infinity, ease: 'linear' }, scale: { duration: 3, repeat: Infinity } }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
             >
               ⬡
             </motion.span>
             <div className="brand-text">
-              <h1>Honsen CAD <span className="brand-accent">中法英互译</span></h1>
+              <h1>
+                Honsen CAD <span className="brand-accent">中法英互译</span>
+              </h1>
             </div>
           </div>
-          <div className="topbar-spacer" aria-hidden />
+          <div className="topbar-spacer" />
           {pyApi ? (
             <div className="window-controls">
-              <button type="button" className="win-btn" title="最小化" onClick={() => pyApi.minimize_window?.()}>
-                <img src="/icons/minimize.png" alt="" draggable={false} />
+              <button
+                className="win-btn"
+                onClick={() => pyApi.minimize_window?.()}
+              >
+                <img src="/icons/minimize.png" alt="" />
               </button>
-              <button type="button" className="win-btn win-btn-close" title="关闭" onClick={() => pyApi.close_window?.()}>
-                <img src="/icons/close.png" alt="" draggable={false} />
+              <button
+                className="win-btn win-btn-close"
+                onClick={() => pyApi.close_window?.()}
+              >
+                <img src="/icons/close.png" alt="" />
               </button>
             </div>
           ) : (
-            <div className="window-controls-spacer" aria-hidden />
+            <div className="window-controls-spacer" />
           )}
         </div>
       </motion.header>
-
       <main className="main-area">
         <motion.div
-          className="workspace-layout"
+          className="batch-layout"
           variants={containerVariants}
           initial="hidden"
           animate="show"
         >
-              <motion.aside className="glass workspace-side" variants={itemVariants}>
-                <div className="workspace-side-body">
-                  <div className="workspace-section">
-                    <h2>文件</h2>
-                  <Field label="CAD 输入 (DXF / DWG)">
-                    <div className="row">
-                      <input readOnly value={inputFile} placeholder="选择 .dxf 或 .dwg 文件" />
-                        <motion.button type="button" className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={pickInput}>浏览</motion.button>
-                      </div>
-                    </Field>
-                    <Field label="输出目录">
-                      <div className="row">
-                        <input readOnly value={outputDir} placeholder="选择输出文件夹" />
-                        <motion.button type="button" className="btn secondary" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={pickOutput}>浏览</motion.button>
-                      </div>
-                    </Field>
-                    <Field label="输出文件名">
-                      <div className="row suffix-row">
-                        <input value={outputName} onChange={(e) => setOutputName(e.target.value)} placeholder="translated_cad" />
-                        <span className="suffix">{outputExt}</span>
-                      </div>
-                    </Field>
-                  </div>
-
-                  <div className="workspace-section">
-                    <h2>翻译设置</h2>
-                    <div className="mode-group mode-group-grid">
-                      {[
-                        { v: 'zh_to_fr', l: '中文 → 法语' },
-                        { v: 'fr_to_zh', l: '法语 → 中文' },
-                        { v: 'zh_to_en', l: '中文 → 英语' },
-                        { v: 'en_to_zh', l: '英语 → 中文' },
-                      ].map((m) => (
-                        <motion.button
-                          key={m.v}
-                          type="button"
-                          className={`chip ${mode === m.v ? 'on' : ''}`}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => selectMode(m.v)}
-                        >
-                          {mode === m.v && <motion.span layoutId="mode-glow" className="chip-glow" transition={{ type: 'spring', stiffness: 400, damping: 28 }} />}
-                          <span>{m.l}</span>
-                        </motion.button>
-                      ))}
-                    </div>
-                    <label className="check">
-                      <input type="checkbox" checked={translateBlocks} onChange={(e) => setTranslateBlocks(e.target.checked)} />
-                      <span>翻译所有块定义（含未使用的符号块）</span>
-                    </label>
-                    <p className="hint">图框/标题栏会自动从块引用提取，通常无需勾选</p>
-                  </div>
-
-                  <div className="workspace-section">
-                    <h2>DeepL API</h2>
-                    <Field label="API Key">
-                      <input type="password" value={deeplKey} onChange={(e) => setDeeplKey(e.target.value)} placeholder="输入 DeepL API Key" />
-                    </Field>
-                  </div>
-                </div>
-
-                <div className="workspace-side-foot">
-                  <motion.button
-                    type="button"
-                    className={`btn primary full ${running ? 'is-running' : ''}`}
-                    disabled={running}
-                    whileHover={running ? {} : { scale: 1.02, y: -1 }}
-                    whileTap={running ? {} : { scale: 0.98 }}
-                    onClick={startTranslate}
+          <motion.section className="glass queue-panel" variants={itemVariants}>
+            <div className="panel-head">
+              <div>
+                <h2>翻译队列</h2>
+                <p>
+                  总体进度 {batch.progress}% · {batch.tasks.length} 个文件
+                </p>
+              </div>
+              <div>
+                <button
+                  className="btn secondary"
+                  disabled={!canClear}
+                  onClick={() => action("/api/batch/clear")}
+                >
+                  清空列表
+                </button>
+                <button className="btn primary" onClick={chooseFiles}>
+                  添加文件
+                </button>
+              </div>
+            </div>
+            <div className="progress">
+              <i style={{ width: `${batch.progress}%` }} />
+            </div>
+            <div className="queue-list">
+              <AnimatePresence initial={false}>
+                {batch.tasks.map((t) => (
+                  <motion.article
+                    className="queue-item"
+                    key={t.id}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 12 }}
                   >
-                    {running ? (
-                      <span className="loading"><span className="dot" /><span className="dot" /><span className="dot" />翻译中...</span>
-                    ) : '开始翻译'}
-                  </motion.button>
-                </div>
-              </motion.aside>
-
-              <motion.section className="glass workspace-log" variants={itemVariants}>
-                <div className="log-head">
-                  <div>
-                    <h2>实时日志</h2>
-                    <p className="log-sub">翻译进度与结果输出</p>
-                  </div>
-                  <button type="button" className="btn ghost" onClick={() => setLogs([])}>清除</button>
-                </div>
-                <div className="log-box" ref={logRef}>
-                  <AnimatePresence initial={false}>
-                    {logs.map((line, i) => (
-                      <motion.div
-                        key={`${i}-${line.slice(0, 32)}`}
-                        className="log-line"
-                        initial={{ opacity: 0, x: -12, filter: 'blur(4px)' }}
-                        animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                        transition={{ duration: 0.28 }}
-                      >
-                        {line}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  {logs.length === 0 && <p className="log-empty">等待任务...</p>}
-                </div>
-              </motion.section>
+                    <div>
+                      <strong>{t.input_file.split(/[\\/]/).pop()}</strong>
+                      <small>
+                        {t.status} · 进度 {t.progress}% · {t.message}
+                      </small>
+                      <div className="task-progress">
+                        <i style={{ width: `${t.progress}%` }} />
+                      </div>
+                      {t.output_file && <small>输出：{t.output_file}</small>}
+                    </div>
+                    <div className="item-actions">
+                      {!["running", "queued", "retrying"].includes(
+                        t.status,
+                      ) && (
+                        <button
+                          className="btn ghost"
+                          onClick={() => action(`/api/batch/${t.id}/retry`)}
+                        >
+                          重翻
+                        </button>
+                      )}
+                      {t.status !== "running" && (
+                        <button
+                          className="btn ghost"
+                          onClick={() => action(`/api/batch/${t.id}/remove`)}
+                        >
+                          移除
+                        </button>
+                      )}
+                    </div>
+                  </motion.article>
+                ))}
+              </AnimatePresence>
+            </div>
+          </motion.section>
+          <motion.section className="glass log-panel" variants={itemVariants}>
+            <div className="log-head">
+              <div>
+                <h2>实时日志</h2>
+                <p className="log-sub">翻译进度与结果输出</p>
+              </div>
+              <button className="btn ghost" onClick={() => setLogs([])}>
+                清除
+              </button>
+            </div>
+            <div className="log-box" ref={logRef}>
+              {logs.map((line, i) => (
+                <motion.div
+                  className="log-line"
+                  key={`${i}-${line.slice(0, 32)}`}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                >
+                  {line}
+                </motion.div>
+              ))}
+              {!logs.length && <p className="log-empty">等待任务...</p>}
+            </div>
+          </motion.section>
+          <motion.aside
+            className="glass settings-panel"
+            variants={itemVariants}
+          >
+            <h2>翻译设置</h2>
+            <Field label="输出目录">
+              <div className="row">
+                <input
+                  readOnly
+                  value={outputDir}
+                  placeholder="选择输出文件夹"
+                />
+                <button className="btn secondary" onClick={chooseOutput}>
+                  浏览
+                </button>
+              </div>
+            </Field>
+            <div className="field">
+              <span>统一翻译方向</span>
+              <div className="mode-group mode-group-grid">
+                {modes.map(([v, label]) => (
+                  <button
+                    className={`chip ${mode === v ? "on" : ""}`}
+                    key={v}
+                    onClick={() => setMode(v)}
+                  >
+                    {mode === v && (
+                      <motion.span layoutId="mode-glow" className="chip-glow" />
+                    )}
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Field label="输出格式">
+              <SelectMenu
+                value={format}
+                onChange={setFormat}
+                options={[["source", "保持源格式"], ["dxf", "DXF"], ["dwg", "DWG"]]}
+              />
+            </Field>
+            <Field label="输出版本（ODA）">
+              <SelectMenu
+                value={version}
+                onChange={setVersion}
+                options={versions}
+              />
+            </Field>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={blocks}
+                onChange={(e) => setBlocks(e.target.checked)}
+              />
+              <span>翻译块定义中的文字</span>
+            </label>
+            <p className="hint">图框/标题栏会自动从块引用提取，通常无需勾选</p>
+            <Field label="DeepL API Key">
+              <input
+                type="password"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder="输入 DeepL API Key"
+              />
+            </Field>
+            <div className="queue-controls">
+              <button
+                className="btn primary"
+                disabled={!batch.started && !canStart}
+                onClick={toggle}
+              >
+                {mainLabel}
+              </button>
+              <button
+                className="btn secondary"
+                disabled={!batch.started}
+                onClick={() => action("/api/batch/stop")}
+              >
+                停止
+              </button>
+            </div>
+          </motion.aside>
         </motion.div>
       </main>
-
-      <motion.footer
-        className="glass statusbar"
-        initial={{ y: 24, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 240, damping: 22 }}
-      >
-        <motion.span className="status-dot" animate={{ backgroundColor: statusColor, boxShadow: `0 0 12px ${statusColor}` }} />
-        <span>{statusMsg || '就绪'}</span>
-        <span className="footer-meta">v6.0 · Etienne · etn@live.com</span>
+      <motion.footer className="glass statusbar">
+        <motion.span
+          className="status-dot"
+          animate={{ backgroundColor: statusColor }}
+        />
+        <span>
+          {batch.paused
+            ? "队列已暂停"
+            : status === "running"
+              ? "翻译队列运行中"
+              : "就绪"}
+        </span>
+        <span className="footer-meta">v1.7.0 · Etienne · etn@live.com</span>
       </motion.footer>
     </div>
-  )
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      {children}
-    </label>
-  )
+  );
 }

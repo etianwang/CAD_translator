@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from batch_queue import BatchQueue
 from cad_convert import analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
 from main import CADChineseTranslator, CONFIG_PATH, output_prefix, resource_path
 
@@ -34,6 +35,7 @@ API_PORT = 8765
 
 class ConfigBody(BaseModel):
     deepl_key: str = ""
+    output_dir: str = ""
 
 
 class TranslateBody(BaseModel):
@@ -45,12 +47,49 @@ class TranslateBody(BaseModel):
     deepl_key: str
 
 
+class BatchBody(BaseModel):
+    files: list[str]
+    output_dir: str = ""
+    translation_mode: str = "zh_to_fr"
+    translate_blocks: bool = False
+    output_format: str = "source"
+    output_version: str = ""
+    deepl_key: str
+
+
+class BatchStartBody(BaseModel):
+    output_dir: str = ""
+    translation_mode: str = "zh_to_fr"
+    translate_blocks: bool = False
+    output_format: str = "source"
+    output_version: str = ""
+    deepl_key: str = ""
+
+
 class TranslationService:
     def __init__(self):
         self.status = "idle"
         self.last_message = ""
         self._log_queues: list[queue.Queue] = []
         self._lock = threading.Lock()
+        self.batch = BatchQueue(self._run_batch, self.emit_log, lambda: self.load_config().get("deepl_key", ""))
+
+    def _run_batch(self, task: dict, log, resume_event, cancel_event) -> str:
+        key = task.get("_key") or self.load_config().get("deepl_key", "")
+        if not key:
+            raise RuntimeError("请配置 DeepL API Key 后继续队列")
+        fmt = task.get("output_format", "source")
+        ext = os.path.splitext(task["input_file"])[1] if fmt == "source" else f".{fmt}"
+        name = f"{output_prefix(task['translation_mode'])}_{Path(task['input_file']).stem}"
+        output = os.path.join(task["output_dir"], name + ext)
+        if os.path.exists(output):
+            output = os.path.join(task["output_dir"], f"{name}_{task['id'][:8]}{ext}")
+        translator = CADChineseTranslator(log_callback=log)
+        translator.deepl_api_key = key
+        if not translator.deepl_translator:
+            raise RuntimeError("DeepL 初始化失败，请检查 API Key")
+        translator.translate_cad_file(task["input_file"], output, task["translation_mode"], task["translate_blocks"], fmt, task.get("output_version", ""), resume_event, cancel_event)
+        return output
 
     def subscribe(self) -> queue.Queue:
         q: queue.Queue = queue.Queue()
@@ -69,6 +108,9 @@ class TranslationService:
             except queue.Full:
                 pass
 
+    def shutdown(self):
+        self.batch.shutdown()
+
     def set_status(self, status: str, message: str = ""):
         self.status = status
         self.last_message = message
@@ -79,16 +121,28 @@ class TranslationService:
             except queue.Full:
                 pass
 
-    def save_config(self, deepl_key: str):
-        config = {"deepl_key": deepl_key.strip()}
+    @staticmethod
+    def default_output_dir() -> str:
+        path = Path.home() / "Documents" / "Honsen CAD output"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
+
+    def save_config(self, deepl_key: str, output_dir: str = ""):
+        config = self.load_config()
+        config["deepl_key"] = deepl_key.strip()
+        if output_dir:
+            config["output_dir"] = output_dir
+        config.setdefault("output_dir", self.default_output_dir())
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
     def load_config(self) -> dict:
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"deepl_key": ""}
+                config = json.load(f)
+                config.setdefault("output_dir", self.default_output_dir())
+                return config
+        return {"deepl_key": "", "output_dir": self.default_output_dir()}
 
     @staticmethod
     def check_internet(url="http://www.baidu.com", timeout=3) -> bool:
@@ -187,7 +241,7 @@ def get_config():
 
 @app.post("/api/config")
 def post_config(body: ConfigBody):
-    service.save_config(body.deepl_key)
+    service.save_config(body.deepl_key, body.output_dir)
     return {"ok": True}
 
 
@@ -214,6 +268,78 @@ def get_odafc_status():
 def start_translate(body: TranslateBody):
     service.start_translation(body)
     return {"ok": True, "status": "running"}
+
+
+@app.get("/api/batch")
+def get_batch():
+    return service.batch.snapshot()
+
+
+@app.post("/api/batch/add")
+def add_batch(body: BatchBody):
+    output_dir = body.output_dir or service.load_config().get("output_dir") or service.default_output_dir()
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail=f"无法创建输出目录: {exc}")
+    if not body.files or not os.path.isdir(output_dir):
+        raise HTTPException(status_code=400, detail="请选择文件和有效的输出目录")
+    if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
+        raise HTTPException(status_code=400, detail="不支持的翻译方向")
+    if body.output_format not in {"source", "dxf", "dwg"}:
+        raise HTTPException(status_code=400, detail="不支持的输出格式")
+    for path in body.files:
+        if not os.path.isfile(path) or not path.lower().endswith((".dxf", ".dwg")):
+            raise HTTPException(status_code=400, detail=f"无效 CAD 文件: {path}")
+        if (path.lower().endswith(".dwg") or body.output_format == "dwg") and not odafc_available():
+            raise HTTPException(status_code=400, detail=dwg_unavailable_short())
+    service.save_config(body.deepl_key or service.load_config().get("deepl_key", ""), output_dir)
+    settings = body.model_dump()
+    settings["output_dir"] = output_dir
+    return service.batch.add(body.files, settings)
+
+
+@app.post("/api/batch/start")
+def start_batch(body: BatchStartBody):
+    output_dir = body.output_dir or service.load_config().get("output_dir") or service.default_output_dir()
+    os.makedirs(output_dir, exist_ok=True)
+    if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
+        raise HTTPException(status_code=400, detail="不支持的翻译方向")
+    if body.output_format not in {"source", "dxf", "dwg"}:
+        raise HTTPException(status_code=400, detail="不支持的输出格式")
+    service.save_config(body.deepl_key or service.load_config().get("deepl_key", ""), output_dir)
+    settings = body.model_dump()
+    settings["output_dir"] = output_dir
+    settings["deepl_key"] = body.deepl_key or service.load_config().get("deepl_key", "")
+    return service.batch.start(settings)
+
+
+@app.post("/api/batch/pause")
+def pause_batch(paused: bool = True):
+    return service.batch.pause(paused)
+
+
+@app.post("/api/batch/stop")
+def stop_batch():
+    return service.batch.stop()
+
+
+@app.post("/api/batch/clear")
+def clear_batch():
+    try:
+        return service.batch.clear()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@app.post("/api/batch/{task_id}/remove")
+def remove_batch_task(task_id: str):
+    return service.batch.remove(task_id)
+
+
+@app.post("/api/batch/{task_id}/retry")
+def retry_batch_task(task_id: str):
+    return service.batch.retry(task_id)
 
 
 @app.get("/api/logs/stream")

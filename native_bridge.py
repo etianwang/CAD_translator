@@ -35,6 +35,14 @@ class NativeBridge:
             "ext": ext.lower(),
         }
 
+    def pick_cad_files(self) -> dict:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        paths = filedialog.askopenfilenames(title="选择 CAD 文件", filetypes=[("CAD files", "*.dxf;*.dwg")])
+        root.destroy()
+        return {"paths": list(paths)}
+
     def pick_output_dir(self) -> dict:
         root = tk.Tk()
         root.withdraw()
@@ -48,5 +56,8 @@ class NativeBridge:
             webview.windows[0].minimize()
 
     def close_window(self) -> None:
+        from web_api import service
+        service.shutdown()
         if webview.windows:
             webview.windows[0].destroy()
+        os._exit(0)

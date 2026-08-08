@@ -45,14 +45,14 @@ cd frontend
 npm install
 npm run build
 cd ..
-python web_launcher.py
+python run.py
 ```
 
 开发前端时，可分别启动本地 API 与 Vite：
 
 ```powershell
 # 终端 1
-python -c "import uvicorn; from web_api import app; uvicorn.run(app, host='127.0.0.1', port=8765)"
+python -c "import uvicorn; from backend.api import app; uvicorn.run(app, host='127.0.0.1', port=8765)"
 
 # 终端 2
 cd frontend
@@ -60,6 +60,15 @@ npm run dev
 ```
 
 然后访问 `http://localhost:5173`。
+
+## 项目结构
+
+- `backend/`：翻译、CAD 转换、队列、FastAPI、本地语言资产、授权与存储逻辑。
+- `desktop/`：pywebview 桌面窗口和原生文件/资源管理器操作。
+- `tools/`：仅供开发者使用的授权发码工具。
+- `tests/`：后端回归检查；可通过 `python -m tests.test_translation_modes` 等模块命令运行。
+- `glossaries/`：随软件发布的中法、中英、法中、英中 CAD 内置术语表与修正规则。
+- `run.py`：桌面程序与 PyInstaller 的唯一入口。
 
 ## DWG 与 ODA
 

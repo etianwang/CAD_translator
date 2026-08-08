@@ -9,11 +9,11 @@ from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 
-import batch_queue
-import web_api
-from azure_translator import AzureFreeQuotaExceededError
-from storage_utils import atomic_output_path
-from web_api import DROPPED_FILE_RETENTION_SECONDS, SSE_QUEUE_SIZE, TranslationService
+from backend import queue as batch_queue
+from backend import api as web_api
+from backend.providers.azure import AzureFreeQuotaExceededError
+from backend.storage import atomic_output_path
+from backend.api import DROPPED_FILE_RETENTION_SECONDS, SSE_QUEUE_SIZE, TranslationService
 
 
 with tempfile.TemporaryDirectory() as tmp:

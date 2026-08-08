@@ -1,6 +1,6 @@
 # 授权与激活
 
-在 `license_manager.py` 中将 `LICENSE_ENFORCEMENT_ENABLED = True` 后，软件首次可联网运行时会记录试用开始日；试用共 30 个自然日。每次启动和每五分钟都会通过 HTTPS `Date` 响应同步时间。试用或授权到期、系统时间回退、或无法联网校时，翻译 API 与界面操作都会被锁定；用户仍可在激活页输入新码。默认值为 `False`，完全跳过联网校时和授权限制，适合不能作商业分发的 ODA 构建。
+在 `backend/licensing.py` 中将 `LICENSE_ENFORCEMENT_ENABLED = True` 后，软件首次可联网运行时会记录试用开始日；试用共 30 个自然日。每次启动和每五分钟都会通过 HTTPS `Date` 响应同步时间。试用或授权到期、系统时间回退、或无法联网校时，翻译 API 与界面操作都会被锁定；用户仍可在激活页输入新码。默认值为 `False`，完全跳过联网校时和授权限制，适合不能作商业分发的 ODA 构建。
 
 激活码包含可解码的到期日期和套餐名，并由 Ed25519 私钥签名。客户端仅包含公钥，不能自行生成有效激活码。
 
@@ -9,7 +9,7 @@
 签发激活码：
 
 ```powershell
-python license_issuer.py issue --private-key "$env:USERPROFILE\Documents\HonsenCADLicenseIssuer\license_private_key.pem" --expires-on 2027-08-08 --plan "一年版"
+python -m tools.license_issuer issue --private-key "$env:USERPROFILE\Documents\HonsenCADLicenseIssuer\license_private_key.pem" --expires-on 2027-08-08 --plan "一年版"
 ```
 
 命令输出的一整行即激活码。`--expires-on` 可填任意日期，因此不同套餐只需使用不同的到期日与 `--plan` 文案。客户在启动页输入后立即生效。
@@ -18,7 +18,7 @@ python license_issuer.py issue --private-key "$env:USERPROFILE\Documents\HonsenC
 
 ## 赞助收款码
 
-收费开关关闭时，标题栏的“赞助作者”会读取 `license_manager.py` 内的 `SUPPORT_WECHAT_QR_URL` 和 `SUPPORT_ALIPAY_QR_URL`。推荐使用 Cloudflare R2 绑定自己的域名，例如：
+收费开关关闭时，标题栏的“赞助作者”会读取 `backend/licensing.py` 内的 `SUPPORT_WECHAT_QR_URL` 和 `SUPPORT_ALIPAY_QR_URL`。推荐使用 Cloudflare R2 绑定自己的域名，例如：
 
 ```python
 SUPPORT_WECHAT_QR_URL = "https://assets.example.com/honsen-cad/wechat.png"

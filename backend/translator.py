@@ -1,4 +1,4 @@
-### main.py
+"""CAD text translation core."""
 import ezdxf
 import re
 import time
@@ -9,16 +9,17 @@ import threading
 import queue
 import urllib.request
 from datetime import datetime
+from pathlib import Path
 
 import deepl
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import yaml
 
-from azure_translator import AzureFreeQuotaExceededError, AzureTranslator
-from language_assets import LanguageAssets
-from storage_utils import atomic_output_path, atomic_write_json
-from text_cleaning_utils import TextCleaner
+from backend.providers.azure import AzureFreeQuotaExceededError, AzureTranslator
+from backend.language_assets import LanguageAssets
+from backend.storage import atomic_output_path, atomic_write_json
+from backend.text_cleaning import TextCleaner
 
 try:
     import winreg
@@ -34,7 +35,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS  # PyInstaller 临时目录
     except AttributeError:
-        base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = Path(__file__).resolve().parents[1]
     return os.path.join(base_path, relative_path)
 
 def load_yaml_data(filename):
@@ -119,14 +120,14 @@ class CADChineseTranslator:
         self.translation_provider = "deepl"
         self.azure_translator = None
         self.cleaner = TextCleaner()
-        abbrev_data = load_yaml_data("translation_abbreviations.yaml")
+        abbrev_data = load_yaml_data("glossaries/translation_abbreviations.yaml")
         self.abbrev_map_fr_to_zh = abbrev_data.get("abbrev_map", {})
 
-        context_zh_to_fr = load_yaml_data("translation_context.yaml").get("context_zh_to_fr", {})
-        context_fr_to_zh = load_yaml_data("translation_context_fr_to_zh.yaml").get("context_fr_to_zh", {})
-        context_zh_to_en = load_yaml_data("translation_context_zh_to_en.yaml").get("context_zh_to_en", {})
-        context_en_to_zh = load_yaml_data("translation_context_en_to_zh.yaml").get("context_en_to_zh", {})
-        corrections_fr_to_zh = load_yaml_data("translation_corrections.yaml").get("corrections_fr_to_zh", {})
+        context_zh_to_fr = load_yaml_data("glossaries/translation_context.yaml").get("context_zh_to_fr", {})
+        context_fr_to_zh = load_yaml_data("glossaries/translation_context_fr_to_zh.yaml").get("context_fr_to_zh", {})
+        context_zh_to_en = load_yaml_data("glossaries/translation_context_zh_to_en.yaml").get("context_zh_to_en", {})
+        context_en_to_zh = load_yaml_data("glossaries/translation_context_en_to_zh.yaml").get("context_en_to_zh", {})
+        corrections_fr_to_zh = load_yaml_data("glossaries/translation_corrections.yaml").get("corrections_fr_to_zh", {})
 
         self.context_zh_to_fr = context_zh_to_fr
         self.context_fr_to_zh = context_fr_to_zh
@@ -782,7 +783,7 @@ class CADChineseTranslator:
             raise
 
     def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False, output_format="source", output_version="", resume_event=None, cancel_event=None):
-        from cad_convert import CadConversionSession
+        from backend.cad import CadConversionSession
 
         wait_for_translation(resume_event, cancel_event)
         with CadConversionSession(input_file, self.safe_log, output_format, output_version) as session:
@@ -1230,7 +1231,7 @@ class CADTranslatorGUI:
             messagebox.showerror("错误", "请选择 DXF 或 DWG 文件")
             return False
         if self.input_file.get().lower().endswith('.dwg'):
-            from cad_convert import dwg_unavailable_message, odafc_available
+            from backend.cad import dwg_unavailable_message, odafc_available
             if not odafc_available():
                 messagebox.showerror("无法处理 DWG", dwg_unavailable_message())
                 return False
@@ -1306,7 +1307,7 @@ class CADTranslatorGUI:
         self.status_var.set("翻译中...")
         
         # 构建输出文件路径（扩展名与输入一致）
-        from cad_convert import analyze_source, output_path_for
+        from backend.cad import analyze_source, output_path_for
 
         try:
             meta = analyze_source(self.input_file.get())
@@ -1362,18 +1363,3 @@ class CADTranslatorGUI:
 
     def run(self):
         self.root.mainloop()
-
-
-def main():
-    if "--legacy" in sys.argv:
-        print("The legacy Tkinter interface has been removed.")
-        return
-    from cad_convert import configure_odafc
-
-    configure_odafc()
-    from web_launcher import run_web_app
-    run_web_app()
-
-
-if __name__ == '__main__':
-    main()

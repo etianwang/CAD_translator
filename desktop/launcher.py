@@ -8,8 +8,8 @@ from pathlib import Path
 
 import uvicorn
 
-from native_bridge import NativeBridge
-from web_api import API_PORT, FRONTEND_DIST, app, service
+from desktop.native_bridge import NativeBridge
+from backend.api import API_PORT, FRONTEND_DIST, app, service
 
 TITLE = "Honsen CAD 中法英互译工具 v1.8.7"
 _INSTANCE_MUTEX = None

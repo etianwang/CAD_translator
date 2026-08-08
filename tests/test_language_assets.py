@@ -3,8 +3,8 @@
 import tempfile
 from pathlib import Path
 
-from language_assets import LanguageAssets
-from main import CADChineseTranslator
+from backend.language_assets import LanguageAssets
+from backend.translator import CADChineseTranslator
 
 
 with tempfile.TemporaryDirectory() as tmp:

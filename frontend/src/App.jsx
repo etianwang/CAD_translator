@@ -408,7 +408,7 @@ export default function App() {
                 {support.wechat_qr_url && <figure><img src="/api/support/qrcode/wechat" alt="微信收款码" /><figcaption>微信收款码</figcaption></figure>}
                 {support.alipay_qr_url && <figure><img src="/api/support/qrcode/alipay" alt="支付宝商家收款码" /><figcaption>支付宝商家收款码</figcaption></figure>}
               </div>
-            ) : <p>请在 <code>license_manager.py</code> 配置两个外部收款码链接。</p>}
+            ) : <p>请在 <code>backend/licensing.py</code> 配置两个外部收款码链接。</p>}
           </div>
         </div>
       )}

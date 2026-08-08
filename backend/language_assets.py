@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from storage_utils import atomic_write_json
+from backend.storage import atomic_write_json
 
 
 DATABASE_PATH = Path.home() / ".cad_translator_language_assets.sqlite3"

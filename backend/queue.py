@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 from typing import Callable
 
-from storage_utils import atomic_write_json, quarantine_corrupt_file
+from backend.storage import atomic_write_json, quarantine_corrupt_file
 
 
 STATE_PATH = Path.home() / ".cad_translator_queue.json"

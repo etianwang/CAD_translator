@@ -13,7 +13,7 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from storage_utils import atomic_write_json, quarantine_corrupt_file
+from backend.storage import atomic_write_json, quarantine_corrupt_file
 
 try:
     import winreg

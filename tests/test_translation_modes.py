@@ -6,18 +6,18 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from urllib.error import HTTPError
 
-from azure_translator import AzureFreeQuotaExceededError, AzureTranslator, AzureTranslatorError
-from language_assets import LanguageAssets
-import main
-from main import CADChineseTranslator, output_prefix
-from web_api import BatchStartBody, TranslateBody, app, builtin_terms, default_output_name, service, start_batch
+from backend.providers.azure import AzureFreeQuotaExceededError, AzureTranslator, AzureTranslatorError
+from backend.language_assets import LanguageAssets
+from backend import translator
+from backend.translator import CADChineseTranslator, output_prefix
+from backend.api import BatchStartBody, TranslateBody, app, builtin_terms, default_output_name, service, start_batch
 
 
 class TranslationModeTests(unittest.TestCase):
     def setUp(self):
         self.assets_tmp = tempfile.TemporaryDirectory()
         self.assets = LanguageAssets(f"{self.assets_tmp.name}/assets.sqlite3")
-        self.assets_patch = patch("main.LanguageAssets", return_value=self.assets)
+        self.assets_patch = patch("backend.translator.LanguageAssets", return_value=self.assets)
         self.assets_patch.start()
 
     def tearDown(self):
@@ -30,7 +30,7 @@ class TranslationModeTests(unittest.TestCase):
             def __exit__(self, *args): return False
             def read(self): return b'[{"translations":[{"text":"cement structure"}]}]'
 
-        with patch("azure_translator.urllib.request.urlopen", return_value=Response()) as open_url:
+        with patch("backend.providers.azure.urllib.request.urlopen", return_value=Response()) as open_url:
             self.assertEqual(AzureTranslator("key", "eastus").translate_text("水泥结构", "zh-cn", "en-us"), "cement structure")
         request = open_url.call_args.args[0]
         self.assertIn("from=zh-Hans", request.full_url)
@@ -39,7 +39,7 @@ class TranslationModeTests(unittest.TestCase):
 
     def test_azure_f0_quota_error_is_not_retryable(self):
         error = HTTPError("https://example.test", 403, "Forbidden", None, BytesIO(b'{"error":{"code":403001,"message":"quota exceeded"}}'))
-        with patch("azure_translator.urllib.request.urlopen", side_effect=error):
+        with patch("backend.providers.azure.urllib.request.urlopen", side_effect=error):
             with self.assertRaisesRegex(AzureFreeQuotaExceededError, "免费额度已用尽") as raised:
                 AzureTranslator("key").translate_text("文本", "zh-cn", "fr")
         error.close()
@@ -48,7 +48,7 @@ class TranslationModeTests(unittest.TestCase):
     def test_azure_invalid_request_and_key_are_not_retryable(self):
         for status in (400, 401, 403):
             error = HTTPError("https://example.test", status, "Request failed", None, BytesIO(b'{"error":{"code":400000,"message":"invalid"}}'))
-            with patch("azure_translator.urllib.request.urlopen", side_effect=error):
+            with patch("backend.providers.azure.urllib.request.urlopen", side_effect=error):
                 with self.assertRaises(AzureTranslatorError) as raised:
                     AzureTranslator("key").translate_text("文本", "zh-cn", "fr")
             error.close()
@@ -161,11 +161,11 @@ class TranslationModeTests(unittest.TestCase):
             config_path = f"{tmp}/config.json"
             with open(config_path, "w", encoding="utf-8") as stream:
                 json.dump({"azure_key": "azure", "azure_region": "eastus", "provider": "azure"}, stream)
-            legacy = object.__new__(main.CADTranslatorGUI)
+            legacy = object.__new__(translator.CADTranslatorGUI)
             legacy._save_job = None
             legacy.deepl_key = SimpleNamespace(get=lambda: "deepl")
             legacy.log_message = lambda *_: None
-            with patch("main.CONFIG_PATH", config_path):
+            with patch("backend.translator.CONFIG_PATH", config_path):
                 legacy._save_api_keys_impl()
             with open(config_path, encoding="utf-8") as stream:
                 config = json.load(stream)

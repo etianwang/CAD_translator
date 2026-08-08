@@ -1,4 +1,4 @@
-### text_cleaning_utils.py
+"""Text normalization helpers for CAD labels."""
 
 import re
 import unicodedata

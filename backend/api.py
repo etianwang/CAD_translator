@@ -20,20 +20,20 @@ from fastapi.responses import FileResponse, JSONResponse, Response, StreamingRes
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from azure_translator import AzureFreeQuotaExceededError
-from batch_queue import BatchQueue
-from cad_convert import ODA_OUTPUT_VERSIONS, analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
-from main import CADChineseTranslator, CONFIG_PATH, load_yaml_data, output_prefix, resource_path
-from license_manager import LICENSE_ENFORCEMENT_ENABLED, SUPPORT_ALIPAY_QR_URL, SUPPORT_WECHAT_QR_URL, LicenseManager
-from language_assets import LanguageAssets
-from storage_utils import atomic_write_bytes, atomic_write_json, quarantine_corrupt_file
+from backend.providers.azure import AzureFreeQuotaExceededError
+from backend.queue import BatchQueue
+from backend.cad import ODA_OUTPUT_VERSIONS, analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
+from backend.translator import CADChineseTranslator, CONFIG_PATH, load_yaml_data, output_prefix, resource_path
+from backend.licensing import LICENSE_ENFORCEMENT_ENABLED, SUPPORT_ALIPAY_QR_URL, SUPPORT_WECHAT_QR_URL, LicenseManager
+from backend.language_assets import LanguageAssets
+from backend.storage import atomic_write_bytes, atomic_write_json, quarantine_corrupt_file
 
 
 def _frontend_dist() -> Path:
     bundled = Path(resource_path("frontend/dist"))
     if bundled.is_dir():
         return bundled
-    return Path(__file__).parent / "frontend" / "dist"
+    return Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
 
 FRONTEND_DIST = _frontend_dist()
@@ -44,10 +44,10 @@ QR_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 QR_CACHE_DIR = Path.home() / ".cad_translator_qr_cache"
 _QR_CACHE_LOCK = threading.Lock()
 BUILTIN_GLOSSARIES = {
-    "zh_to_fr": ("translation_context.yaml", "context_zh_to_fr"),
-    "fr_to_zh": ("translation_context_fr_to_zh.yaml", "context_fr_to_zh"),
-    "zh_to_en": ("translation_context_zh_to_en.yaml", "context_zh_to_en"),
-    "en_to_zh": ("translation_context_en_to_zh.yaml", "context_en_to_zh"),
+    "zh_to_fr": ("glossaries/translation_context.yaml", "context_zh_to_fr"),
+    "fr_to_zh": ("glossaries/translation_context_fr_to_zh.yaml", "context_fr_to_zh"),
+    "zh_to_en": ("glossaries/translation_context_zh_to_en.yaml", "context_zh_to_en"),
+    "en_to_zh": ("glossaries/translation_context_en_to_zh.yaml", "context_en_to_zh"),
 }
 
 

@@ -82,7 +82,7 @@ class NativeBridge:
         root.destroy()
         if not path:
             return {"path": ""}
-        from web_api import service
+        from backend.api import service
         service.export_logs(path)
         return {"path": path}
 
@@ -97,7 +97,7 @@ class NativeBridge:
             webview.windows[0].minimize()
 
     def close_window(self) -> None:
-        from web_api import service
+        from backend.api import service
         service.shutdown()
         if webview.windows:
             webview.windows[0].destroy()

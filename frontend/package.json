@@ -1,7 +1,7 @@
 {
   "name": "cad-translator-ui",
   "private": true,
-  "version": "1.7.1",
+  "version": "1.8.7",
   "type": "module",
   "scripts": {
     "dev": "vite",

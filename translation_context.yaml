@@ -25,6 +25,14 @@ context_zh_to_fr:
   控制屏: écran de contrôle
   插座: prise
   新风: air neuf
+  供电: alimentation
+  电源供电: alimentation électrique
+  总电源: alimentation générale
+  应急电源: alimentation de secours
+  供水: alimentation en eau
+  冷水供水: alimentation eau froide
+  热水供水: alimentation eau chaude
+  生活给水: alimentation d'eau potable
   新风机: centrale de traitement d'air
   机房: local des machines
   桥架: chemin de câbles
@@ -60,6 +68,19 @@ context_zh_to_fr:
   接地: mise à la terre
   套管: fourreau
   预留洞: réservation
+  墙体预留洞: réservation dans mur
+  楼板预留洞: trémie
+  洞口: ouverture
+  开洞: ouverture
+  墙体开洞: ouverture de mur
+  楼板开洞: ouverture de dalle
+  楼梯洞口: trémie d'escalier
+  门洞: baie de porte
+  窗洞: baie de fenêtre
+  门: porte
+  窗: fenêtre
+  落地窗: porte-fenêtre
+  过梁: linteau
   保温: isolation thermique
   给排水: plomberie
   水泵: pompe à eau

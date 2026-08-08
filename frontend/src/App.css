@@ -467,6 +467,8 @@ input:focus {
   margin-bottom: 0;
 }
 
+.log-actions { display:flex; gap:6px; margin-left:auto; }
+
 .log-box {
   flex: 1;
   overflow-y: auto;
@@ -590,12 +592,26 @@ input:focus {
   color: rgba(203, 213, 225, 0.62);
 }
 
+.footer-meta a { color: inherit; text-decoration: none; -webkit-app-region: no-drag; app-region: no-drag; }
+.footer-meta a:hover { color: #eaf8ff; text-decoration: underline; }
+
+.license-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(1, 8, 30, .74); backdrop-filter: blur(10px); }
+.license-card { width: min(390px, 100%); padding: 26px; border: 1px solid rgba(125,211,252,.5); border-radius: 20px; background: rgba(5,23,70,.92); box-shadow: 0 24px 70px rgba(0,0,0,.4); }
+.license-card h2 { margin: 0 0 10px; }.license-card p { color: rgba(226,232,240,.78); line-height: 1.55; }.license-card input { width: 100%; box-sizing: border-box; margin: 8px 0 12px; }.license-card .btn { width: 100%; }.license-card small { display: block; margin-top: 10px; color: #fca5a5; }
+.support-button { margin-right: 8px; padding: 6px 10px; border: 1px solid rgba(125,211,252,.42); border-radius: 10px; color: #eaf8ff; background: rgba(8,28,82,.4); cursor: pointer; font: inherit; font-size: 12px; -webkit-app-region: no-drag; app-region: no-drag; }
+.support-overlay { position: fixed; inset: 0; z-index: 101; display: grid; place-items: center; padding: 24px; background: rgba(1,8,30,.74); backdrop-filter: blur(10px); }
+.support-card { position: relative; width: min(560px,100%); padding: 26px; border: 1px solid rgba(125,211,252,.5); border-radius: 20px; background: rgba(5,23,70,.94); box-shadow: 0 24px 70px rgba(0,0,0,.4); }.support-card h2 { margin: 0 0 12px; }.support-card p { color: rgba(226,232,240,.8); }.support-close { position:absolute; top:10px; right:13px; border:0; color:#cdefff; background:transparent; cursor:pointer; font-size:24px; }.support-qrs { display:flex; flex-wrap:wrap; justify-content:center; gap:24px; }.support-qrs figure { margin:0; text-align:center; }.support-qrs img { width:210px; max-width:100%; border-radius:12px; background:#fff; }.support-qrs figcaption { margin-top:8px; color:#eaf8ff; }
+
+.asset-card { position:relative; width:min(760px,100%); max-height:min(720px,calc(100vh - 48px)); overflow:auto; padding:26px; border:1px solid rgba(125,211,252,.5); border-radius:20px; background:rgba(5,23,70,.96); box-shadow:0 24px 70px rgba(0,0,0,.4); }.asset-card h2 { margin:0 0 12px; }.asset-tabs,.asset-actions,.asset-project { display:flex; gap:8px; margin-bottom:10px; }.asset-tabs button { border:0; border-bottom:2px solid transparent; padding:7px 10px; color:#bcdcff; background:transparent; cursor:pointer; font:inherit; }.asset-tabs button.active { color:#fff; border-color:var(--accent); }.asset-project input { min-width:0; }.asset-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:10px; }.asset-form input,.asset-form select,.asset-search { min-width:0; box-sizing:border-box; padding:8px 10px; color:#f8fafc; border:1px solid rgba(125,211,252,.35); border-radius:9px; background:rgba(0,0,0,.2); font:inherit; }.asset-form .btn { grid-column:span 2; }.asset-search { width:100%; margin-bottom:8px; }.asset-list { max-height:300px; overflow:auto; border-top:1px solid rgba(255,255,255,.1); }.asset-row { display:flex; align-items:center; gap:4px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08); font-size:13px; }.asset-row > div { flex:1; min-width:0; word-break:break-word; }.asset-row small,.usage-grid small { display:block; margin-top:3px; color:rgba(226,232,240,.62); font-size:11px; }.asset-row .btn { padding:5px 7px; }.usage-grid { display:grid; gap:10px; }.usage-grid section { padding:12px; border:1px solid rgba(125,211,252,.25); border-radius:12px; background:rgba(0,0,0,.16); }.usage-grid h3,.usage-grid p { margin:0 0 5px; }.usage-grid h3 { font-size:14px; color:#dff7ff; }.asset-actions .btn { flex:1; }
+
 /* Batch queue: clockwise rotated triangle, settings on the right. */
 .batch-layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(290px, 3fr); grid-template-rows: minmax(0, 7fr) minmax(0, 3fr); gap: 12px; height: 100%; min-height: 0; }
 .queue-panel, .log-panel, .settings-panel { min-height: 0; padding: 16px 18px; }
-.queue-panel { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; }
+.queue-panel { position:relative; grid-column: 1; grid-row: 1; display: flex; flex-direction: column; }
+.queue-panel.drop-active { outline:2px dashed var(--accent); outline-offset:-7px; }
+.queue-panel.drop-active::after { content:"松开以添加 DXF / DWG 文件"; position:absolute; inset:8px; z-index:3; display:grid; place-items:center; border-radius:20px; color:#fff; font-weight:700; background:rgba(4,22,68,.7); backdrop-filter:blur(5px); pointer-events:none; }
 .log-panel { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; }
-.settings-panel { grid-column: 2; grid-row: 1 / span 2; overflow-y: auto; }
+.settings-panel { grid-column: 2; grid-row: 1 / span 2; overflow-y: auto; padding: 9px 14px; }
 .panel-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
 .panel-head h2, .settings-panel h2 { font-size: 14px; margin: 0; }
 .panel-head p, .pending, .queue-item small { display: block; color: rgba(226,232,240,.7); font-size: 12px; margin-top: 3px; }
@@ -609,6 +625,20 @@ input:focus {
 .select-menu summary::-webkit-details-marker { display:none; }.select-menu summary span { color:#9edbff; font-size:18px; line-height:1; transition:transform .16s; }.select-menu[open] summary { border-color:rgba(125,211,252,.72); border-bottom-left-radius:0; border-bottom-right-radius:0; }.select-menu[open] summary span { transform:rotate(180deg); }
 .select-options { position:absolute; z-index:12; top:100%; left:0; right:0; max-height:292px; overflow:auto; padding:5px; border:1px solid rgba(125,211,252,.5); border-top:0; border-radius:0 0 14px 14px; background:rgba(5, 23, 70, .58); backdrop-filter:blur(28px) saturate(175%); box-shadow:0 18px 32px rgba(1, 10, 38, .3); }
 .select-options button { display:block; width:100%; border:0; border-radius:9px; padding:8px 10px; text-align:left; color:#eff9ff; background:transparent; cursor:pointer; font:inherit; font-size:13px; }.select-options button:hover, .select-options button:focus-visible { outline:0; background:rgba(90, 185, 255, .28); }.select-options button.selected { background:rgba(75, 155, 255, .3); color:#fff; }
+.settings-panel .field { gap:3px; margin-bottom:6px; }
+.settings-panel .field > span, .settings-panel .check { font-size:12px; }
+.settings-panel input[type='text'], .settings-panel input[type='password'], .settings-panel input:not([type]) { padding:6px 10px; line-height:1.2; }
+.settings-panel .btn { padding:7px 10px; }
+.settings-panel .mode-group { gap:5px; margin-bottom:6px; }
+.settings-panel .chip { padding:5px 7px; font-size:12px; }
+.settings-panel .check { gap:7px; line-height:1.3; }
+.settings-panel .hint { font-size:11px; line-height:1.25; margin:4px 0; }
+.settings-panel .select-menu summary { min-height:28px; padding:3px 9px; border-radius:10px; }
+.settings-panel .select-menu summary span { font-size:13px; }
+.settings-panel .select-options { border-radius:0 0 12px 12px; }
+.settings-panel .select-options { max-height:220px; padding:3px; }
+.settings-panel .select-options button { padding:5px 7px; font-size:12px; }
+.settings-panel .queue-controls { gap:6px; margin-top:4px; }
 @media (max-width: 760px) { .batch-layout { grid-template-columns:1fr; grid-template-rows:minmax(260px, 1fr) 220px auto; overflow:auto; }.queue-panel,.log-panel,.settings-panel { grid-column:1; grid-row:auto; }.settings-panel { overflow:visible; } }
 
 /* Three palettes share the existing animated OGL background and recolor controls. */

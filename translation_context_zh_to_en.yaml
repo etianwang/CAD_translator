@@ -20,6 +20,14 @@ context_zh_to_en:
   风管: air duct
   风口: air grille
   新风: outdoor air
+  供电: power supply
+  电源供电: electrical power supply
+  总电源: main power supply
+  应急电源: emergency power supply
+  供水: water supply
+  冷水供水: cold water supply
+  热水供水: hot water supply
+  生活给水: potable water supply
   新风机: fresh air handling unit
   排风: exhaust air
   排烟: smoke extraction
@@ -27,6 +35,19 @@ context_zh_to_en:
   接地: grounding
   套管: sleeve
   预留洞: reserved opening
+  墙体预留洞: wall reservation
+  楼板预留洞: slab reservation
+  洞口: opening
+  开洞: opening
+  墙体开洞: wall opening
+  楼板开洞: floor opening
+  楼梯洞口: stair opening
+  门洞: door opening
+  窗洞: window opening
+  门: door
+  窗: window
+  落地窗: French window
+  过梁: lintel
   保温: thermal insulation
   管道井: service shaft
   给排水: plumbing

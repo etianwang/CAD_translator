@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
+from storage_utils import atomic_output_path
+
 WORK_DXF_VERSION = "R2010"
 ODA_OUTPUT_VERSIONS = ("ACAD9", "ACAD10", "ACAD12", "ACAD13", "ACAD14", "ACAD2000", "ACAD2004", "ACAD2007", "ACAD2010", "ACAD2013", "ACAD2018")
 
@@ -237,13 +239,14 @@ class CadConversionSession:
         return ""
 
     def finalize(self, translated_dxf: str, final_output: str) -> None:
-        if self.output_is_dwg:
-            if self.output_version:
-                self.meta.oda_version = self.output_version
-            work_dxf_to_dwg(translated_dxf, final_output, self.meta, self.log)
-        elif self.output_version:
-            from ezdxf.addons import odafc
-            require_odafc(self.log)
-            odafc.convert(translated_dxf, final_output, version=self.output_version, audit=True, replace=True)
-        elif os.path.abspath(translated_dxf) != os.path.abspath(final_output):
-            shutil.copy2(translated_dxf, final_output)
+        with atomic_output_path(final_output) as temporary_output:
+            if self.output_is_dwg:
+                if self.output_version:
+                    self.meta.oda_version = self.output_version
+                work_dxf_to_dwg(translated_dxf, temporary_output, self.meta, self.log)
+            elif self.output_version:
+                from ezdxf.addons import odafc
+                require_odafc(self.log)
+                odafc.convert(translated_dxf, temporary_output, version=self.output_version, audit=True, replace=True)
+            elif os.path.abspath(translated_dxf) != os.path.abspath(final_output):
+                shutil.copy2(translated_dxf, temporary_output)

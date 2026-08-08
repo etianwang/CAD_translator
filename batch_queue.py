@@ -5,18 +5,20 @@ from __future__ import annotations
 import json
 import os
 import threading
-import time
 import uuid
 from pathlib import Path
 from typing import Callable
 
+from storage_utils import atomic_write_json, quarantine_corrupt_file
+
 
 STATE_PATH = Path.home() / ".cad_translator_queue.json"
 ACTIVE = {"queued", "retrying", "running"}
+MAX_TASK_HISTORY = 100
 
 
 class BatchQueue:
-    def __init__(self, run: Callable[[dict, Callable[[str], None], threading.Event, threading.Event], str], emit: Callable[[str], None], key_for: Callable[[], str]):
+    def __init__(self, run: Callable[[dict, Callable[[str], None], threading.Event, threading.Event], str], emit: Callable[[str], None], key_for: Callable[[dict], str]):
         self.run, self.emit, self.key_for = run, emit, key_for
         self.lock = threading.RLock()
         self.oda_lock = threading.Lock()
@@ -32,7 +34,8 @@ class BatchQueue:
     def _load(self) -> list[dict]:
         try:
             tasks = json.loads(STATE_PATH.read_text(encoding="utf-8")).get("tasks", [])
-        except (OSError, ValueError):
+        except (OSError, ValueError, TypeError):
+            quarantine_corrupt_file(STATE_PATH)
             return []
         for task in tasks:
             if task.get("status") == "running":
@@ -42,26 +45,29 @@ class BatchQueue:
 
     def _save(self):
         # API keys intentionally never enter the persisted task model.
-        tasks = [{k: v for k, v in task.items() if k != "_key"} for task in self.tasks]
-        STATE_PATH.write_text(json.dumps({"tasks": tasks}, ensure_ascii=False, indent=2), encoding="utf-8")
+        self._prune_history()
+        tasks = [{k: v for k, v in task.items() if not k.startswith("_")} for task in self.tasks]
+        atomic_write_json(STATE_PATH, {"tasks": tasks})
+
+    def _prune_history(self):
+        finished = [task for task in self.tasks if task["status"] not in ACTIVE]
+        if len(finished) > MAX_TASK_HISTORY:
+            keep = {task["id"] for task in finished[-MAX_TASK_HISTORY:]}
+            self.tasks[:] = [task for task in self.tasks if task["status"] in ACTIVE or task["id"] in keep]
 
     def snapshot(self):
         with self.lock:
             total = len(self.tasks)
             done = sum(t["status"] in {"succeeded", "failed"} for t in self.tasks)
-            tasks = [{k: v for k, v in task.items() if k != "_key"} for task in self.tasks]
+            tasks = [{k: v for k, v in task.items() if not k.startswith("_")} for task in self.tasks]
             return {"tasks": tasks, "paused": self.paused, "started": self.started, "resumable": self.resumable, "progress": round(done * 100 / total) if total else 0}
 
-    def add(self, files: list[str], settings: dict):
+    def add(self, files: list[str]):
         with self.lock:
-            mode = settings["translation_mode"]
             for path in files:
                 self.tasks.append({
-                    "id": uuid.uuid4().hex, "input_file": path, "output_dir": settings["output_dir"],
-                    "output_format": settings.get("output_format", "source"), "output_version": settings.get("output_version", ""),
-                    "translation_mode": mode, "translate_blocks": settings.get("translate_blocks", False),
+                    "id": uuid.uuid4().hex, "input_file": path,
                     "status": "queued", "progress": 0, "retries": 0, "output_file": "", "message": "等待中", "logs": [],
-                    "_key": settings["deepl_key"],
                 })
             self._save()
         return self.snapshot()
@@ -76,6 +82,7 @@ class BatchQueue:
         with self.lock:
             task = self._task(task_id)
             if task and task["status"] in {"failed", "succeeded", "cancelled"}:
+                task.pop("_output_path", None)
                 task.update(status="queued", progress=0, message="等待重翻", output_file="")
                 if self.cancel_event.is_set():
                     self.cancel_event = threading.Event()
@@ -106,13 +113,15 @@ class BatchQueue:
                 self.cancel_event = threading.Event()
             if settings:
                 for task in self.tasks:
-                    if task["status"] == "cancelled":
+                    if task["status"] in {"queued", "retrying", "cancelled", "failed"}:
                         task.update(
                             output_dir=settings["output_dir"], output_format=settings["output_format"],
                             output_version=settings["output_version"], translation_mode=settings["translation_mode"],
-                            translate_blocks=settings["translate_blocks"], status="queued", progress=0,
-                            retries=0, output_file="", message="等待中", logs=[], _key=settings["deepl_key"],
+                            translate_blocks=settings["translate_blocks"], provider=settings.get("provider", "deepl"),
+                            azure_region=settings.get("azure_region", ""), status="queued", progress=0,
+                            retries=0, output_file="", message="等待中", logs=[], _key=settings.get("api_key") or settings.get("deepl_key", ""),
                         )
+                        task.pop("_output_path", None)
             self.started = True
             self.paused = False
             self.resumable = False
@@ -193,7 +202,7 @@ class BatchQueue:
             self.resume_event.wait()
             if cancel_event.is_set():
                 raise InterruptedError("应用已关闭")
-            key = task.get("_key") or self.key_for()
+            key = task.get("_key") or self.key_for(task)
             limiter = self.key_locks.setdefault(key, threading.BoundedSemaphore(2))
             with limiter:
                 # ponytail: one ODA lock for all DWG phases; split locks only if conversion throughput matters.
@@ -205,19 +214,28 @@ class BatchQueue:
             with self.lock:
                 task.update(status="succeeded", progress=100, output_file=output, message="成功")
         except Exception as exc:
+            retry_delay = None
             with self.lock:
                 if cancel_event.is_set():
                     if task["status"] != "cancelled":
                         task.update(status="queued", message="应用关闭，可重新开始")
                     return
-                task["retries"] += 1
-                if task["retries"] <= 3:
-                    task.update(status="retrying", message=f"失败，{2 ** task['retries']} 秒后重试: {exc}")
-                    self._save()
-                    time.sleep(2 ** task["retries"])
-                    task["status"] = "queued"
-                else:
+                if not getattr(exc, "retryable", True):
                     task.update(status="failed", message=str(exc))
+                else:
+                    task["retries"] += 1
+                if getattr(exc, "retryable", True) and task["retries"] <= 3:
+                    retry_delay = 2 ** task["retries"]
+                    task.update(status="retrying", message=f"失败，{retry_delay} 秒后重试: {exc}")
+                    self._save()
+                elif getattr(exc, "retryable", True):
+                    task.update(status="failed", message=str(exc))
+            if retry_delay:
+                if cancel_event.wait(retry_delay):
+                    return
+                with self.lock:
+                    if task["status"] == "retrying":
+                        task["status"] = "queued"
         finally:
             with self.lock:
                 task = self._task(task_id)

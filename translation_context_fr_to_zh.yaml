@@ -12,6 +12,13 @@ context_fr_to_zh:
   VIDE SUR SÉJOUR: 客厅中庭挑空
   alarme: 报警
   air neuf: 新风
+  alimentation électrique: 电源供电
+  alimentation générale: 总电源
+  alimentation de secours: 应急电源
+  alimentation en eau: 供水
+  alimentation eau froide: 冷水供水
+  alimentation eau chaude: 热水供水
+  alimentation d'eau potable: 生活给水
   ascenseur: 电梯
   axe: 轴线
   bouche d'air: 风口
@@ -56,6 +63,22 @@ context_fr_to_zh:
   poutre en acier: 钢梁
   protection incendie: 消防
   réservation: 预留洞
+  réservation dans mur: 墙体预留洞
+  réservation de dalle: 楼板预留洞
+  ouverture: 开洞
+  ouverture de mur: 墙体开洞
+  ouverture dans le mur: 墙体开洞
+  ouverture de dalle: 楼板开洞
+  percement: 开洞
+  percement de mur: 墙体开洞
+  trémie: 楼板预留洞
+  trémie d'escalier: 楼梯洞口
+  baie de porte: 门洞
+  baie de fenêtre: 窗洞
+  porte: 门
+  fenêtre: 窗
+  porte-fenêtre: 落地窗
+  linteau: 过梁
   salle de bain: 卫生间
   schéma de commande: 控制系统图
   schéma de câblage: 接线图

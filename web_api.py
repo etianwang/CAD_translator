@@ -1,25 +1,32 @@
 """FastAPI backend for the React web UI."""
 
 import asyncio
+from collections import deque
 import json
 import os
 import queue
+import shutil
 import sys
 import threading
+import time
 import urllib.request
+from uuid import uuid4
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from azure_translator import AzureFreeQuotaExceededError
 from batch_queue import BatchQueue
-from cad_convert import analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
-from main import CADChineseTranslator, CONFIG_PATH, output_prefix, resource_path
+from cad_convert import ODA_OUTPUT_VERSIONS, analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
+from main import CADChineseTranslator, CONFIG_PATH, load_yaml_data, output_prefix, resource_path
+from license_manager import LICENSE_ENFORCEMENT_ENABLED, SUPPORT_ALIPAY_QR_URL, SUPPORT_WECHAT_QR_URL, LicenseManager
+from language_assets import LanguageAssets
+from storage_utils import atomic_write_bytes, atomic_write_json, quarantine_corrupt_file
 
 
 def _frontend_dist() -> Path:
@@ -31,11 +38,64 @@ def _frontend_dist() -> Path:
 
 FRONTEND_DIST = _frontend_dist()
 API_PORT = 8765
+SSE_QUEUE_SIZE = 500
+DROPPED_FILE_RETENTION_SECONDS = 30 * 24 * 60 * 60
+QR_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
+QR_CACHE_DIR = Path.home() / ".cad_translator_qr_cache"
+_QR_CACHE_LOCK = threading.Lock()
+BUILTIN_GLOSSARIES = {
+    "zh_to_fr": ("translation_context.yaml", "context_zh_to_fr"),
+    "fr_to_zh": ("translation_context_fr_to_zh.yaml", "context_fr_to_zh"),
+    "zh_to_en": ("translation_context_zh_to_en.yaml", "context_zh_to_en"),
+    "en_to_zh": ("translation_context_en_to_zh.yaml", "context_en_to_zh"),
+}
+
+
+def _qr_cache_path(kind: str) -> Path:
+    return QR_CACHE_DIR / f"{kind}.bin"
+
+
+def _download_qr(kind: str) -> bytes:
+    url = {"wechat": SUPPORT_WECHAT_QR_URL, "alipay": SUPPORT_ALIPAY_QR_URL}.get(kind)
+    if not url:
+        raise ValueError("未配置收款码")
+    request = urllib.request.Request(url, headers={"User-Agent": "HonsenCADTranslator/1"})
+    with urllib.request.urlopen(request, timeout=10) as remote:
+        content = remote.read()
+        content_type = remote.headers.get_content_type()
+    if not content_type.startswith("image/"):
+        raise ValueError("外部链接未返回图片")
+    return content
+
+
+def preload_support_qrcodes() -> None:
+    with _QR_CACHE_LOCK:
+        for kind in ("wechat", "alipay"):
+            path = _qr_cache_path(kind)
+            if path.is_file() and time.time() - path.stat().st_mtime < QR_CACHE_MAX_AGE_SECONDS:
+                continue
+            try:
+                atomic_write_bytes(path, _download_qr(kind))
+            except Exception:
+                pass  # Retain any existing binary cache when the remote is unavailable.
+
+
+def builtin_terms() -> list[dict]:
+    """Expose the shipped YAML glossary as a read-only asset list."""
+    entries = []
+    for mode, (filename, key) in BUILTIN_GLOSSARIES.items():
+        for index, (source, target) in enumerate(load_yaml_data(filename).get(key, {}).items()):
+            entries.append({"id": f"{mode}:{index}", "scope": "builtin", "mode": mode, "source": source, "target": target, "layer_contains": ""})
+    return entries
 
 
 class ConfigBody(BaseModel):
     deepl_key: str = ""
+    provider: str = "deepl"
+    azure_key: str = ""
+    azure_region: str = ""
     output_dir: str = ""
+    project_package_path: Optional[str] = None
 
 
 class TranslateBody(BaseModel):
@@ -45,16 +105,14 @@ class TranslateBody(BaseModel):
     translation_mode: str = "zh_to_fr"
     translate_blocks: bool = False
     deepl_key: str
+    provider: str = "deepl"
+    azure_key: str = ""
+    azure_region: str = ""
+    project_package_path: str = ""
 
 
 class BatchBody(BaseModel):
     files: list[str]
-    output_dir: str = ""
-    translation_mode: str = "zh_to_fr"
-    translate_blocks: bool = False
-    output_format: str = "source"
-    output_version: str = ""
-    deepl_key: str
 
 
 class BatchStartBody(BaseModel):
@@ -64,6 +122,36 @@ class BatchStartBody(BaseModel):
     output_format: str = "source"
     output_version: str = ""
     deepl_key: str = ""
+    provider: str = "deepl"
+    azure_key: str = ""
+    azure_region: str = ""
+    project_package_path: str = ""
+
+
+class AssetTermBody(BaseModel):
+    scope: str = "global"
+    mode: str
+    source: str
+    target: str
+    layer_contains: str = ""
+    project_package_path: str = ""
+    id: Optional[int] = None
+
+
+class AssetDeleteBody(BaseModel):
+    scope: str = "global"
+    id: int
+    project_package_path: str = ""
+
+
+class ProjectPackageBody(BaseModel):
+    path: str
+    name: str = ""
+    create: bool = False
+
+
+class UsageBody(BaseModel):
+    deepl_key: str = ""
 
 
 class TranslationService:
@@ -71,51 +159,120 @@ class TranslationService:
         self.status = "idle"
         self.last_message = ""
         self._log_queues: list[queue.Queue] = []
+        self._logs = deque(maxlen=5000)
         self._lock = threading.Lock()
-        self.batch = BatchQueue(self._run_batch, self.emit_log, lambda: self.load_config().get("deepl_key", ""))
+        self._output_lock = threading.Lock()
+        self._reserved_outputs: set[str] = set()
+        self.language_assets = LanguageAssets()
+        self.dropped_files_dir = Path(CONFIG_PATH).parent / "cad_translator_dropped_files"
+        self.dropped_files_dir.mkdir(exist_ok=True)
+        self.batch = BatchQueue(self._run_batch, self.emit_log, lambda task: self.load_config().get(f"{task.get('provider', 'deepl')}_key", ""))
+        self.cleanup_dropped_files()
+        threading.Thread(target=preload_support_qrcodes, daemon=True).start()
+
+    def save_dropped_files(self, files: list[UploadFile]) -> list[str]:
+        paths = []
+        for upload in files:
+            name = Path(upload.filename or "").name
+            if not name.lower().endswith((".dxf", ".dwg")):
+                raise HTTPException(status_code=400, detail=f"无效 CAD 文件: {name or '未命名文件'}")
+            target = self.dropped_files_dir / uuid4().hex / name
+            target.parent.mkdir(parents=True)
+            with target.open("wb") as output:
+                shutil.copyfileobj(upload.file, output)
+            upload.file.close()
+            paths.append(str(target))
+        self.cleanup_dropped_files()
+        return paths
+
+    def cleanup_dropped_files(self):
+        tasks = getattr(getattr(self, "batch", None), "snapshot", lambda: {"tasks": []})()["tasks"]
+        active_paths = {Path(task["input_file"]).parent.resolve() for task in tasks if task["status"] in {"queued", "retrying", "running"}}
+        cutoff = time.time() - DROPPED_FILE_RETENTION_SECONDS
+        root = self.dropped_files_dir.resolve()
+        for candidate in self.dropped_files_dir.iterdir():
+            if candidate.is_dir() and candidate.resolve().parent == root and candidate.resolve() not in active_paths and candidate.stat().st_mtime < cutoff:
+                shutil.rmtree(candidate)
 
     def _run_batch(self, task: dict, log, resume_event, cancel_event) -> str:
-        key = task.get("_key") or self.load_config().get("deepl_key", "")
+        provider = task.get("provider", "deepl")
+        config = self.load_config()
+        key = task.get("_key") or config.get(f"{provider}_key", "")
         if not key:
-            raise RuntimeError("请配置 DeepL API Key 后继续队列")
+            raise RuntimeError(f"请配置 {'Azure Translator' if provider == 'azure' else 'DeepL'} API Key 后继续队列")
         fmt = task.get("output_format", "source")
         ext = os.path.splitext(task["input_file"])[1] if fmt == "source" else f".{fmt}"
         name = f"{output_prefix(task['translation_mode'])}_{Path(task['input_file']).stem}"
-        output = os.path.join(task["output_dir"], name + ext)
-        if os.path.exists(output):
-            output = os.path.join(task["output_dir"], f"{name}_{task['id'][:8]}{ext}")
+        output = self.reserve_output(task, name, ext)
         translator = CADChineseTranslator(log_callback=log)
-        translator.deepl_api_key = key
-        if not translator.deepl_translator:
-            raise RuntimeError("DeepL 初始化失败，请检查 API Key")
+        translator.configure_language_assets(task.get("project_package_path") or config.get("project_package_path", ""))
+        if provider == "azure":
+            translator.configure_azure(key, task.get("azure_region") or config.get("azure_region", ""))
+        else:
+            translator.deepl_api_key = key
+            if not translator.deepl_translator:
+                raise RuntimeError("DeepL 初始化失败，请检查 API Key")
         translator.translate_cad_file(task["input_file"], output, task["translation_mode"], task["translate_blocks"], fmt, task.get("output_version", ""), resume_event, cancel_event)
         return output
 
+    def reserve_output(self, task: dict, name: str, ext: str) -> str:
+        """Reserve a distinct output path before concurrent work starts."""
+        if task.get("_output_path"):
+            return task["_output_path"]
+        base = os.path.join(task["output_dir"], name + ext)
+        candidate = base
+        with self._output_lock:
+            if candidate in self._reserved_outputs or os.path.exists(candidate):
+                candidate = os.path.join(task["output_dir"], f"{name}_{task['id'][:8]}{ext}")
+            suffix = 1
+            while candidate in self._reserved_outputs or os.path.exists(candidate):
+                candidate = os.path.join(task["output_dir"], f"{name}_{task['id'][:8]}_{suffix}{ext}")
+                suffix += 1
+            self._reserved_outputs.add(candidate)
+        task["_output_path"] = candidate
+        return candidate
+
     def subscribe(self) -> queue.Queue:
-        q: queue.Queue = queue.Queue()
-        self._log_queues.append(q)
+        q: queue.Queue = queue.Queue(maxsize=SSE_QUEUE_SIZE)
+        with self._lock:
+            self._log_queues.append(q)
         return q
 
     def unsubscribe(self, q: queue.Queue):
-        if q in self._log_queues:
-            self._log_queues.remove(q)
+        with self._lock:
+            if q in self._log_queues:
+                self._log_queues.remove(q)
 
     def emit_log(self, message: str, level: str = "INFO"):
+        with self._lock:
+            self._logs.append(str(message))
+            queues = list(self._log_queues)
         _ = level  # 兼容 main.safe_log；UI 暂不按级别分色
-        for q in list(self._log_queues):
+        for q in queues:
             try:
                 q.put_nowait(message)
             except queue.Full:
                 pass
 
+    def clear_logs(self):
+        with self._lock:
+            self._logs.clear()
+
+    def export_logs(self, file_path: str):
+        with self._lock:
+            content = "\n".join(self._logs)
+        Path(file_path).write_text(content, encoding="utf-8-sig")
+
     def shutdown(self):
         self.batch.shutdown()
 
     def set_status(self, status: str, message: str = ""):
-        self.status = status
-        self.last_message = message
+        with self._lock:
+            self.status = status
+            self.last_message = message
+            queues = list(self._log_queues)
         payload = json.dumps({"type": "status", "status": status, "message": message}, ensure_ascii=False)
-        for q in list(self._log_queues):
+        for q in queues:
             try:
                 q.put_nowait(f"__EVENT__:{payload}")
             except queue.Full:
@@ -127,30 +284,48 @@ class TranslationService:
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
 
-    def save_config(self, deepl_key: str, output_dir: str = ""):
+    def save_config(self, deepl_key: str, output_dir: str = "", provider: str = "deepl", azure_key: str = "", azure_region: str = "", project_package_path: Optional[str] = None):
         config = self.load_config()
         config["deepl_key"] = deepl_key.strip()
+        config["provider"] = provider
+        config["azure_key"] = azure_key.strip()
+        config["azure_region"] = azure_region.strip()
+        if project_package_path is not None:
+            config["project_package_path"] = project_package_path.strip()
         if output_dir:
             config["output_dir"] = output_dir
         config.setdefault("output_dir", self.default_output_dir())
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=2)
+        atomic_write_json(CONFIG_PATH, config)
 
     def load_config(self) -> dict:
         if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-                config = json.load(f)
-                config.setdefault("output_dir", self.default_output_dir())
-                return config
-        return {"deepl_key": "", "output_dir": self.default_output_dir()}
+            try:
+                with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            except (OSError, ValueError, TypeError):
+                quarantine_corrupt_file(CONFIG_PATH)
+                config = {}
+            config.setdefault("output_dir", self.default_output_dir())
+            config.setdefault("provider", "deepl")
+            config.setdefault("deepl_key", "")
+            config.setdefault("azure_key", "")
+            config.setdefault("azure_region", "")
+            config.setdefault("project_package_path", "")
+            return config
+        return {"deepl_key": "", "provider": "deepl", "azure_key": "", "azure_region": "", "output_dir": self.default_output_dir(), "project_package_path": ""}
 
     @staticmethod
-    def check_internet(url="http://www.baidu.com", timeout=3) -> bool:
+    def deepl_usage(key: str) -> dict:
+        if not key.strip():
+            return {"available": False, "message": "未配置 DeepL Key"}
+        endpoint = "https://api-free.deepl.com/v2/usage" if key.strip().endswith(":fx") else "https://api.deepl.com/v2/usage"
+        request = urllib.request.Request(endpoint, headers={"Authorization": f"DeepL-Auth-Key {key.strip()}"})
         try:
-            urllib.request.urlopen(url, timeout=timeout)
-            return True
-        except Exception:
-            return False
+            with urllib.request.urlopen(request, timeout=10) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            return {"available": True, "characters": payload.get("character_count", 0), "limit": payload.get("character_limit", 0)}
+        except Exception as exc:
+            return {"available": False, "message": f"DeepL 用量读取失败: {exc}"}
 
     def validate(self, body: TranslateBody) -> Optional[str]:
         if not body.input_file:
@@ -167,8 +342,12 @@ class TranslationService:
             return "输出目录不存在"
         if not body.output_name.strip():
             return "请输入输出文件名"
-        if not body.deepl_key.strip():
-            return "请配置 DeepL API Key"
+        if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
+            return "不支持的翻译方向"
+        if body.provider not in {"deepl", "azure"}:
+            return "不支持的翻译服务"
+        if not (body.azure_key if body.provider == "azure" else body.deepl_key).strip():
+            return f"请配置 {'Azure Translator' if body.provider == 'azure' else 'DeepL'} API Key"
         return None
 
     def start_translation(self, body: TranslateBody):
@@ -180,21 +359,22 @@ class TranslationService:
         if err:
             raise HTTPException(status_code=400, detail=err)
 
-        if not self.check_internet():
-            raise HTTPException(status_code=503, detail="无法连接网络，请检查网络后重试")
-
-        self.save_config(body.deepl_key)
+        self.save_config(body.deepl_key, provider=body.provider, azure_key=body.azure_key, azure_region=body.azure_region, project_package_path=body.project_package_path)
         self.set_status("running", "翻译中...")
         self.emit_log("=" * 40)
         self.emit_log("开始翻译任务")
 
         def worker():
             translator = CADChineseTranslator(log_callback=self.emit_log)
-            translator.deepl_api_key = body.deepl_key.strip()
-            if not translator.deepl_translator:
-                self.emit_log("DeepL 初始化失败，请检查 API Key")
-                self.set_status("error", "DeepL 初始化失败")
-                return
+            translator.configure_language_assets(body.project_package_path)
+            if body.provider == "azure":
+                translator.configure_azure(body.azure_key, body.azure_region)
+            else:
+                translator.deepl_api_key = body.deepl_key.strip()
+                if not translator.deepl_translator:
+                    self.emit_log("DeepL 初始化失败，请检查 API Key")
+                    self.set_status("error", "DeepL 初始化失败")
+                    return
 
             try:
                 meta = analyze_source(body.input_file)
@@ -209,6 +389,9 @@ class TranslationService:
                 )
                 self.emit_log("=" * 40)
                 self.set_status("success", "翻译完成！")
+            except AzureFreeQuotaExceededError as exc:
+                self.emit_log(str(exc))
+                self.set_status("error", str(exc))
             except Exception:
                 import traceback
                 self.emit_log(f"ERROR: {traceback.format_exc()}")
@@ -218,20 +401,64 @@ class TranslationService:
 
 
 service = TranslationService()
+license_manager = LicenseManager()
 app = FastAPI(title="CAD Translator API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+@app.middleware("http")
+async def require_license(request: Request, call_next):
+    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/license/status", "/api/license/activate", "/api/support"}:
+        return await call_next(request)
+    status = license_manager.status()
+    if not status["usable"]:
+        return JSONResponse(status_code=403, content={"detail": status["message"], "license": status})
+    return await call_next(request)
 
 
 @app.get("/api/health")
 def health():
     return {"ok": True, "status": service.status}
+
+
+class ActivationBody(BaseModel):
+    code: str
+
+
+@app.get("/api/license/status")
+def license_status():
+    return license_manager.status()
+
+
+@app.post("/api/license/activate")
+def activate_license(body: ActivationBody):
+    status = license_manager.activate(body.code)
+    if not status["usable"]:
+        raise HTTPException(status_code=400, detail=status["message"])
+    return status
+
+
+@app.get("/api/support")
+def support_info():
+    return {
+        "licensing_enabled": LICENSE_ENFORCEMENT_ENABLED,
+        "wechat_qr_url": SUPPORT_WECHAT_QR_URL,
+        "alipay_qr_url": SUPPORT_ALIPAY_QR_URL,
+    }
+
+
+@app.get("/api/support/qrcode/{kind}")
+def support_qrcode(kind: str):
+    if kind not in {"wechat", "alipay"}:
+        raise HTTPException(status_code=404, detail="未配置收款码")
+    path = _qr_cache_path(kind)
+    if not path.is_file():
+        try:
+            atomic_write_bytes(path, _download_qr(kind))
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"收款码加载失败: {exc}") from exc
+    elif time.time() - path.stat().st_mtime >= QR_CACHE_MAX_AGE_SECONDS:
+        threading.Thread(target=preload_support_qrcodes, daemon=True).start()
+    return Response(path.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/config")
@@ -241,8 +468,66 @@ def get_config():
 
 @app.post("/api/config")
 def post_config(body: ConfigBody):
-    service.save_config(body.deepl_key, body.output_dir)
+    service.save_config(body.deepl_key, body.output_dir, body.provider, body.azure_key, body.azure_region, body.project_package_path)
     return {"ok": True}
+
+
+@app.get("/api/language-assets")
+def get_language_assets():
+    config = service.load_config()
+    project_path = config.get("project_package_path", "")
+    try:
+        project = service.language_assets.project_info(project_path) if project_path else {"path": "", "name": "", "terms": []}
+    except ValueError as exc:
+        project = {"path": project_path, "name": "", "terms": [], "error": str(exc)}
+    return {"project": project, "terms": service.language_assets.list_terms(project_path), "builtin_terms": builtin_terms(), "memory": service.language_assets.list_memory(), "usage": service.language_assets.usage()}
+
+
+@app.post("/api/language-assets/project")
+def select_project_package(body: ProjectPackageBody):
+    try:
+        project = service.language_assets.create_project(body.path, body.name) if body.create else service.language_assets.project_info(body.path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    config = service.load_config()
+    service.save_config(config["deepl_key"], config["output_dir"], config["provider"], config["azure_key"], config["azure_region"], project["path"])
+    return project
+
+
+@app.post("/api/language-assets/terms")
+def save_language_term(body: AssetTermBody):
+    try:
+        service.language_assets.upsert_term(body.scope, body.mode, body.source, body.target, body.layer_contains, body.project_package_path, body.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True}
+
+
+@app.post("/api/language-assets/terms/delete")
+def remove_language_term(body: AssetDeleteBody):
+    service.language_assets.delete_term(body.scope, body.id, body.project_package_path)
+    return {"ok": True}
+
+
+@app.post("/api/language-assets/memory")
+def save_translation_memory(body: AssetTermBody):
+    try:
+        service.language_assets.upsert_memory(body.mode, body.source, body.target, body.layer_contains, body.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True}
+
+
+@app.post("/api/language-assets/memory/delete")
+def remove_translation_memory(body: AssetDeleteBody):
+    service.language_assets.delete_memory(body.id)
+    return {"ok": True}
+
+
+@app.post("/api/language-assets/usage")
+def get_usage(body: UsageBody):
+    config = service.load_config()
+    return {"local": service.language_assets.usage(), "deepl_remote": service.deepl_usage(body.deepl_key or config.get("deepl_key", ""))}
 
 
 @app.get("/api/changelog")
@@ -275,28 +560,27 @@ def get_batch():
     return service.batch.snapshot()
 
 
+@app.post("/api/logs/clear")
+def clear_logs():
+    service.clear_logs()
+    return {"ok": True}
+
+
 @app.post("/api/batch/add")
 def add_batch(body: BatchBody):
-    output_dir = body.output_dir or service.load_config().get("output_dir") or service.default_output_dir()
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-    except OSError as exc:
-        raise HTTPException(status_code=400, detail=f"无法创建输出目录: {exc}")
-    if not body.files or not os.path.isdir(output_dir):
-        raise HTTPException(status_code=400, detail="请选择文件和有效的输出目录")
-    if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
-        raise HTTPException(status_code=400, detail="不支持的翻译方向")
-    if body.output_format not in {"source", "dxf", "dwg"}:
-        raise HTTPException(status_code=400, detail="不支持的输出格式")
+    if not body.files:
+        raise HTTPException(status_code=400, detail="请选择 CAD 文件")
     for path in body.files:
         if not os.path.isfile(path) or not path.lower().endswith((".dxf", ".dwg")):
             raise HTTPException(status_code=400, detail=f"无效 CAD 文件: {path}")
-        if (path.lower().endswith(".dwg") or body.output_format == "dwg") and not odafc_available():
-            raise HTTPException(status_code=400, detail=dwg_unavailable_short())
-    service.save_config(body.deepl_key or service.load_config().get("deepl_key", ""), output_dir)
-    settings = body.model_dump()
-    settings["output_dir"] = output_dir
-    return service.batch.add(body.files, settings)
+    return service.batch.add(body.files)
+
+
+@app.post("/api/batch/drop")
+async def drop_batch(files: list[UploadFile] = File(...)):
+    if not files:
+        raise HTTPException(status_code=400, detail="请选择 CAD 文件")
+    return service.batch.add(service.save_dropped_files(files))
 
 
 @app.post("/api/batch/start")
@@ -305,12 +589,21 @@ def start_batch(body: BatchStartBody):
     os.makedirs(output_dir, exist_ok=True)
     if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
         raise HTTPException(status_code=400, detail="不支持的翻译方向")
+    if body.provider not in {"deepl", "azure"}:
+        raise HTTPException(status_code=400, detail="不支持的翻译服务")
     if body.output_format not in {"source", "dxf", "dwg"}:
         raise HTTPException(status_code=400, detail="不支持的输出格式")
-    service.save_config(body.deepl_key or service.load_config().get("deepl_key", ""), output_dir)
+    if body.output_version not in {"", *ODA_OUTPUT_VERSIONS}:
+        raise HTTPException(status_code=400, detail="不支持的输出版本")
+    if not (body.azure_key if body.provider == "azure" else body.deepl_key).strip():
+        raise HTTPException(status_code=400, detail=f"请配置 {'Azure Translator' if body.provider == 'azure' else 'DeepL'} API Key")
+    for task in service.batch.snapshot()["tasks"]:
+        if task["status"] in {"queued", "retrying", "cancelled", "failed"} and (task["input_file"].lower().endswith(".dwg") or body.output_format == "dwg") and not odafc_available():
+            raise HTTPException(status_code=400, detail=dwg_unavailable_short())
+    service.save_config(body.deepl_key, output_dir, body.provider, body.azure_key, body.azure_region, body.project_package_path)
     settings = body.model_dump()
     settings["output_dir"] = output_dir
-    settings["deepl_key"] = body.deepl_key or service.load_config().get("deepl_key", "")
+    settings["api_key"] = body.azure_key if body.provider == "azure" else body.deepl_key
     return service.batch.start(settings)
 
 

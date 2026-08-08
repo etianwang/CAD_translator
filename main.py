@@ -15,6 +15,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import yaml
 
+from azure_translator import AzureFreeQuotaExceededError, AzureTranslator
+from language_assets import LanguageAssets
+from storage_utils import atomic_output_path, atomic_write_json
 from text_cleaning_utils import TextCleaner
 
 try:
@@ -22,7 +25,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.7.1"
+APP_VERSION = "1.8.7"
 
 def resource_path(relative_path):
     """
@@ -31,7 +34,7 @@ def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS  # PyInstaller 临时目录
     except AttributeError:
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 def load_yaml_data(filename):
@@ -107,10 +110,14 @@ class CADChineseTranslator:
 
     def __init__(self, log_callback=None):
         self.translated_cache = {}
+        self.language_assets = LanguageAssets()
+        self.project_package_path = ""
         self.default_font = pick_available_font()
         self.log_callback = log_callback
         self.deepl_api_key = os.environ.get("DEEPL_API_KEY")
         self.deepl_translator = None
+        self.translation_provider = "deepl"
+        self.azure_translator = None
         self.cleaner = TextCleaner()
         abbrev_data = load_yaml_data("translation_abbreviations.yaml")
         self.abbrev_map_fr_to_zh = abbrev_data.get("abbrev_map", {})
@@ -186,6 +193,13 @@ class CADChineseTranslator:
             print("[日志记录失败]", e)
             print("原始日志内容:", repr(message))
 
+    def configure_azure(self, key, region=""):
+        self.translation_provider = "azure"
+        self.azure_translator = AzureTranslator(key, region) if key else None
+
+    def configure_language_assets(self, project_package_path=""):
+        self.project_package_path = project_package_path or ""
+
     def preprocess_abbreviations(self, text, lang_config_key):
         """在翻译前处理常见缩写，例如 W:800mm → 宽度:800mm，W400*H650 → 宽度400×高度650"""
         if not text or not isinstance(text, str):
@@ -235,6 +249,16 @@ class CADChineseTranslator:
 
     def get_glossary_translation(self, text, lang_config_key):
         return self.language_configs[lang_config_key]['glossary'].get(text.strip().casefold())
+
+    def get_layer_glossary_translation(self, text, lang_config_key, layer):
+        if lang_config_key != 'fr_to_zh' or text.strip().casefold() != 'alimentation':
+            return None
+        layer = (layer or '').casefold()
+        if any(term in layer for term in ('eau', 'plomb', 'sanit', 'hydrau', 'aep')):
+            return '供水'
+        if any(term in layer for term in ('elec', 'élec', 'cfo', 'cfa', 'power', 'courant')):
+            return '供电'
+        return None
     
     def post_process_translation(self, text, original, lang_config_key):
         if '建筑术语:' in text and '原文:' in text:
@@ -265,15 +289,17 @@ class CADChineseTranslator:
 
         return self.cleaner.normalize_whitespace(text)
    
-    def translate_text(self, text, lang_config_key):
+    def translate_text(self, text, lang_config_key, layer=''):
         if not text or not lang_config_key:
             return text
+
+        cache_key = (text, lang_config_key, (layer or '').casefold())
 
         # Step 1: 预清洗
         cleaned = self.cleaner.full_clean(text)
 
-        if text in self.translated_cache:
-            return self.translated_cache[text]
+        if cache_key in self.translated_cache:
+            return self.translated_cache[cache_key]
 
         if not cleaned.strip():
             self.safe_log(f"跳过空文本或无效文本: \"{text}\"")
@@ -292,7 +318,7 @@ class CADChineseTranslator:
 
         if non_translatable or (ascii_only and non_word_ratio > 0.6):
             self.safe_log(f"跳过非翻译文本（符号/ASCII）: \"{cleaned}\"")
-            self.translated_cache[text] = cleaned
+            self.translated_cache[cache_key] = cleaned
             return self.cleaner.safe_utf8(cleaned)
 
         # Step 3: 缩写处理 & 中文校验
@@ -308,11 +334,20 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(text)
 
         lang_config = self.language_configs[lang_config_key]
-        glossary_translation = self.get_glossary_translation(cleaned, lang_config_key)
+        glossary_translation = self.language_assets.lookup_term(cleaned, lang_config_key, layer, self.project_package_path)
+        glossary_translation = glossary_translation or self.get_layer_glossary_translation(cleaned, lang_config_key, layer)
+        glossary_translation = glossary_translation or self.get_glossary_translation(cleaned, lang_config_key)
         if glossary_translation:
             final = self.cleaner.safe_utf8(self.cleaner.full_clean(glossary_translation)).strip()
-            self.translated_cache[text] = final
+            self.translated_cache[cache_key] = final
             self.safe_log(f"✔ 术语表命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
+            return final
+
+        memory_translation = self.language_assets.lookup_memory(cleaned, lang_config_key, layer)
+        if memory_translation:
+            final = self.cleaner.safe_utf8(self.cleaner.full_clean(memory_translation)).strip()
+            self.translated_cache[cache_key] = final
+            self.safe_log(f"✔ 翻译记忆命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
             return final
 
         # Step 4: 可读性检查
@@ -327,19 +362,26 @@ class CADChineseTranslator:
             if context != cleaned:
                 self.safe_log(f"提示术语: {context}")
 
-            # Step 5: DeepL 翻译
-            if not self.deepl_translator:
-                raise Exception("DeepL 未初始化，请配置 API Key")
-            deepl_result = self.deepl_translator.translate_text(
-                cleaned,
-                source_lang=lang_config['source'].split('-')[0].upper(),
-                target_lang=(
-                    lang_config['target'].upper()
-                    if lang_config['target'].startswith('en-')
-                    else lang_config['target'].split('-')[0].upper()
-                ),
-            )
-            translated_result = deepl_result.text
+            # Step 5: provider translation
+            if self.translation_provider == "azure":
+                if not self.azure_translator:
+                    raise RuntimeError("Azure Translator 未初始化，请配置 API Key")
+                translated_result = self.azure_translator.translate_text(
+                    cleaned, lang_config['source'], lang_config['target']
+                )
+            else:
+                if not self.deepl_translator:
+                    raise RuntimeError("DeepL 未初始化，请配置 API Key")
+                deepl_result = self.deepl_translator.translate_text(
+                    cleaned,
+                    source_lang=lang_config['source'].split('-')[0].upper(),
+                    target_lang=(
+                        lang_config['target'].upper()
+                        if lang_config['target'].startswith('en-')
+                        else lang_config['target'].split('-')[0].upper()
+                    ),
+                )
+                translated_result = deepl_result.text
 
             # Step 6: 翻译结果后处理
             if self.contains_surrogates(translated_result):
@@ -356,15 +398,21 @@ class CADChineseTranslator:
                 final = final.replace('\ufffd', '?')  # 防止乱码
                 final = self.cleaner.safe_utf8(final)
 
-            self.translated_cache[text] = final
-            self.safe_log(f"✔ 翻译完成 (DeepL): \"{cleaned}\" → \"{final}\"")
+            self.translated_cache[cache_key] = final
+            self.language_assets.record_memory(cleaned, final, lang_config_key, layer, self.translation_provider)
+            self.language_assets.record_usage(self.translation_provider, len(cleaned))
+            self.safe_log(f"✔ 翻译完成 ({'Azure Translator' if self.translation_provider == 'azure' else 'DeepL'}): \"{cleaned}\" → \"{final}\"")
             time.sleep(0.5)
             return final
 
+        except AzureFreeQuotaExceededError as e:
+            self.language_assets.record_usage("azure", 0, quota_exceeded=True)
+            self.safe_log(str(e), level="error")
+            raise
         except Exception as e:
-            self.safe_log(f"翻译失败 (DeepL): {e} → 原文: \"{cleaned}\"")
-            fallback = self.cleaner.full_clean(self.cleaner.safe_utf8(text))
-            return fallback
+            provider = "Azure Translator" if self.translation_provider == "azure" else "DeepL"
+            self.safe_log(f"翻译失败 ({provider}): {e} → 原文: \"{cleaned}\"")
+            raise RuntimeError(f"{provider} 翻译失败: {e}") from e
 
 
     def extract_text_entities(self, doc, lang_config, include_blocks=False):
@@ -726,11 +774,12 @@ class CADChineseTranslator:
                     raise Exception("无法写入 MULTILEADER 块属性")
 
             else:
-                self.safe_log(f" 未知写入目标: {dxftype}/{field}，无法写入")
+                raise ValueError(f"未知写入目标: {dxftype}/{field}")
 
         except Exception as e:
             import traceback
             self.safe_log(f"写回失败: {e}\n{traceback.format_exc()}")
+            raise
 
     def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False, output_format="source", output_version="", resume_event=None, cancel_event=None):
         from cad_convert import CadConversionSession
@@ -791,7 +840,7 @@ class CADChineseTranslator:
                     item['translated_text'] = original_text
                     continue
 
-                translated = self.translate_text(original_text, lang_config)
+                translated = self.translate_text(original_text, lang_config, item.get('layer', ''))
                 item['translated_text'] = translated
 
                 if translated != original_text:
@@ -810,6 +859,7 @@ class CADChineseTranslator:
                         successful_translations += 1
                     except Exception as e:
                         self.safe_log(f" ❌ 写回实体失败: {e}", level="error")
+                        raise RuntimeError(f"写回 CAD 实体失败: {e}") from e
                 
                 if i % 10 == 0 or i == total_items:
                     self.safe_log(f"   进度: {i}/{total_items} ({i/total_items*100:.1f}%)")
@@ -824,7 +874,8 @@ class CADChineseTranslator:
             wait_for_translation(resume_event, cancel_event)
             if output_version and output_file.lower().endswith(".dxf"):
                 doc.dxfversion = output_version
-            doc.saveas(output_file)
+            with atomic_output_path(output_file) as temporary_output:
+                doc.saveas(temporary_output)
             self.safe_log(f"✅ 文件成功保存: {output_file}")
         except Exception as e:
             self.safe_log(f"❌ 文件保存失败: {e}")
@@ -1225,11 +1276,12 @@ class CADTranslatorGUI:
     def _save_api_keys_impl(self):
         self._save_job = None
         try:
-            config = {
-                "deepl_key": self.deepl_key.get().strip(),
-            }
-            with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2)
+            config = {}
+            if os.path.exists(CONFIG_PATH):
+                with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            config["deepl_key"] = self.deepl_key.get().strip()
+            atomic_write_json(CONFIG_PATH, config)
         except Exception as e:
             self.log_message(f" 保存配置失败: {e}")
     
@@ -1313,18 +1365,14 @@ class CADTranslatorGUI:
 
 
 def main():
-    import sys
-
+    if "--legacy" in sys.argv:
+        print("The legacy Tkinter interface has been removed.")
+        return
     from cad_convert import configure_odafc
 
     configure_odafc()
-
-    if "--legacy" in sys.argv:
-        app = CADTranslatorGUI()
-        app.run()
-    else:
-        from web_launcher import run_web_app
-        run_web_app()
+    from web_launcher import run_web_app
+    run_web_app()
 
 
 if __name__ == '__main__':

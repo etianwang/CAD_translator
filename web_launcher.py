@@ -11,7 +11,23 @@ import uvicorn
 from native_bridge import NativeBridge
 from web_api import API_PORT, FRONTEND_DIST, app, service
 
-TITLE = "Honsen CAD 中法英互译工具 v1.7.1"
+TITLE = "Honsen CAD 中法英互译工具 v1.8.7"
+_INSTANCE_MUTEX = None
+
+
+def _acquire_single_instance() -> bool:
+    """Keep a second desktop window from attaching to an older local API."""
+    if sys.platform != "win32":
+        return True
+    try:
+        import ctypes
+
+        global _INSTANCE_MUTEX
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        _INSTANCE_MUTEX = kernel32.CreateMutexW(None, False, "Local\\HonsenCADTranslator")
+        return ctypes.get_last_error() != 183  # ERROR_ALREADY_EXISTS
+    except Exception:
+        return True
 
 
 def _wait_server(url: str, timeout: float = 15.0) -> bool:
@@ -54,23 +70,25 @@ def _enable_windows_acrylic():
 
 
 def run_web_app():
+    if not _acquire_single_instance():
+        print("Honsen CAD Translator is already running.")
+        return
     if not FRONTEND_DIST.exists():
         print("未找到 frontend/dist，请先构建 React 界面：")
         print("  cd frontend")
         print("  npm install")
         print("  npm run build")
-        print("\n或使用旧版界面：python main.py --legacy")
         sys.exit(1)
 
-    def start_api():
-        uvicorn.run(app, host="127.0.0.1", port=API_PORT, log_level="warning")
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=API_PORT, log_level="warning"))
 
-    api_thread = threading.Thread(target=start_api, daemon=True)
+    api_thread = threading.Thread(target=server.run, daemon=True)
     api_thread.start()
 
     url = f"http://127.0.0.1:{API_PORT}"
-    if not _wait_server(url):
+    if not _wait_server(url) or not server.started:
         print("API 服务启动失败")
+        server.should_exit = True
         sys.exit(1)
 
     import webview

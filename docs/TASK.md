@@ -8,7 +8,7 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 2. Make every existing language-pair glossary apply when a complete CAD text entity exactly matches a term.
 3. Add Chinese → English and English → Chinese YAML glossaries for ambiguous building, structural, and MEP terms.
 4. Include the new YAML files in the Windows package.
-5. Retain the existing DeepL fallback for non-glossary text and DXF/DWG conversion workflow.
+5. Retain the existing DeepL fallback for non-glossary text and DXF/DWG conversion workflow; Azure Translator F0 is an optional second provider.
 6. Refine Chinese ↔ French structural, MEP, and room-label terminology, including corrections for known mistranslations.
 
 ## Glossary rule
@@ -19,7 +19,7 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 
 ## Non-goals
 
-- No second translation provider, automatic terminology extraction, or generic dictionary.
+- No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
 ## Current task: batch translation queue

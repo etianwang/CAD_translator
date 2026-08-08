@@ -46,7 +46,7 @@ if (-not $iscc) {
 }
 
 Write-Host "==> Inno Setup 鐢熸垚瀹夎鍖?.." -ForegroundColor Cyan
-& $iscc (Join-Path $Root "installer\Honsen_CAD_Translator_v1.8.0.iss")
+& $iscc (Join-Path $Root "installer\Honsen_CAD_Translator_v1.8.7.iss")
 
 $setup = Join-Path $Root "installer_output\Honsen_CAD_Translator_v1.8.7_Setup.exe"
 if (Test-Path $setup) {

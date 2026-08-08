@@ -1,11 +1,11 @@
-; Honsen CAD 中法英互译 — Inno Setup 安装脚本
-; 构建前请先运行 PyInstaller，并将 ODA（可选）放入 dist\ODAFileConverter\
+; Honsen CAD 中法英互译 — Inno Setup installer script
+; Build the EXE first. ODA is optional and belongs in dist\ODAFileConverter.
 
 #define MyAppName "Honsen CAD 中法英互译"
 #define MyAppVersion "1.8.7"
 #define MyAppPublisher "Honsen"
 #define MyAppExeName "Honsen_CAD_Translator_v1.8.7.exe"
-#define MyAppURL "https://github.com/"
+#define MyAppURL "https://github.com/etianwang"
 
 [Setup]
 AppId={{8F3A2C1D-9B4E-4F6A-A1D2-3E5F7C8B9A0D}
@@ -28,8 +28,6 @@ PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
-LicenseFile=
-InfoBeforeFile=
 VersionInfoVersion={#MyAppVersion}.0.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoProductName={#MyAppName}
@@ -42,9 +40,7 @@ Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.i
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加选项:"; Flags: unchecked
 
 [Files]
-; 主程序（PyInstaller onefile）
 Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; ODA File Converter（与主程序同级；打包前放入 dist\ODAFileConverter\）
 Source: "..\dist\ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 [Icons]
@@ -63,15 +59,12 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssPostInstall then
-  begin
-    if not OdaBundled then
-      MsgBox(
-        '安装完成。' + #13#10 + #13#10 +
-        '未检测到 ODA File Converter，当前仅可直接翻译 DXF 文件。' + #13#10 +
-        '如需 DWG 支持，请将 ODA 完整文件复制到：' + #13#10 +
-        ExpandConstant('{app}\ODAFileConverter\') + #13#10 + #13#10 +
-        '或在 AutoCAD 中将 DWG 另存为 DXF 后翻译。',
-        mbInformation, MB_OK);
-  end;
+  if (CurStep = ssPostInstall) and (not OdaBundled) then
+    MsgBox(
+      '安装完成。' + #13#10 + #13#10 +
+      '未检测到 ODA File Converter，当前仅可直接翻译 DXF 文件。' + #13#10 +
+      '如需 DWG 支持，请将 ODA 文件复制到：' + #13#10 +
+      ExpandConstant('{app}\ODAFileConverter\') + #13#10 + #13#10 +
+      '或在 AutoCAD 中将 DWG 另存为 DXF 后翻译。',
+      mbInformation, MB_OK);
 end;

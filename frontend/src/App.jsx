@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Iridescence from "./components/Iridescence";
 import "./App.css";
 const THEMES = {
-  blue: { label: "蓝", color: [0.07, 0.23, 0.54] },
+  system: { label: "果冻", color: [0.56, 0.56, 0.58] },
   magenta: { label: "紫", color: [0.68, 0.12, 0.5] },
   forest: { label: "绿", color: [0.05, 0.42, 0.37] },
 };
@@ -89,7 +89,8 @@ function SelectMenu({ value, onChange, options }) {
   );
 }
 export default function App() {
-  const [theme, setTheme] = useState("blue");
+  const [theme, setTheme] = useState("system");
+  const [systemAccent, setSystemAccent] = useState(THEMES.system.color);
   const pyApi = usePywebview();
   const [batch, setBatch] = useState({
     tasks: [],
@@ -137,6 +138,13 @@ export default function App() {
   }, []);
   useEffect(() => {
     api("/api/support").then(setSupport).catch(() => {});
+  }, []);
+  useEffect(() => {
+    api("/api/system-theme")
+      .then((result) => {
+        if (Array.isArray(result.color) && result.color.length === 3) setSystemAccent(result.color);
+      })
+      .catch(() => {});
   }, []);
   useEffect(() => {
     if (support.licensing_enabled && !license.checking && !license.usable) setShowSupport(true);
@@ -322,10 +330,17 @@ export default function App() {
   const statusColor = { idle: "#94a3b8", running: "#38bdf8", error: "#f87171" }[
     status
   ];
+  const activeTheme = theme === "system" ? { ...THEMES.system, color: systemAccent } : THEMES[theme];
+  const systemRgb = systemAccent.map((channel) => Math.round(Math.max(0, Math.min(1, channel)) * 255));
+  const systemThemeStyle = theme === "system" ? {
+    "--accent": `rgb(${systemRgb.join(" ")})`,
+    "--accent-strong": `color-mix(in srgb, rgb(${systemRgb.join(" ")}) 72%, white)`,
+    "--accent-soft": `rgb(${systemRgb.join(" ")} / 0.30)`,
+  } : undefined;
   return (
-    <div className={`app-shell theme-${theme}`}>
+    <div className={`app-shell theme-${theme}`} style={systemThemeStyle}>
       <Iridescence
-        color={THEMES[theme].color}
+        color={activeTheme.color}
         speed={0.85}
         amplitude={0.14}
         mouseReact
@@ -446,7 +461,7 @@ export default function App() {
           </button>
           <div className="theme-switcher" aria-label="主题切换">
             {Object.entries(THEMES).map(([name, item]) => (
-              <button type="button" className={theme === name ? "active" : ""} aria-label={`${item.label}色主题`} title={`${item.label}色主题`} key={name} onClick={() => setTheme(name)} />
+              <button type="button" className={`theme-swatch theme-swatch-${name} ${theme === name ? "active" : ""}`} aria-label={`${item.label}主题`} title={`${item.label}主题`} key={name} onClick={() => setTheme(name)} />
             ))}
           </div>
           {pyApi ? (
@@ -702,7 +717,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.8.7 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
+        <span className="footer-meta">v1.18.8 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
       </motion.footer>
     </div>
   );

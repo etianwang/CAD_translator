@@ -12,9 +12,13 @@ from datetime import datetime
 from pathlib import Path
 
 import deepl
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
 import yaml
+
+try:  # The removed legacy GUI is retained only for config compatibility tests.
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+except ImportError:  # Homebrew Python on macOS does not include Tk by default.
+    tk = ttk = filedialog = messagebox = None
 
 from backend.providers.azure import AzureFreeQuotaExceededError, AzureTranslator
 from backend.language_assets import LanguageAssets
@@ -26,7 +30,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.8.7"
+APP_VERSION = "1.18.8"
 
 def resource_path(relative_path):
     """

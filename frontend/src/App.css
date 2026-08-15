@@ -6,10 +6,79 @@
   padding: 12px;
   gap: 12px;
   overflow: hidden;
-  background: transparent;
+  /* WebKit can report a zero-sized WebGL canvas during its first frame.
+     Keep the selected theme visible until Iridescence receives its real size. */
+  background:
+    radial-gradient(ellipse 95% 75% at 50% 0%, var(--accent-soft), transparent 66%),
+    #060910;
 }
 
 .app-shell::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:3; border:1px solid rgba(255,255,255,.11); box-shadow:inset 0 0 18px rgba(0,0,0,.14); }
+
+/* The system palette is a web implementation of macOS Liquid Glass: a colorful
+   ambient layer sits behind regular content materials, while the controls and
+   navigation form the more translucent functional layer. */
+.theme-system {
+  background:
+    radial-gradient(68% 55% at 5% -8%, color-mix(in srgb, var(--accent) 44%, transparent), transparent 72%),
+    radial-gradient(50% 44% at 102% 105%, color-mix(in srgb, var(--accent-strong) 30%, transparent), transparent 72%),
+    radial-gradient(42% 38% at 80% 8%, rgba(255,255,255,.12), transparent 72%),
+    #080b14;
+}
+.theme-system::before {
+  content:"";
+  position:fixed;
+  z-index:0;
+  pointer-events:none;
+  width:46vw;
+  height:46vw;
+  min-width:420px;
+  min-height:420px;
+  top:-27vw;
+  right:-14vw;
+  border-radius:50%;
+  opacity:.66;
+  filter:blur(32px);
+  background:
+    radial-gradient(circle at 28% 40%, color-mix(in srgb, var(--accent) 88%, white), transparent 13%),
+    radial-gradient(circle at 66% 58%, color-mix(in srgb, var(--accent-strong) 72%, white), transparent 24%),
+    radial-gradient(circle at 46% 54%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%);
+}
+.theme-system .glass {
+  background:
+    linear-gradient(125deg, rgba(255,255,255,.13), rgba(255,255,255,.035) 34%, rgba(9,13,25,.36) 74%),
+    rgba(11,15,25,.40);
+  border-color:rgba(255,255,255,.20);
+  box-shadow:0 18px 42px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.20), inset 0 -1px 0 rgba(0,0,0,.16);
+  backdrop-filter:blur(30px) saturate(145%) brightness(1.08);
+  -webkit-backdrop-filter:blur(30px) saturate(145%) brightness(1.08);
+}
+.theme-system .topbar,
+.theme-system .window-controls,
+.theme-system .theme-switcher,
+.theme-system .support-button {
+  background:linear-gradient(135deg, rgba(255,255,255,.17), rgba(255,255,255,.045) 46%, color-mix(in srgb, var(--accent) 14%, transparent));
+  border-color:rgba(255,255,255,.26);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26), 0 10px 24px rgba(0,0,0,.16);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+}
+.theme-system .btn.primary {
+  border:1px solid rgba(255,255,255,.32);
+  background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, white), var(--accent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38), 0 9px 24px var(--accent-soft);
+}
+.theme-system .select-menu summary,
+.theme-system input,
+.theme-system select {
+  background:rgba(7,11,20,.28);
+  border-color:rgba(255,255,255,.20);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter:blur(14px) saturate(135%);
+  -webkit-backdrop-filter:blur(14px) saturate(135%);
+}
+.theme-system .glass:hover { border-color:color-mix(in srgb, var(--accent) 28%, rgba(255,255,255,.25)); }
+.theme-system .btn.primary:hover { filter:brightness(1.08) saturate(1.08); transform:translateY(-1px); }
 
 .bg-vignette {
   position: fixed;
@@ -642,10 +711,10 @@ input:focus {
 @media (max-width: 760px) { .batch-layout { grid-template-columns:1fr; grid-template-rows:minmax(260px, 1fr) 220px auto; overflow:auto; }.queue-panel,.log-panel,.settings-panel { grid-column:1; grid-row:auto; }.settings-panel { overflow:visible; } }
 
 /* Three palettes share the existing animated OGL background and recolor controls. */
-.app-shell { --accent:#22d3ee; --accent-strong:#6366f1; --accent-soft:rgba(34,211,238,.28); }
+.app-shell { --accent:#8e8e93; --accent-strong:#b7b7bb; --accent-soft:rgba(142,142,147,.28); }
 .theme-magenta { --accent:#f05aa9; --accent-strong:#9f3cc7; --accent-soft:rgba(240,90,169,.3); }
 .theme-forest { --accent:#0ea5a8; --accent-strong:#f59e0b; --accent-soft:rgba(14,165,168,.3); }
 .theme-switcher { display:flex; gap:6px; padding:4px; border:1px solid rgba(255,255,255,.12); border-radius:12px; background:rgba(0,0,0,.14); -webkit-app-region:no-drag; app-region:no-drag; }
-.theme-switcher button { width:18px; height:18px; padding:0; border:1px solid rgba(255,255,255,.45); border-radius:50%; cursor:pointer; opacity:.65; }.theme-switcher button.active { opacity:1; box-shadow:0 0 0 2px rgba(255,255,255,.2),0 0 12px var(--accent); }.theme-switcher button:nth-child(1) { background:conic-gradient(#123b8a,#22d3ee,#6366f1,#123b8a); }.theme-switcher button:nth-child(2) { background:linear-gradient(135deg,#f05aa9,#9f3cc7); }.theme-switcher button:nth-child(3) { background:conic-gradient(#123b35,#0ea5a8,#f59e0b,#123b35); }
+.theme-switcher button { width:18px; height:18px; padding:0; border:1px solid rgba(255,255,255,.45); border-radius:50%; cursor:pointer; opacity:.65; }.theme-switcher button.active { opacity:1; box-shadow:0 0 0 2px rgba(255,255,255,.2),0 0 12px var(--accent); }.theme-swatch-system { background:radial-gradient(circle at 30% 26%, rgba(255,255,255,.95), transparent 18%), conic-gradient(from 210deg, var(--accent), color-mix(in srgb,var(--accent) 35%,#fff), var(--accent-strong), var(--accent)); box-shadow:inset 0 -2px 3px rgba(0,0,0,.24), inset 0 1px 2px rgba(255,255,255,.85); }.theme-swatch-magenta { background:linear-gradient(135deg,#f05aa9,#9f3cc7); }.theme-swatch-forest { background:conic-gradient(#123b35,#0ea5a8,#f59e0b,#123b35); }
 .btn.primary { background:linear-gradient(135deg,var(--accent),var(--accent-strong)); box-shadow:0 8px 28px var(--accent-soft); }.chip-glow { background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.12)); }.chip.on { border-color:var(--accent); box-shadow:0 0 20px var(--accent-soft); }.check input { accent-color:var(--accent); }.progress i,.task-progress i { background:var(--accent); }.select-menu summary { border-color:color-mix(in srgb,var(--accent) 55%,transparent); }.select-options button:hover,.select-options button:focus-visible,.select-options button.selected { background:var(--accent-soft); }
 .log-head { margin-bottom:7px; }.log-head h2 { margin-bottom:0; font-size:14px; }.log-sub { font-size:11px; margin-top:2px; }

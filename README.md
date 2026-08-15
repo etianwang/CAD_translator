@@ -1,6 +1,6 @@
-# Honsen CAD 中法英互译工具 v1.8.7
+# Honsen CAD 中法英互译工具 v1.18.8
 
-面向建筑、结构和机电图纸的 Windows 桌面翻译工具。它读取 CAD 图纸文字，使用 DeepL 或 Azure Translator F0 与工程术语表生成独立的译文图纸，支持单文件和可恢复的批量翻译队列。
+面向建筑、结构和机电图纸的 Windows/macOS 桌面翻译工具。它读取 CAD 图纸文字，使用 DeepL 或 Azure Translator F0 与工程术语表生成独立的译文图纸，支持单文件和可恢复的批量翻译队列。
 
 ![批量翻译队列界面](images/demo.png)
 
@@ -28,16 +28,18 @@
 3. 点击“开始翻译”。处理中可暂停或停止，失败项可单独重翻。
 4. 在输出目录中查看带语言前缀的译文图纸，并在 CAD 软件中复核文字与版式。
 
-DeepL/Azure Key 和默认输出目录仅保存在用户目录的 `~/.cad_translator_config.json`；DeepL 也可通过环境变量 `DEEPL_API_KEY` 提供 Key。
+DeepL/Azure Key 和默认输出目录仅保存在用户目录的 `~/.cad_translator_config.json`；首次使用时默认输出到 `~/Documents/Honsen CAD output`（macOS Finder 中显示为“文稿/Honsen CAD output”）。DeepL 也可通过环境变量 `DEEPL_API_KEY` 提供 Key。
 
 ## 环境要求
 
-- Windows 10/11（桌面界面需要 WebView2；Windows 11 通常已内置）。
+- Windows 10/11（桌面界面需要 WebView2；Windows 11 通常已内置），或 macOS 11 及以上。
 - Python 3 与 Node.js（从源码运行或打包时需要）。
 - 有效的 DeepL API Key 或 Azure Translator F0 Key。
 - 仅处理 DXF 时不需要 ODA；处理 DWG 需安装或配置 ODA File Converter。
 
 ## 从源码运行
+
+Windows PowerShell：
 
 ```powershell
 pip install -r requirements.txt
@@ -45,6 +47,16 @@ cd frontend
 npm install
 npm run build
 cd ..
+python run.py
+```
+
+macOS：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-macos.txt
+cd frontend && npm ci && npm run build && cd ..
 python run.py
 ```
 
@@ -72,12 +84,13 @@ npm run dev
 
 ## DWG 与 ODA
 
-程序按以下顺序查找 `ODAFileConverter.exe`：
+程序按以下顺序查找 ODA File Converter：
 
 1. 环境变量 `CAD_ODA_EXEC` 指定的完整路径；
-2. 程序同级的 `ODAFileConverter/ODAFileConverter.exe`；
-3. 程序同级的 `ODAFileConverter.exe`；
-4. `C:\Program Files\ODA\ODAFileConverter\ODAFileConverter.exe`。
+2. Windows 程序同级的 `ODAFileConverter/ODAFileConverter.exe`；
+3. macOS 主应用同级的 `ODAFileConverter.app/Contents/MacOS/ODAFileConverter`；
+4. Windows：`C:\Program Files\ODA\ODAFileConverter\ODAFileConverter.exe`；
+5. macOS：`/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileConverter`，或 `PATH` 中的 `ODAFileConverter`。
 
 未找到 ODA 时仍可翻译 DXF。DWG 会经过“DWG → 工作 DXF → 翻译 → 目标 DWG/DXF”的流程；请遵守 ODA 的许可条款。
 
@@ -89,16 +102,32 @@ cd frontend
 npm install
 npm run build
 cd ..
-pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.8.7.spec
+pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.18.8.spec
 ```
 
-生成文件为 `dist/Honsen_CAD_Translator_v1.8.7.exe`。如需开箱支持 DWG，请将完整 ODA 目录放在 `dist/ODAFileConverter/`。
+生成文件为 `dist/Honsen_CAD_Translator_v1.18.8.exe`。如需开箱支持 DWG，请将完整 ODA 目录放在 `dist/ODAFileConverter/`。
 
 安装 Inno Setup 6 后可生成安装包：
 
 ```powershell
 .\installer\build_installer.ps1
 ```
+
+## 打包 macOS 应用
+
+macOS 使用独立 spec，不会读取或改写 Windows 打包配置：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-macos.txt
+cd frontend && npm ci && npm run build && cd ..
+python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg
+```
+
+生成单个 `dist/Honsen CAD Translator.app` 与可分发的 `dist/Honsen_CAD_Translator_v1.18.8_macOS_arm64.dmg`；官方 ODA DMG 会嵌入应用的 `Contents/Resources/ODAFileConverter.dmg`。程序需要 ODA 时将其只读挂载，直接调用官方签名的 `ODAFileConverter.app`，关闭时卸载。构建脚本会校验 DMG 签名、Gatekeeper 状态与架构，拒绝将 x86_64 ODA 搭配 arm64 主程序，反之亦然。
+
+默认 `--identity -` 仅用于本机测试签名。发布时在对应架构的 macOS/Python 环境分别生成 Apple Silicon 和 Intel 版，并传入 `--identity "Developer ID Application: ..."`，然后对成品进行 Apple 公证。当前 Homebrew Python 只有 arm64 切片，不能在本机交叉产出真正的 Intel 主应用。
 
 ## 注意事项
 

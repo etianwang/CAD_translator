@@ -1,0 +1,7 @@
+-r requirements.txt
+pyinstaller>=6.10.0
+pyobjc-core>=10.3; sys_platform == "darwin"
+pyobjc-framework-Cocoa>=10.3; sys_platform == "darwin"
+pyobjc-framework-Quartz>=10.3; sys_platform == "darwin"
+pyobjc-framework-WebKit>=10.3; sys_platform == "darwin"
+pyobjc-framework-Security>=10.3; sys_platform == "darwin"

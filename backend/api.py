@@ -49,6 +49,22 @@ BUILTIN_GLOSSARIES = {
     "zh_to_en": ("glossaries/translation_context_zh_to_en.yaml", "context_zh_to_en"),
     "en_to_zh": ("glossaries/translation_context_en_to_zh.yaml", "context_en_to_zh"),
 }
+SYSTEM_ACCENT_FALLBACK = (0.56, 0.56, 0.58)  # macOS Graphite-like neutral fallback
+
+
+def system_accent_theme() -> dict:
+    """Read the active macOS accent colour without making it a user setting."""
+    rgb = SYSTEM_ACCENT_FALLBACK
+    if sys.platform == "darwin":
+        try:
+            from AppKit import NSColor, NSColorSpace
+
+            color = NSColor.controlAccentColor().colorUsingColorSpace_(NSColorSpace.sRGBColorSpace())
+            if color is not None:
+                rgb = (float(color.redComponent()), float(color.greenComponent()), float(color.blueComponent()))
+        except Exception:
+            pass
+    return {"color": [round(channel, 4) for channel in rgb]}
 
 
 def _qr_cache_path(kind: str) -> Path:
@@ -280,6 +296,12 @@ class TranslationService:
 
     @staticmethod
     def default_output_dir() -> str:
+        """Return the user-facing default output directory.
+
+        macOS localizes ``Documents`` as “文稿” in Finder.  Keep the physical
+        path stable as ``~/Documents/Honsen CAD output`` rather than deriving
+        it from the selected CAD file or the application bundle.
+        """
         path = Path.home() / "Documents" / "Honsen CAD output"
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
@@ -542,6 +564,11 @@ def get_changelog():
 @app.get("/api/status")
 def get_status():
     return {"status": service.status, "message": service.last_message}
+
+
+@app.get("/api/system-theme")
+def get_system_theme():
+    return system_accent_theme()
 
 
 @app.get("/api/odafc-status")

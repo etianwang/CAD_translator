@@ -2,31 +2,41 @@
 
 import os
 import subprocess
-import tkinter as tk
+import sys
 from datetime import datetime
-from tkinter import filedialog
 
 import webview
 
 
 class NativeBridge:
+    @staticmethod
+    def _window():
+        if not webview.windows:
+            raise RuntimeError("桌面窗口尚未就绪")
+        return webview.windows[0]
+
+    def _open_dialog(self, *, multiple: bool = False, file_types=()) -> list[str]:
+        paths = self._window().create_file_dialog(
+            webview.OPEN_DIALOG,
+            allow_multiple=multiple,
+            file_types=file_types,
+        )
+        return list(paths or ())
+
+    def _save_dialog(self, filename: str, file_types=()) -> str:
+        paths = self._window().create_file_dialog(
+            webview.SAVE_DIALOG,
+            save_filename=filename,
+            file_types=file_types,
+        )
+        return str(paths[0]) if paths else ""
+
     def pick_dxf_file(self) -> dict:
         return self.pick_cad_file()
 
     def pick_cad_file(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        path = filedialog.askopenfilename(
-            title="选择 CAD 文件",
-            filetypes=[
-                ("CAD files", "*.dxf;*.dwg"),
-                ("DXF files", "*.dxf"),
-                ("DWG files", "*.dwg"),
-                ("All files", "*.*"),
-            ],
-        )
-        root.destroy()
+        paths = self._open_dialog(file_types=("CAD files (*.dxf;*.dwg)", "All files (*.*)"))
+        path = paths[0] if paths else ""
         if not path:
             return {"path": "", "dir": "", "base": "", "ext": ""}
         base, ext = os.path.splitext(os.path.basename(path))
@@ -38,48 +48,27 @@ class NativeBridge:
         }
 
     def pick_cad_files(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        paths = filedialog.askopenfilenames(title="选择 CAD 文件", filetypes=[("CAD files", "*.dxf;*.dwg")])
-        root.destroy()
-        return {"paths": list(paths)}
+        return {"paths": self._open_dialog(multiple=True, file_types=("CAD files (*.dxf;*.dwg)",))}
 
     def pick_output_dir(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        path = filedialog.askdirectory(title="选择输出目录")
-        root.destroy()
+        paths = self._window().create_file_dialog(webview.FOLDER_DIALOG)
+        path = str(paths[0]) if paths else ""
         return {"path": path or ""}
 
     def pick_term_package(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        path = filedialog.askopenfilename(title="选择项目术语包", filetypes=[("Honsen term package", "*.hcterms.json"), ("JSON files", "*.json")])
-        root.destroy()
+        paths = self._open_dialog(file_types=("Honsen term package (*.hcterms.json)", "JSON files (*.json)"))
+        path = paths[0] if paths else ""
         return {"path": path or ""}
 
     def save_term_package(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        path = filedialog.asksaveasfilename(title="新建项目术语包", defaultextension=".hcterms.json", initialfile="项目术语.hcterms.json", filetypes=[("Honsen term package", "*.hcterms.json")])
-        root.destroy()
+        path = self._save_dialog("项目术语.hcterms.json", ("Honsen term package (*.hcterms.json)",))
         return {"path": path or ""}
 
     def export_logs(self) -> dict:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        path = filedialog.asksaveasfilename(
-            title="导出日志",
-            defaultextension=".txt",
-            initialfile=f"Honsen_CAD_Translator_log_{datetime.now():%Y%m%d_%H%M%S}.txt",
-            filetypes=[("Text files", "*.txt")],
+        path = self._save_dialog(
+            f"Honsen_CAD_Translator_log_{datetime.now():%Y%m%d_%H%M%S}.txt",
+            ("Text files (*.txt)",),
         )
-        root.destroy()
         if not path:
             return {"path": ""}
         from backend.api import service
@@ -89,7 +78,17 @@ class NativeBridge:
     def reveal_file(self, path: str) -> dict:
         if not path or not os.path.isfile(path):
             return {"error": "输出文件不存在，可能已被移动或删除"}
-        subprocess.Popen(["explorer.exe", "/select,", os.path.normpath(path)])
+        normalized = os.path.normpath(path)
+        if sys.platform == "win32":
+            command = ["explorer.exe", "/select,", normalized]
+        elif sys.platform == "darwin":
+            command = ["open", "-R", normalized]
+        else:
+            command = ["xdg-open", os.path.dirname(normalized)]
+        try:
+            subprocess.Popen(command)
+        except OSError as exc:
+            return {"error": f"无法在文件管理器中定位输出文件: {exc}"}
         return {"ok": True}
 
     def minimize_window(self) -> None:
@@ -98,7 +97,9 @@ class NativeBridge:
 
     def close_window(self) -> None:
         from backend.api import service
+        from backend.cad import unmount_embedded_odafc
         service.shutdown()
+        unmount_embedded_odafc()
         if webview.windows:
             webview.windows[0].destroy()
         os._exit(0)

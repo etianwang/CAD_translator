@@ -12,3 +12,6 @@ venv/
 cad_translator_config.json
 frontend/dist/
 frontend/node_modules/
+.DS_Store
+ODAFileConverter/
+ODAFileConverter.app/

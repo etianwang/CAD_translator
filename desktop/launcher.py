@@ -10,9 +10,15 @@ import uvicorn
 
 from desktop.native_bridge import NativeBridge
 from backend.api import API_PORT, FRONTEND_DIST, app, service
+from backend.cad import unmount_embedded_odafc
 
-TITLE = "Honsen CAD 中法英互译工具 v1.8.7"
+TITLE = "Honsen CAD 中法英互译工具 v1.18.8"
 _INSTANCE_MUTEX = None
+
+
+def _webview_gui() -> str | None:
+    """Use WebView2 on Windows and the native platform default elsewhere."""
+    return "edgechromium" if sys.platform == "win32" else None
 
 
 def _acquire_single_instance() -> bool:
@@ -115,6 +121,7 @@ def run_web_app():
 
     window.events.loaded += lambda: threading.Timer(0.6, _enable_windows_acrylic).start()
     window.events.closing += lambda *_: service.shutdown()
-    webview.start(gui="edgechromium")
+    webview.start(gui=_webview_gui())
     service.shutdown()
+    unmount_embedded_odafc()
     os._exit(0)

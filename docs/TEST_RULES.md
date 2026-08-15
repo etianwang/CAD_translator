@@ -27,7 +27,7 @@ For every run, randomly choose one supported output format (`source`, `dxf`, or 
 - the output file exists and opens successfully through ezdxf/ODA as applicable;
 - extracted output text is translated correctly for the target language and is not merely the source text;
 - the user clicks **Export logs**, saves the UTF-8 text file, and the saved file is non-empty and readable;
-- the user clicks **Locate file** on the completed task and Windows Explorer opens with that output selected.
+- the user clicks **Locate file** on the completed task and Windows Explorer or macOS Finder opens with that output selected.
 
 The final report must list each provider, direction, selected format/version, output path, openability result, translated-text check, log-export path, and locate-file result. Any failure blocks release.
 
@@ -37,7 +37,11 @@ Follow the automated and real-DWG acceptance cases in [BATCH_TRANSLATION_HARNESS
 
 Status (2026-08-07): completed. Python compilation, translation-mode/glossary tests, batch recovery/queue-operation tests, and React build passed. The specified real DWG completed Chinese → French → Chinese and Chinese → English → Chinese; all four output DWGs were readable and extracted text changed on every pass. API keys were neither logged nor persisted in queue state.
 
-Packaging status: package with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.8.7.spec` and verify `dist/Honsen_CAD_Translator_v1.8.7.exe`. Before external distribution, perform a desktop launch smoke test with the adjacent local `ODAFileConverter/` directory.
+Packaging status: Windows packages with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.18.8.spec` and verifies `dist/Honsen_CAD_Translator_v1.18.8.exe`. macOS packages independently with `python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg` and verifies `dist/Honsen CAD Translator.app` plus `dist/Honsen_CAD_Translator_v1.18.8_macOS_arm64.dmg`. Before external distribution, perform a desktop launch smoke test and a real DWG round trip with the platform's ODA File Converter.
+
+macOS ODA layout rule (2026-08-15): `installer/build_macos.py` validates and embeds the complete architecture-matched official DMG at `Honsen CAD Translator.app/Contents/Resources/ODAFileConverter.dmg`. Runtime mounts it read-only, calls the signed ODA application from that volume, and detaches it on normal shutdown; never copy only the ODA executable. Automated checks must cover embedded-DMG and adjacent-app fallback lookup. Before distribution, require stable outer signature after a runtime smoke check, ODA Gatekeeper acceptance, notarization, and the real DWG round trip.
+
+macOS ODA filename/window rule (2026-08-15): before every ODA conversion, stage the source as an ASCII `input.dwg` or `input.dxf` file in a private temporary directory. ODA 27.1 fails to match command-line filters made from decomposed Unicode macOS filenames (for example French accented names) and otherwise opens its GUI with “There is no matched files in input folder”. When the executable belongs to an `.app` bundle, launch it through LaunchServices as `open -g -j -W -n -a ODAFileConverter.app --args …` as a best-effort request not to activate or show it; ODA can override those flags and foreground its own Qt window, so this is not a `nowindow` guarantee. The original source and requested output path must remain unchanged; automated checks must cover this staging and launch path. ODA has no supported truly headless macOS mode, so a strict no-window product requirement needs a separately licensed non-GUI conversion engine; retain the ezdxf direct-executable fallback for non-bundle executables.
 
 Queue execution rule (2026-08-07): adding files must not start ODA or DeepL work. Verify a task remains `queued` until the user selects **开始翻译**, and verify original translator logs appear in the live-log panel after startup.
 
@@ -45,7 +49,7 @@ Pause rule (2026-08-07): verify each task shows an independent progress bar and 
 
 Close rule (2026-08-07): closing the desktop window must cancel batch work, persist running tasks as `queued`, and leave no non-daemon queue worker able to keep the process alive.
 
-Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.8.7.exe` process remains after closing the window.
+Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.18.8.exe` process remains after closing the window.
 
 Recovery and stop rule (2026-08-07): after restart, recovered tasks must remain idle until **继续** is clicked. **停止** must cancel the batch and restore **开始翻译**; **清空列表** is available only after the batch is stopped/completed, never while it is running or paused.
 

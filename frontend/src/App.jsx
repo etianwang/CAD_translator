@@ -717,7 +717,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.18.8 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
+        <span className="footer-meta">v1.8.8 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
       </motion.footer>
     </div>
   );

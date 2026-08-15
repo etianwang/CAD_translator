@@ -36,14 +36,14 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
-    name="Honsen_CAD_Translator_v1.18.8",
+    name="Honsen_CAD_Translator_v1.8.8",
     console=False,
     target_arch=None,
     codesign_identity=codesign_identity,
 )
 collection = COLLECT(
     exe, a.binaries, a.datas,
-    name="Honsen_CAD_Translator_v1.18.8",
+    name="Honsen_CAD_Translator_v1.8.8",
 )
 app = BUNDLE(
     collection,
@@ -52,8 +52,8 @@ app = BUNDLE(
     codesign_identity=codesign_identity,
     info_plist={
         "CFBundleDisplayName": "Honsen CAD Translator",
-        "CFBundleShortVersionString": "1.18.8",
-        "CFBundleVersion": "1.18.8",
+        "CFBundleShortVersionString": "1.8.8",
+        "CFBundleVersion": "1.8.8",
         "NSHighResolutionCapable": True,
     },
 )

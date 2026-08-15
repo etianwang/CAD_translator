@@ -41,7 +41,7 @@ class PlatformCompatibilityTests(unittest.TestCase):
         self.assertTrue(any(path.name == "ODAFileConverter" for path in candidates))
 
     def test_frozen_macos_app_finds_adjacent_oda_app(self):
-        executable = "/tmp/cad-dist/Honsen CAD Translator.app/Contents/MacOS/Honsen_CAD_Translator_v1.18.8"
+        executable = "/tmp/cad-dist/Honsen CAD Translator.app/Contents/MacOS/Honsen_CAD_Translator_v1.8.8"
         expected = Path("/tmp/cad-dist/ODAFileConverter.app/Contents/MacOS/ODAFileConverter").resolve()
         with (
             patch("backend.cad.sys.platform", "darwin"),

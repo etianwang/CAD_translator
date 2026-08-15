@@ -10,9 +10,9 @@ npm run build
 Pop-Location
 
 Write-Host "==> PyInstaller 鎵撳寘..." -ForegroundColor Cyan
-pyinstaller Honsen_CAD_Translator_v1.18.8.spec
+pyinstaller Honsen_CAD_Translator_v1.8.8.spec
 
-$exe = Join-Path $Root "dist\Honsen_CAD_Translator_v1.18.8.exe"
+$exe = Join-Path $Root "dist\Honsen_CAD_Translator_v1.8.8.exe"
 if (-not (Test-Path $exe)) {
     throw "鏈壘鍒?$exe锛孭yInstaller 鎵撳寘澶辫触"
 }
@@ -48,7 +48,7 @@ if (-not $iscc) {
 Write-Host "==> Inno Setup 鐢熸垚瀹夎鍖?.." -ForegroundColor Cyan
 & $iscc (Join-Path $Root "installer\Honsen_DrawTranslate_Setup.iss")
 
-$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.18.8_Setup.exe"
+$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.8.8_Setup.exe"
 if (Test-Path $setup) {
     Write-Host "瀹屾垚: $setup" -ForegroundColor Green
 } else {

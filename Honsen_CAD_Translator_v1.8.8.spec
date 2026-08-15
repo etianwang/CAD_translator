@@ -26,6 +26,6 @@ hiddenimports = [
 a = Analysis(["run.py"], pathex=[spec_dir], binaries=[], datas=datas, hiddenimports=hiddenimports)
 pyz = PYZ(a.pure)
 exe = EXE(
-    pyz, a.scripts, a.binaries, a.datas, [], name="Honsen_CAD_Translator_v1.18.8",
+    pyz, a.scripts, a.binaries, a.datas, [], name="Honsen_CAD_Translator_v1.8.8",
     console=False, icon=[os.path.join(spec_dir, "ico.ico")],
 )

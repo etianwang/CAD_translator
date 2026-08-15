@@ -37,7 +37,7 @@ Follow the automated and real-DWG acceptance cases in [BATCH_TRANSLATION_HARNESS
 
 Status (2026-08-07): completed. Python compilation, translation-mode/glossary tests, batch recovery/queue-operation tests, and React build passed. The specified real DWG completed Chinese → French → Chinese and Chinese → English → Chinese; all four output DWGs were readable and extracted text changed on every pass. API keys were neither logged nor persisted in queue state.
 
-Packaging status: Windows packages with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.18.8.spec` and verifies `dist/Honsen_CAD_Translator_v1.18.8.exe`. macOS packages independently with `python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg` and verifies `dist/Honsen CAD Translator.app` plus `dist/Honsen_CAD_Translator_v1.18.8_macOS_arm64.dmg`. Before external distribution, perform a desktop launch smoke test and a real DWG round trip with the platform's ODA File Converter.
+Packaging status: Windows packages with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.8.8.spec` and verifies `dist/Honsen_CAD_Translator_v1.8.8.exe`. macOS packages independently with `python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg` and verifies `dist/Honsen CAD Translator.app` plus `dist/Honsen_CAD_Translator_v1.8.8_macOS_arm64.dmg`. Before external distribution, perform a desktop launch smoke test and a real DWG round trip with the platform's ODA File Converter.
 
 macOS ODA layout rule (2026-08-15): `installer/build_macos.py` validates and embeds the complete architecture-matched official DMG at `Honsen CAD Translator.app/Contents/Resources/ODAFileConverter.dmg`. Runtime mounts it read-only, calls the signed ODA application from that volume, and detaches it on normal shutdown; never copy only the ODA executable. Automated checks must cover embedded-DMG and adjacent-app fallback lookup. Before distribution, require stable outer signature after a runtime smoke check, ODA Gatekeeper acceptance, notarization, and the real DWG round trip.
 
@@ -49,7 +49,7 @@ Pause rule (2026-08-07): verify each task shows an independent progress bar and 
 
 Close rule (2026-08-07): closing the desktop window must cancel batch work, persist running tasks as `queued`, and leave no non-daemon queue worker able to keep the process alive.
 
-Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.18.8.exe` process remains after closing the window.
+Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.8.8.exe` process remains after closing the window.
 
 Recovery and stop rule (2026-08-07): after restart, recovered tasks must remain idle until **继续** is clicked. **停止** must cancel the batch and restore **开始翻译**; **清空列表** is available only after the batch is stopped/completed, never while it is running or paused.
 

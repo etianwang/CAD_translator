@@ -1,5 +1,7 @@
 """Launch FastAPI + pywebview desktop shell for the React UI."""
 
+from __future__ import annotations
+
 import os
 import sys
 import threading

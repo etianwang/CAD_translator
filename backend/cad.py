@@ -15,7 +15,9 @@ from typing import Callable, Optional
 
 from backend.storage import atomic_output_path
 
-WORK_DXF_VERSION = "R2010"
+# ODA File Converter accepts its own ``ACAD*`` identifiers, not ezdxf's
+# ``R2010`` DXF-version label.  This value is passed to ODA directly.
+WORK_DXF_VERSION = "ACAD2010"
 ODA_OUTPUT_VERSIONS = ("ACAD9", "ACAD10", "ACAD12", "ACAD13", "ACAD14", "ACAD2000", "ACAD2004", "ACAD2007", "ACAD2010", "ACAD2013", "ACAD2018")
 
 # Windows 安装包推荐目录结构（与主程序 exe 同级）：
@@ -381,7 +383,7 @@ def convert_with_odafc(source: str, destination: str, *, version: str, audit: bo
 
 def dwg_to_work_dxf(dwg_path: str, work_dxf_path: str, log: LogFn = None) -> None:
     require_odafc(log)
-    _log(log, f"DWG → DXF {WORK_DXF_VERSION}（工作副本）...")
+    _log(log, "DWG → DXF AutoCAD 2010（工作副本）...")
     convert_with_odafc(dwg_path, work_dxf_path, version=WORK_DXF_VERSION, audit=True, replace=True)
     _log(log, "DWG 已转换为 DXF 中间文件")
 

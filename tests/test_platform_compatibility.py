@@ -109,6 +109,10 @@ class PlatformCompatibilityTests(unittest.TestCase):
             self.assertEqual(command[-1], "input.dwg")
             self.assertEqual(destination.read_bytes(), b"dxf")
 
+    def test_oda_working_dxf_uses_an_oda_output_identifier(self):
+        self.assertEqual(cad.WORK_DXF_VERSION, "ACAD2010")
+        self.assertIn(cad.WORK_DXF_VERSION, cad.ODA_OUTPUT_VERSIONS)
+
 
 if __name__ == "__main__":
     unittest.main()

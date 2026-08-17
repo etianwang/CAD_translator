@@ -57,6 +57,8 @@ Restart settings rule (2026-08-07): after **停止**, the next batch **开始翻
 
 ODA version rule (2026-08-07): the version picker lists ACAD9 through ACAD2018 as supported by local ODA/ezdxf; selected versions are finalized through ODA for DXF and DWG output.
 
+ODA working-copy rule (2026-08-17): use the ODA identifier `ACAD2010` for the internal DWG → DXF working copy. Do not pass ezdxf's display label `R2010` to ODA; ODA rejects it as an invalid output version.
+
 Reliability rule (2026-08-08): automated checks must cover atomic queue/config persistence and corrupted-state recovery, bounded task/upload/SSE retention, atomic output delivery, backend rejection of unknown ODA versions, and preservation of Azure settings by the legacy UI's DeepL-key save action.
 
 Licensing rule (2026-08-08): when `LICENSE_ENFORCEMENT_ENABLED` is enabled, verify a 30-day network-time trial, a valid signed activation code, an expired activation code, and that blocked licences cannot call translation or queue API routes. When disabled, assert that no network-time request occurs. Never place the vendor private key or a customer activation code in source, logs, or test reports.

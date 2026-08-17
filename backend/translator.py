@@ -32,6 +32,21 @@ except ImportError:
 
 APP_VERSION = "1.8.8"
 
+# ODA can export legacy SHX/GBK text as ``\M+5C6BD`` rather than Unicode.
+# The leading nibble identifies the legacy codepage; the following four hex
+# digits are the two-byte GBK value (C6BD = "平", C3E6 = "面").
+ODA_MBCS_ESCAPE_RE = re.compile(r"\\M\+[0-9A-Fa-f]([0-9A-Fa-f]{4})")
+
+
+def decode_oda_mbcs_escapes(value: str) -> str:
+    """Decode ODA's legacy M+ codepage escapes without touching other CAD codes."""
+    def decode_match(match):
+        try:
+            return bytes.fromhex(match.group(1)).decode("gbk")
+        except UnicodeDecodeError:
+            return match.group(0)
+    return ODA_MBCS_ESCAPE_RE.sub(decode_match, str(value or ""))
+
 def resource_path(relative_path):
     """
     获取资源文件路径，兼容开发环境和 PyInstaller 打包后的路径。
@@ -440,7 +455,9 @@ class CADChineseTranslator:
                 items.extend(self._extract_from_layout(layout, include_blocks))
                 processed_layouts.add(layout.name)
 
-        # 3. 【关键】如果勾选了包含块，则遍历所有块定义
+        # 3. 块定义扫描。ACAD_TABLE 和 DIMENSION 的可见图形分别存放在
+        # *T / *D 匿名块中，它们没有普通 INSERT 引用；即使用户选择不扫描
+        # 所有块，也必须扫描这两类可见内容，否则表格和标注会整片漏译。
         if include_blocks:
             self.safe_log("📦 正在扫描块定义 (Blocks)...")
             block_count = 0
@@ -465,18 +482,34 @@ class CADChineseTranslator:
             
             self.safe_log(f"✅ 块扫描完成，共处理 {block_count} 个块。")
         else:
-            self.safe_log("ℹ️ 未勾选'包含块'，跳过块内文字。")
+            special_block_count = 0
+            for block in doc.blocks:
+                block_name = block.name.upper()
+                if not block_name.startswith(("*T", "*D")):
+                    continue
+                try:
+                    block_items = self._extract_from_layout(block, include_blocks=False, in_block_def=True)
+                    if block_items:
+                        self.safe_log(f"  -> 可见匿名块 '{block.name}' 中发现 {len(block_items)} 个文本对象")
+                        items.extend(block_items)
+                        special_block_count += 1
+                except Exception as e:
+                    self.safe_log(f"  ⚠️ 扫描匿名块 '{block.name}' 失败: {e}", level="warning")
+            if special_block_count:
+                self.safe_log(f"✅ 已补扫 {special_block_count} 个表格/标注匿名块。")
+            else:
+                self.safe_log("ℹ️ 未勾选'包含块'，仅跳过普通块定义。")
 
         self.safe_log(f"📝 总共提取到 {len(items)} 个文本对象。")
         return items
 
-    SUPPORTED_TEXT_TYPES = ['TEXT', 'MTEXT', 'ATTDEF', 'ATTRIB', 'MULTILEADER']
+    SUPPORTED_TEXT_TYPES = ['TEXT', 'MTEXT', 'ATTDEF', 'ATTRIB', 'MULTILEADER', 'DIMENSION', 'ACAD_TABLE']
 
     def _clean_entity_text(self, text):
         """清洗实体中的原始文本"""
         if not text:
             return ""
-        return self.cleaner.full_clean(str(text))
+        return self.cleaner.full_clean(decode_oda_mbcs_escapes(str(text)))
 
     def _get_multileader_mtext(self, entity):
         if hasattr(entity, 'get_mtext_content'):
@@ -498,19 +531,50 @@ class CADChineseTranslator:
                 pass
         return {}
 
+    def _get_acad_table_text_slots(self, entity):
+        """Return writable raw-text slots from a modern ``ACAD_TABLE`` entity.
+
+        ODA/DXF stores the rendered table in an anonymous ``*T`` block, but
+        retains the authoritative cell values in the ``AcDbTable`` subclass as
+        group-code 302 tags.  Changing only the rendered block is not durable:
+        AutoCAD can rebuild it from these source values when opening the file.
+        """
+        try:
+            tags = entity.xtags.get_subclass("AcDbTable")
+        except (AttributeError, KeyError, TypeError):
+            return []
+        return [
+            (index, tag.value)
+            for index, tag in enumerate(tags)
+            if getattr(tag, "code", None) == 302 and isinstance(getattr(tag, "value", None), str)
+        ]
+
+    def _write_acad_table_text_slot(self, entity, slot, text):
+        try:
+            tags = entity.xtags.get_subclass("AcDbTable")
+            index = int(slot)
+            tag = tags[index]
+        except (AttributeError, KeyError, TypeError, ValueError, IndexError) as exc:
+            raise ValueError(f"无效 ACAD_TABLE 文字槽: {slot}") from exc
+        if getattr(tag, "code", None) != 302:
+            raise ValueError(f"ACAD_TABLE 文字槽 {slot} 不再指向文本")
+        from ezdxf.lldxf.types import DXFTag
+        tags[index] = DXFTag(302, text)
+
     def _append_text_item(self, items, entity, layout, field, raw_text):
         if not raw_text or not str(raw_text).strip():
             return
-        if not self.is_valid_text_for_translation(str(raw_text)):
+        decoded_text = decode_oda_mbcs_escapes(str(raw_text))
+        if not self.is_valid_text_for_translation(decoded_text):
             return
-        cleaned = self._clean_entity_text(raw_text)
+        cleaned = self._clean_entity_text(decoded_text)
         if not cleaned:
             return
         items.append({
             'entity': entity,
             'field': field,
             'original_text': cleaned,
-            'raw_source': str(raw_text).strip(),
+            'raw_source': decoded_text.strip(),
             'layer': getattr(entity.dxf, 'layer', 'DEFAULT'),
             'location': layout.name if hasattr(layout, 'name') else 'Unknown',
             'type': entity.dxftype(),
@@ -598,6 +662,18 @@ class CADChineseTranslator:
             else:
                 for tag, value in self._get_multileader_block_content(entity).items():
                     self._append_text_item(items, entity, layout, f'block:{tag}', value)
+
+        elif dxftype == 'DIMENSION':
+            # A literal dimension override (e.g. a Chinese explanatory note)
+            # lives on the DIMENSION entity. ``<>`` is AutoCAD's measurement
+            # placeholder and must remain untouched.
+            text_val = getattr(entity.dxf, 'text', '') or ''
+            if text_val.strip() not in {'', '<>'}:
+                self._append_text_item(items, entity, layout, 'text', text_val)
+
+        elif dxftype == 'ACAD_TABLE':
+            for slot, text_val in self._get_acad_table_text_slots(entity):
+                self._append_text_item(items, entity, layout, f'table:{slot}', text_val)
 
         return items
 
@@ -694,7 +770,7 @@ class CADChineseTranslator:
         if not text or not text.strip():
             return False
 
-        cleaned = self.cleaner.full_clean(text)
+        cleaned = self.cleaner.full_clean(decode_oda_mbcs_escapes(text))
 
         if not cleaned.strip():
             return False
@@ -735,7 +811,7 @@ class CADChineseTranslator:
             dxftype = entity.dxftype()
             field_label = {
                 'text': '文本', 'prompt': '属性提示', 'tag': '属性标记', 'mtext': '多重引线',
-            }.get(field, field.replace('block:', '块属性:'))
+            }.get(field, field.replace('block:', '块属性:').replace('table:', '表格单元:'))
 
             if len(cleaned_text) > 0:
                 first_char = cleaned_text[0]
@@ -746,7 +822,7 @@ class CADChineseTranslator:
             else:
                 self.safe_log(f"准备写入 [{dxftype}/{field_label}] - 文本为空!")
 
-            if field == 'text' and dxftype in ("TEXT", "ATTRIB", "ATTDEF"):
+            if field == 'text' and dxftype in ("TEXT", "ATTRIB", "ATTDEF", "DIMENSION"):
                 entity.dxf.text = cleaned_text
 
             elif field == 'prompt' and dxftype == "ATTDEF":
@@ -777,6 +853,9 @@ class CADChineseTranslator:
                     entity.set_block_content(content)
                 else:
                     raise Exception("无法写入 MULTILEADER 块属性")
+
+            elif field.startswith('table:') and dxftype == "ACAD_TABLE":
+                self._write_acad_table_text_slot(entity, field[6:], cleaned_text)
 
             else:
                 raise ValueError(f"未知写入目标: {dxftype}/{field}")

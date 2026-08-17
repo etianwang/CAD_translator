@@ -104,7 +104,7 @@ export default function App() {
   const [mode, setMode] = useState("zh_to_fr");
   const [format, setFormat] = useState("source");
   const [version, setVersion] = useState("");
-  const [blocks, setBlocks] = useState(false);
+  const [blocks, setBlocks] = useState(true);
   const [provider, setProvider] = useState("deepl");
   const [deeplKey, setDeeplKey] = useState("");
   const [azureKey, setAzureKey] = useState("");
@@ -657,9 +657,9 @@ export default function App() {
                 checked={blocks}
                 onChange={(e) => setBlocks(e.target.checked)}
               />
-              <span>翻译块定义中的文字</span>
+              <span>翻译块定义中的文字（推荐）</span>
             </label>
-            <p className="hint">图框/标题栏会自动从块引用提取，通常无需勾选</p>
+            <p className="hint">已开启以覆盖图框、目录和复用图例；关闭后仍会翻译可见表格和标注。</p>
             <Field label="翻译服务">
               <SelectMenu
                 value={provider}

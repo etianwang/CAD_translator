@@ -1,15 +1,17 @@
 import json
 import unittest
 import tempfile
+import ezdxf
 from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import patch
 from urllib.error import HTTPError
+from ezdxf.lldxf.types import DXFTag
 
 from backend.providers.azure import AzureFreeQuotaExceededError, AzureTranslator, AzureTranslatorError
 from backend.language_assets import LanguageAssets
 from backend import translator
-from backend.translator import CADChineseTranslator, output_prefix
+from backend.translator import CADChineseTranslator, decode_oda_mbcs_escapes, output_prefix
 from backend.api import BatchStartBody, TranslateBody, app, builtin_terms, default_output_name, service, start_batch
 
 
@@ -104,6 +106,67 @@ class TranslationModeTests(unittest.TestCase):
         self.assertEqual(translator.translate_text("楼板开洞", "zh_to_en"), "floor opening")
         self.assertEqual(translator.translate_text("WALL OPENING", "en_to_zh"), "墙体开洞")
         self.assertEqual(translator.translate_text("POWER SUPPLY", "en_to_zh"), "供电")
+
+    def test_visible_anonymous_table_block_is_scanned_without_full_block_option(self):
+        doc = ezdxf.new()
+        table_block = doc.blocks.new_anonymous_block("T")
+        table_block.add_text("墙体拆除图")
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+
+        items = cad_translator.extract_text_entities(doc, "zh_to_fr", include_blocks=False)
+
+        self.assertTrue(any(item["original_text"] == "墙体拆除图" for item in items))
+
+    def test_dimension_override_text_is_collected_but_placeholder_is_not(self):
+        class Dimension:
+            def __init__(self, text):
+                self.dxf = SimpleNamespace(text=text, layer="0")
+
+            def dxftype(self):
+                return "DIMENSION"
+
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        layout = SimpleNamespace(name="Model")
+        self.assertEqual(
+            [item["original_text"] for item in cad_translator.collect_entity_text_items(Dimension("安装高度"), layout)],
+            ["安装高度"],
+        )
+        self.assertEqual(cad_translator.collect_entity_text_items(Dimension("<>"), layout), [])
+
+    def test_acad_table_source_text_is_collected_and_written(self):
+        class XTags:
+            def __init__(self):
+                self.table_tags = [DXFTag(91, 1), DXFTag(302, "墙体拆除图"), DXFTag(302, "Layout 1")]
+
+            def get_subclass(self, name):
+                if name != "AcDbTable":
+                    raise KeyError(name)
+                return self.table_tags
+
+        class Table:
+            def __init__(self):
+                self.dxf = SimpleNamespace(layer="0")
+                self.xtags = XTags()
+
+            def dxftype(self):
+                return "ACAD_TABLE"
+
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        table = Table()
+        layout = SimpleNamespace(name="Layout1")
+        items = cad_translator.collect_entity_text_items(table, layout)
+        self.assertEqual([item["original_text"] for item in items], ["墙体拆除图", "Layout 1"])
+        cad_translator.write_back_translation(table, "plan de demolition des murs", items[0]["field"])
+        self.assertEqual(table.xtags.table_tags[1].value, "plan de demolition des murs")
+
+    def test_oda_legacy_mbcs_text_is_decoded_before_translation_filtering(self):
+        self.assertEqual(decode_oda_mbcs_escapes(r"\M+5C6BD\M+5C3E6"), "平面")
+        self.assertEqual(decode_oda_mbcs_escapes(r"r\M+5A8A6serv\M+5A8A6"), "réservé")
+
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        entity = SimpleNamespace(dxf=SimpleNamespace(text=r"\M+5C6BD\M+5C3E6", layer="0"), dxftype=lambda: "TEXT")
+        items = cad_translator.collect_entity_text_items(entity, SimpleNamespace(name="Layout1"))
+        self.assertEqual(items[0]["original_text"], "平面")
 
     def test_builtin_yaml_glossaries_are_exposed_read_only(self):
         terms = builtin_terms()

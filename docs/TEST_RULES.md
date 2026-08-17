@@ -59,6 +59,10 @@ ODA version rule (2026-08-07): the version picker lists ACAD9 through ACAD2018 a
 
 ODA working-copy rule (2026-08-17): use the ODA identifier `ACAD2010` for the internal DWG → DXF working copy. Do not pass ezdxf's display label `R2010` to ODA; ODA rejects it as an invalid output version.
 
+CAD text-coverage rule (2026-08-17): the desktop block-definition option is enabled by default and must translate title blocks, reusable legends, and sheet-index text. With the option disabled, extraction must still include visible anonymous `*T` (table) and `*D` (dimension) blocks. Translate explicit `DIMENSION.dxf.text` overrides, but preserve the standard `<>` measurement placeholder. For native `ACAD_TABLE` entities, translate and write back the authoritative `AcDbTable` cell strings as well as their rendered `*T` representation, otherwise AutoCAD may restore the original text when the table is regenerated. Regression coverage must include an anonymous table text item, an `ACAD_TABLE` source-cell write-back, and both cases of dimension override text.
+
+ODA legacy-text rule (2026-08-17): decode ODA's `\\M+5xxxx` GBK text escapes before validating or translating entity text. This encoding is used by ODA in affected paper-space layouts (including the reported Layout1); otherwise valid Chinese is incorrectly treated as invalid control text and skipped. Preserve unrelated CAD format controls and cover Chinese plus accented-Latin GBK escapes in regression tests.
+
 Reliability rule (2026-08-08): automated checks must cover atomic queue/config persistence and corrupted-state recovery, bounded task/upload/SSE retention, atomic output delivery, backend rejection of unknown ODA versions, and preservation of Azure settings by the legacy UI's DeepL-key save action.
 
 Licensing rule (2026-08-08): when `LICENSE_ENFORCEMENT_ENABLED` is enabled, verify a 30-day network-time trial, a valid signed activation code, an expired activation code, and that blocked licences cannot call translation or queue API routes. When disabled, assert that no network-time request occurs. Never place the vendor private key or a customer activation code in source, logs, or test reports.

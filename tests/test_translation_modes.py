@@ -89,16 +89,14 @@ class TranslationModeTests(unittest.TestCase):
 
         translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
         translator.deepl_translator = Translator()
-        self.assertEqual(translator.translate_text("天花", "zh_to_fr"), "plafond")
+        self.assertEqual(translator.translate_text("天花", "zh_to_fr"), "PLAF.")
         self.assertEqual(translator.translate_text("PLAFOND", "fr_to_zh"), "天花")
-        self.assertEqual(translator.translate_text("剪力墙", "zh_to_fr"), "voile de contreventement")
+        self.assertEqual(translator.translate_text("剪力墙", "zh_to_fr"), "voile en béton armé")
         self.assertEqual(translator.translate_text("VOILE DE CONTREVENTEMENT", "fr_to_zh"), "剪力墙")
         self.assertEqual(translator.translate_text("LOCAL INFORMATIQUE", "fr_to_zh"), "计算机房")
         self.assertEqual(translator.translate_text("天花图", "zh_to_en"), "reflected ceiling plan")
         self.assertEqual(translator.translate_text("CABLE TRAY", "en_to_zh"), "桥架")
         self.assertEqual(translator.translate_text("OUVERTURE", "fr_to_zh"), "开洞")
-        self.assertEqual(translator.translate_text("ALIMENTATION", "fr_to_zh", "ELEC-CFO"), "供电")
-        self.assertEqual(translator.translate_text("ALIMENTATION", "fr_to_zh", "PLOMB-EAU"), "供水")
         self.assertEqual(translator.translate_text("alimentation en eau", "fr_to_zh"), "供水")
         self.assertEqual(translator.translate_text("alimentation de secours", "fr_to_zh"), "应急电源")
         self.assertEqual(translator.translate_text("trémie d'escalier", "fr_to_zh"), "楼梯洞口")
@@ -106,6 +104,73 @@ class TranslationModeTests(unittest.TestCase):
         self.assertEqual(translator.translate_text("楼板开洞", "zh_to_en"), "floor opening")
         self.assertEqual(translator.translate_text("WALL OPENING", "en_to_zh"), "墙体开洞")
         self.assertEqual(translator.translate_text("POWER SUPPLY", "en_to_zh"), "供电")
+
+    def test_french_abbreviation_uses_professional_glossary_before_legacy_expansion(self):
+        translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        translator.profession = "electrical"
+        self.assertEqual(translator.translate_text("BAES", "fr_to_zh"), "自带电源应急照明灯具")
+        self.assertEqual(translator.translate_text("TGBT", "fr_to_zh"), "低压总配电柜")
+        self.assertEqual(translator.translate_text("ECS", "fr_to_zh"), "火灾报警控制器")
+
+    def test_optional_split_text_merge_translates_a_short_aligned_label_once(self):
+        doc = ezdxf.new()
+        modelspace = doc.modelspace()
+        top = modelspace.add_text("Salle de", dxfattribs={"height": 2, "layer": "TEXT"})
+        top.dxf.insert = (10, 20)
+        bottom = modelspace.add_text("Réunion", dxfattribs={"height": 2, "layer": "TEXT"})
+        bottom.dxf.insert = (10, 16)
+        other = modelspace.add_mtext("Salle de\\PParents", dxfattribs={"char_height": 2, "layer": "TEXT"})
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        items = cad_translator.extract_text_entities(doc, "fr_to_zh")
+
+        self.assertEqual(len(cad_translator.build_translation_units(items)), 3)
+        units = cad_translator.build_translation_units(items, merge_split_text=True)
+        self.assertEqual([unit["source"] for unit in units], ["Salle de Réunion", "Salle deParents"])
+        self.assertEqual(cad_translator.reflow_split_text("Meeting room", 2), ["Meeting", "room"])
+        self.assertEqual(cad_translator.reflow_split_text("会议室", 2), ["会议", "室"])
+        self.assertEqual(cad_translator.reflow_split_text("会议室/家长室", 3, ["Salle de", "Réunion/Salle des", "Parents"]), ["会议", "室/", "家长室"])
+
+    def test_split_text_merge_writes_the_translated_label_back_to_each_original_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = f"{tmp}/source.dxf", f"{tmp}/output.dxf"
+            doc = ezdxf.new()
+            modelspace = doc.modelspace()
+            top = modelspace.add_text("Salle de", dxfattribs={"height": 2, "layer": "TEXT"})
+            top.dxf.insert = (10, 20)
+            bottom = modelspace.add_text("Réunion", dxfattribs={"height": 2, "layer": "TEXT"})
+            bottom.dxf.insert = (10, 16)
+            doc.saveas(source)
+            cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+            calls = []
+            cad_translator.translate_text = lambda text, *_args: calls.append(text) or "Meeting room"
+
+            cad_translator._translate_cad_file_dxf(source, output, "fr_to_zh", merge_split_text=True)
+
+            translated = [entity.dxf.text for entity in ezdxf.readfile(output).modelspace().query("TEXT")]
+            self.assertEqual(calls, ["Salle de Réunion"])
+            self.assertEqual(translated, ["Meeting", "room"])
+
+    def test_split_text_merge_does_not_depend_on_entity_storage_order(self):
+        doc = ezdxf.new()
+        modelspace = doc.modelspace()
+        bottom = modelspace.add_text("Réunion", dxfattribs={"height": 2, "layer": "TEXT"})
+        bottom.dxf.insert = (10, 16)
+        top = modelspace.add_text("Salle de", dxfattribs={"height": 2, "layer": "TEXT"})
+        top.dxf.insert = (10, 20)
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        units = cad_translator.build_translation_units(cad_translator.extract_text_entities(doc, "fr_to_zh"), merge_split_text=True)
+        self.assertEqual([unit["source"] for unit in units], ["Salle de Réunion"])
+
+    def test_split_text_merge_never_absorbs_a_room_area_label(self):
+        doc = ezdxf.new()
+        modelspace = doc.modelspace()
+        name = modelspace.add_text("Parents", dxfattribs={"height": 20, "layer": "TEXT"})
+        name.dxf.insert = (10, 20)
+        area = modelspace.add_text("26.33m²", dxfattribs={"height": 20, "layer": "TEXT"})
+        area.dxf.insert = (10, -13)
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        units = cad_translator.build_translation_units(cad_translator.extract_text_entities(doc, "fr_to_zh"), merge_split_text=True)
+        self.assertEqual([unit["source"] for unit in units], ["Parents", "26.33m²"])
 
     def test_visible_anonymous_table_block_is_scanned_without_full_block_option(self):
         doc = ezdxf.new()
@@ -201,6 +266,13 @@ class TranslationModeTests(unittest.TestCase):
                 translation_mode="unsupported", deepl_key="key",
             )
             self.assertEqual(service.validate(body), "不支持的翻译方向")
+
+    def test_single_file_api_rejects_unknown_profession(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            drawing = f"{tmp}/drawing.dxf"
+            open(drawing, "w", encoding="utf-8").close()
+            body = TranslateBody(input_file=drawing, output_dir=tmp, output_name="output", profession="unknown", deepl_key="key")
+            self.assertEqual(service.validate(body), "不支持的专业分类")
 
     def test_write_back_failure_is_not_silenced(self):
         class UnsupportedEntity:

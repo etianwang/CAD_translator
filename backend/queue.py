@@ -117,7 +117,9 @@ class BatchQueue:
                         task.update(
                             output_dir=settings["output_dir"], output_format=settings["output_format"],
                             output_version=settings["output_version"], translation_mode=settings["translation_mode"],
+                            profession=settings.get("profession", "general"),
                             translate_blocks=settings["translate_blocks"], provider=settings.get("provider", "deepl"),
+                            merge_split_text=settings.get("merge_split_text", False),
                             azure_region=settings.get("azure_region", ""), status="queued", progress=0,
                             retries=0, output_file="", message="等待中", logs=[], _key=settings.get("api_key") or settings.get("deepl_key", ""),
                         )

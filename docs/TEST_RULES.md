@@ -15,6 +15,31 @@ Before merging, run these checks:
 
 The final DWG test consumes DeepL API quota.
 
+## v1.9.0 language-asset acceptance
+
+1. Verify provider-success records include direction, provider, drawing filename, timestamps, hit count, and manual status; glossary and cache hits do not create provider records.
+2. Verify records are searchable by source/target keyword and filterable by direction, provider, manual status, and one of the latest ten distinct drawing filenames; verify paging reaches older records.
+3. Verify editing a record changes the next same-direction translation without a provider request and clears the running cache.
+4. Verify promotion to a direction term makes it override built-in YAML and provider records, regardless of provider or layer.
+5. Verify `S.A.S`, `s-a-s`, `S_A_S`, and `SAS` are equivalent, while `A-01` and `A01` remain different.
+6. Verify local legacy terms migrate into direction terms once, and an existing `.hcterms.json` file is neither read nor modified.
+
+## v1.9.1 professional-classification acceptance
+
+1. Verify all four directions accept `general`, `electrical`, `hvac`, `plumbing`, `architecture`, and `decoration`; invalid values are rejected.
+2. Verify the selected professional user term, built-in term, and record each override their general counterpart according to the v1.9.1 priority order.
+3. Verify a general term and record provide the fallback for a selected professional, but a record for another professional does not.
+4. Verify legacy SQLite terms and records migrate once to `general`, without data loss.
+5. Verify the frontend starts at 通用, sends the selected classification with single and batch requests, and a started batch keeps its original classification.
+
+## v1.9.2 intelligent split-text merging acceptance
+
+1. Verify `智能合并拆行文字` defaults to off and that off preserves individual `TEXT` translation requests and write-back.
+2. Verify an aligned two- or three-line short room label is translated once as a joined source and the translated output is reflowed to the original number of `TEXT` entities.
+3. Verify differing layer, style, height, rotation, alignment, excessive gap, long text, `MTEXT`, attributes, dimensions, tables, and block-definition text are not grouped.
+4. Verify a joined source still uses the selected professional term before a general term or provider.
+5. Verify both single and batch API requests accept the Boolean setting, and an already started batch retains its initial value.
+
 ## Mandatory real-user E2E release gate
 
 No executable may be marked release-ready until this test passes through the desktop UI, using valid Azure Translator and DeepL credentials. API keys must be configured locally and must never be written to test output, source files, logs, or reports.
@@ -37,7 +62,7 @@ Follow the automated and real-DWG acceptance cases in [BATCH_TRANSLATION_HARNESS
 
 Status (2026-08-07): completed. Python compilation, translation-mode/glossary tests, batch recovery/queue-operation tests, and React build passed. The specified real DWG completed Chinese → French → Chinese and Chinese → English → Chinese; all four output DWGs were readable and extracted text changed on every pass. API keys were neither logged nor persisted in queue state.
 
-Packaging status: Windows packages with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.8.8.spec` and verifies `dist/Honsen_CAD_Translator_v1.8.8.exe`. macOS packages independently with `python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg` and verifies `dist/Honsen CAD Translator.app` plus `dist/Honsen_CAD_Translator_v1.8.8_macOS_arm64.dmg`. Before external distribution, perform a desktop launch smoke test and a real DWG round trip with the platform's ODA File Converter.
+Packaging status: Windows packages with `pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.9.0.spec` and verifies `dist/Honsen_CAD_Translator_v1.9.0.exe`. macOS packages independently with `python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg` and verifies `dist/Honsen CAD Translator.app` plus `dist/Honsen_CAD_Translator_v1.9.0_macOS_arm64.dmg`. Before external distribution, perform a desktop launch smoke test and a real DWG round trip with the platform's ODA File Converter.
 
 macOS ODA layout rule (2026-08-15): `installer/build_macos.py` validates and embeds the complete architecture-matched official DMG at `Honsen CAD Translator.app/Contents/Resources/ODAFileConverter.dmg`. Runtime mounts it read-only, calls the signed ODA application from that volume, and detaches it on normal shutdown; never copy only the ODA executable. Automated checks must cover embedded-DMG and adjacent-app fallback lookup. Before distribution, require stable outer signature after a runtime smoke check, ODA Gatekeeper acceptance, notarization, and the real DWG round trip.
 
@@ -49,7 +74,7 @@ Pause rule (2026-08-07): verify each task shows an independent progress bar and 
 
 Close rule (2026-08-07): closing the desktop window must cancel batch work, persist running tasks as `queued`, and leave no non-daemon queue worker able to keep the process alive.
 
-Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.8.8.exe` process remains after closing the window.
+Shutdown enforcement: after state persistence and cancellation, the close control must force the application process to exit; verify no `Honsen_CAD_Translator_v1.9.0.exe` process remains after closing the window.
 
 Recovery and stop rule (2026-08-07): after restart, recovered tasks must remain idle until **继续** is clicked. **停止** must cancel the batch and restore **开始翻译**; **清空列表** is available only after the batch is stopped/completed, never while it is running or paused.
 

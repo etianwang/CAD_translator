@@ -27,6 +27,7 @@ const modes = [
   ["zh_to_en", "中文 → 英语"],
   ["en_to_zh", "英语 → 中文"],
 ];
+const professions = [["general", "通用"], ["electrical", "电气"], ["hvac", "暖通"], ["plumbing", "给排水"], ["architecture", "建筑"], ["decoration", "装饰"]];
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -102,20 +103,28 @@ export default function App() {
   const [logs, setLogs] = useState([]);
   const [outputDir, setOutputDir] = useState("");
   const [mode, setMode] = useState("zh_to_fr");
+  const [profession, setProfession] = useState("general");
   const [format, setFormat] = useState("source");
   const [version, setVersion] = useState("");
   const [blocks, setBlocks] = useState(true);
+  const [mergeSplitText, setMergeSplitText] = useState(false);
   const [provider, setProvider] = useState("deepl");
   const [deeplKey, setDeeplKey] = useState("");
   const [azureKey, setAzureKey] = useState("");
   const [azureRegion, setAzureRegion] = useState("");
-  const [projectPackagePath, setProjectPackagePath] = useState("");
   const [showAssets, setShowAssets] = useState(false);
   const [assetTab, setAssetTab] = useState("terms");
-  const [assets, setAssets] = useState({ terms: [], builtin_terms: [], memory: [], usage: {} });
+  const [assetMode, setAssetMode] = useState("zh_to_fr");
+  const [assetProfession, setAssetProfession] = useState("general");
+  const [assetNotice, setAssetNotice] = useState("");
+  const [assets, setAssets] = useState({ terms: [], builtin_terms: [], records: { items: [], drawings: [], total: 0, page: 1 }, usage: {} });
   const [assetSearch, setAssetSearch] = useState("");
-  const [termForm, setTermForm] = useState({ scope: "global", mode: "zh_to_fr", source: "", target: "", layer_contains: "", id: null });
-  const [memoryForm, setMemoryForm] = useState({ mode: "zh_to_fr", source: "", target: "", layer_contains: "", id: null });
+  const [termForm, setTermForm] = useState({ mode: "zh_to_fr", source: "", target: "", id: null });
+  const [recordForm, setRecordForm] = useState({ id: null, source: "", target: "" });
+  const [recordProvider, setRecordProvider] = useState("");
+  const [recordManual, setRecordManual] = useState("");
+  const [recordDrawing, setRecordDrawing] = useState("");
+  const [recordPage, setRecordPage] = useState(1);
   const [license, setLicense] = useState({ checking: true, usable: false });
   const [activationCode, setActivationCode] = useState("");
   const [activationError, setActivationError] = useState("");
@@ -158,7 +167,6 @@ export default function App() {
         setAzureKey(c.azure_key || "");
         setAzureRegion(c.azure_region || "");
         setOutputDir(c.output_dir || "");
-        setProjectPackagePath(c.project_package_path || "");
       })
       .catch(() => {});
     refresh();
@@ -209,19 +217,23 @@ export default function App() {
   const settings = () => ({
     output_dir: outputDir,
     translation_mode: mode,
+    profession,
     translate_blocks: blocks,
+    merge_split_text: mergeSplitText,
     output_format: format,
     output_version: version,
     provider,
     deepl_key: deeplKey,
     azure_key: azureKey,
     azure_region: azureRegion,
-    project_package_path: projectPackagePath,
   });
-  const refreshAssets = async () => {
-    const result = await api("/api/language-assets");
+  const refreshAssets = async (page = recordPage) => {
+    const query = new URLSearchParams({ mode: assetMode, profession: assetProfession, search: assetSearch, page: String(page) });
+    if (recordProvider) query.set("provider", recordProvider);
+    if (recordManual) query.set("manual", recordManual);
+    if (recordDrawing) query.set("drawing", recordDrawing);
+    const result = await api(`/api/language-assets?${query}`);
     setAssets(result);
-    setProjectPackagePath(result.project?.path || "");
   };
   const openAssets = async (tab = "terms") => {
     setAssetTab(tab);
@@ -234,23 +246,26 @@ export default function App() {
       }
     } catch (error) { setLogs((p) => [...p, `ERROR: ${error.message}`]); }
   };
+  useEffect(() => {
+    if (showAssets) refreshAssets().catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]));
+  }, [assetMode, assetProfession]);
   const saveTerm = async () => {
-    await api("/api/language-assets/terms", { method: "POST", body: JSON.stringify({ ...termForm, project_package_path: projectPackagePath }) });
-    setTermForm({ scope: termForm.scope, mode: termForm.mode, source: "", target: "", layer_contains: "", id: null });
+    await api("/api/language-assets/terms", { method: "POST", body: JSON.stringify({ ...termForm, profession: assetProfession }) });
+    setTermForm({ mode: assetMode, source: "", target: "", id: null });
     await refreshAssets();
+    setAssetNotice("术语已保存并刷新");
   };
-  const saveMemory = async () => {
-    await api("/api/language-assets/memory", { method: "POST", body: JSON.stringify(memoryForm) });
-    setMemoryForm({ mode: memoryForm.mode, source: "", target: "", layer_contains: "", id: null });
+  const copyBuiltinTerm = async (term) => {
+    await api("/api/language-assets/terms", { method: "POST", body: JSON.stringify({ mode: term.mode, source: term.source, target: term.target, profession: assetProfession }) });
+    setAssetTab("terms");
     await refreshAssets();
+    setAssetNotice("已添加到方向术语库并刷新");
   };
-  const chooseProjectPackage = async (create = false) => {
-    const result = create ? await pyApi?.save_term_package?.() : await pyApi?.pick_term_package?.();
-    const path = result?.path || projectPackagePath;
-    if (!path) return;
-    const project = await api("/api/language-assets/project", { method: "POST", body: JSON.stringify({ path, create }) });
-    setProjectPackagePath(project.path);
+  const saveRecord = async () => {
+    await api("/api/language-assets/records", { method: "POST", body: JSON.stringify(recordForm) });
+    setRecordForm({ id: null, source: "", target: "" });
     await refreshAssets();
+    setAssetNotice("翻译记录已保存并刷新");
   };
   const chooseFiles = async () => {
     const r = await pyApi?.pick_cad_files?.();
@@ -349,52 +364,53 @@ export default function App() {
       <div className="bg-noise" />
       {showAssets && (
         <div className="support-overlay" onClick={() => setShowAssets(false)}>
-          <div className="asset-card" onClick={(event) => event.stopPropagation()}>
-            <button className="support-close" onClick={() => setShowAssets(false)}>×</button>
-            <h2>语言资产</h2>
+          <div className="asset-card" role="dialog" aria-modal="true" aria-labelledby="language-assets-title" onClick={(event) => event.stopPropagation()}>
+            <button className="support-close" aria-label="关闭语言资产" onClick={() => setShowAssets(false)}>×</button>
+            <h2 id="language-assets-title">语言资产</h2>
             <div className="asset-tabs">
               <button className={assetTab === "terms" ? "active" : ""} onClick={() => setAssetTab("terms")}>术语表</button>
               <button className={assetTab === "builtins" ? "active" : ""} onClick={() => setAssetTab("builtins")}>内置术语</button>
-              <button className={assetTab === "memory" ? "active" : ""} onClick={() => setAssetTab("memory")}>翻译记忆</button>
+              <button className={assetTab === "records" ? "active" : ""} onClick={() => setAssetTab("records")}>翻译记录</button>
               <button className={assetTab === "usage" ? "active" : ""} onClick={() => { setAssetTab("usage"); api("/api/language-assets/usage", { method: "POST", body: JSON.stringify({ deepl_key: deeplKey }) }).then((result) => setAssets((old) => ({ ...old, usage: result.local, deepl_remote: result.deepl_remote }))).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`])); }}>服务用量</button>
             </div>
+            <div className="asset-directions" role="tablist" aria-label="语言方向">
+              {modes.map(([value, label]) => <button key={value} role="tab" aria-selected={assetMode === value} className={assetMode === value ? "active" : ""} onClick={() => { setAssetMode(value); setTermForm((form) => ({ ...form, mode: value, id: null })); setRecordPage(1); setRecordDrawing(""); }}>{label}</button>)}
+            </div>
+            <div className="asset-directions asset-professions" role="tablist" aria-label="专业分类">
+              {professions.map(([value, label]) => <button key={value} role="tab" aria-selected={assetProfession === value} className={assetProfession === value ? "active" : ""} onClick={() => { setAssetProfession(value); setTermForm((form) => ({ ...form, id: null })); setRecordPage(1); }}>{label}</button>)}
+            </div>
+            {assetNotice && <p className="asset-notice" role="status">{assetNotice}</p>}
             {assetTab === "terms" && <>
-              <div className="asset-project">
-                <input value={projectPackagePath} onChange={(event) => setProjectPackagePath(event.target.value)} placeholder="项目术语包 .hcterms.json" />
-                <button className="btn ghost" onClick={() => chooseProjectPackage(false).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>选择</button>
-                <button className="btn ghost" onClick={() => chooseProjectPackage(true).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>新建</button>
-              </div>
               <div className="asset-form">
-                <select value={termForm.scope} onChange={(event) => setTermForm((form) => ({ ...form, scope: event.target.value, id: null }))}><option value="global">我的术语</option><option value="project">项目术语</option></select>
-                <select value={termForm.mode} onChange={(event) => setTermForm((form) => ({ ...form, mode: event.target.value }))}>{modes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
                 <input value={termForm.source} onChange={(event) => setTermForm((form) => ({ ...form, source: event.target.value }))} placeholder="原文（完整匹配）" />
                 <input value={termForm.target} onChange={(event) => setTermForm((form) => ({ ...form, target: event.target.value }))} placeholder="译文" />
-                <input value={termForm.layer_contains} onChange={(event) => setTermForm((form) => ({ ...form, layer_contains: event.target.value }))} placeholder="图层包含（可选）" />
                 <button className="btn primary" onClick={() => saveTerm().catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>{termForm.id === null ? "添加术语" : "保存术语"}</button>
               </div>
               <input className="asset-search" value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} placeholder="搜索术语" />
               <div className="asset-list">
-                {assets.terms.filter((term) => `${term.source} ${term.target}`.toLowerCase().includes(assetSearch.toLowerCase())).map((term) => <div className="asset-row" key={`${term.scope}-${term.id}`}><div><b>{term.source}</b> → {term.target}<small>{term.scope === "project" ? "项目术语" : "我的术语"} · {term.mode}{term.layer_contains ? ` · 图层:${term.layer_contains}` : ""}</small></div><button className="btn ghost" onClick={() => setTermForm({ ...term })}>编辑</button><button className="btn ghost" onClick={() => api("/api/language-assets/terms/delete", { method: "POST", body: JSON.stringify({ scope: term.scope, id: term.id, project_package_path: projectPackagePath }) }).then(refreshAssets).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>删除</button></div>)}
+                {assets.terms.filter((term) => `${term.source} ${term.target}`.toLowerCase().includes(assetSearch.toLowerCase())).map((term) => <div className="asset-row" key={term.id}><div><b>{term.source}</b> → {term.target}<small>方向术语 · {term.mode} · {professions.find(([value]) => value === assetProfession)?.[1]}</small></div><button className="btn ghost" onClick={() => setTermForm({ ...term })}>编辑</button><button className="btn ghost" onClick={() => api("/api/language-assets/terms/delete", { method: "POST", body: JSON.stringify({ id: term.id }) }).then(async () => { await refreshAssets(); setAssetNotice("术语已删除并刷新"); }).catch((error) => { setAssetNotice(`删除失败：${error.message}`); setLogs((p) => [...p, `ERROR: ${error.message}`]); })}>删除</button></div>)}
               </div>
             </>}
             {assetTab === "builtins" && <>
-              <p className="hint">以下为随软件发布的四个 YAML 术语表，只读且始终参与翻译。复制后可在“术语表”中改为项目或我的覆盖词。</p>
+              <p className="hint">以下为当前方向的只读 YAML 术语；复制后可在方向术语库中修改。</p>
               <input className="asset-search" value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} placeholder="搜索内置术语" />
               <div className="asset-list">
-                {assets.builtin_terms.filter((term) => `${term.source} ${term.target}`.toLowerCase().includes(assetSearch.toLowerCase())).map((term) => <div className="asset-row" key={term.id}><div><b>{term.source}</b> → {term.target}<small>内置术语 · {term.mode}</small></div><button className="btn ghost" onClick={() => { setTermForm({ scope: "global", mode: term.mode, source: term.source, target: term.target, layer_contains: "", id: null }); setAssetTab("terms"); }}>复制到我的术语</button><button className="btn ghost" onClick={() => { setTermForm({ scope: "project", mode: term.mode, source: term.source, target: term.target, layer_contains: "", id: null }); setAssetTab("terms"); }}>复制到项目</button></div>)}
+                {assets.builtin_terms.filter((term) => `${term.source} ${term.target}`.toLowerCase().includes(assetSearch.toLowerCase())).map((term) => <div className="asset-row" key={term.id}><div><b>{term.source}</b> → {term.target}<small>内置术语 · {term.mode}</small></div><button className="btn ghost" onClick={() => copyBuiltinTerm(term).catch((error) => { setAssetNotice(`添加失败：${error.message}`); setLogs((p) => [...p, `ERROR: ${error.message}`]); })}>添加到方向术语库</button></div>)}
               </div>
             </>}
-            {assetTab === "memory" && <>
+            {assetTab === "records" && <>
               <div className="asset-form">
-                <select value={memoryForm.mode} onChange={(event) => setMemoryForm((form) => ({ ...form, mode: event.target.value }))}>{modes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-                <input value={memoryForm.source} onChange={(event) => setMemoryForm((form) => ({ ...form, source: event.target.value }))} placeholder="原文" />
-                <input value={memoryForm.target} onChange={(event) => setMemoryForm((form) => ({ ...form, target: event.target.value }))} placeholder="译文" />
-                <input value={memoryForm.layer_contains} onChange={(event) => setMemoryForm((form) => ({ ...form, layer_contains: event.target.value }))} placeholder="精确图层（可选）" />
-                <button className="btn primary" onClick={() => saveMemory().catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>{memoryForm.id === null ? "添加记忆" : "保存记忆"}</button>
+                <input value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} placeholder="搜索原文或译文" />
+                <select value={recordProvider} onChange={(event) => setRecordProvider(event.target.value)} aria-label="服务来源"><option value="">全部服务</option><option value="deepl">DeepL</option><option value="azure">Azure</option></select>
+                <select value={recordManual} onChange={(event) => setRecordManual(event.target.value)} aria-label="人工修正状态"><option value="">全部状态</option><option value="true">已人工修正</option><option value="false">服务结果</option></select>
+                <select value={recordDrawing} onChange={(event) => setRecordDrawing(event.target.value)} aria-label="最近图纸"><option value="">最近图纸（全部）</option>{assets.records.drawings.map((drawing) => <option key={drawing} value={drawing}>{drawing}</option>)}</select>
+                <button className="btn primary" onClick={() => { setRecordPage(1); refreshAssets(1).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`])); }}>筛选记录</button>
               </div>
               <div className="asset-list">
-                {assets.memory.map((entry) => <div className="asset-row" key={entry.id}><div><b>{entry.source}</b> → {entry.target}<small>{entry.mode} · {entry.origin === "manual" ? "人工" : entry.provider} · 命中 {entry.hit_count} 次</small></div><button className="btn ghost" onClick={() => setMemoryForm({ mode: entry.mode, source: entry.source, target: entry.target, layer_contains: entry.layer_key, id: entry.id })}>编辑</button><button className="btn ghost" onClick={() => { setTermForm({ scope: "global", mode: entry.mode, source: entry.source, target: entry.target, layer_contains: entry.layer_key, id: null }); setAssetTab("terms"); }}>升为术语</button><button className="btn ghost" onClick={() => api("/api/language-assets/memory/delete", { method: "POST", body: JSON.stringify({ id: entry.id }) }).then(refreshAssets).catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>删除</button></div>)}
+                {assets.records.items.map((entry) => <div className="asset-row" key={entry.id}><div><b>{entry.source}</b> → {entry.target}<small>{entry.provider === "deepl" ? "DeepL" : "Azure"} · {entry.manual ? "已人工修正" : "服务结果"} · 命中 {entry.hit_count} 次<br />首次：{entry.created_at} · 最后修改：{entry.updated_at}{entry.drawings ? ` · 图纸：${entry.drawings}` : ""}</small></div><button className="btn ghost" onClick={() => setRecordForm({ id: entry.id, source: entry.source, target: entry.target })}>编辑</button><button className="btn ghost" onClick={() => api("/api/language-assets/records/promote", { method: "POST", body: JSON.stringify({ id: entry.id }) }).then(async () => { await refreshAssets(); setAssetNotice("记录已升为术语并刷新"); }).catch((error) => { setAssetNotice(`操作失败：${error.message}`); setLogs((p) => [...p, `ERROR: ${error.message}`]); })}>升为术语</button><button className="btn ghost" onClick={() => api("/api/language-assets/records/delete", { method: "POST", body: JSON.stringify({ id: entry.id }) }).then(async () => { await refreshAssets(); setAssetNotice("记录已删除并刷新"); }).catch((error) => { setAssetNotice(`删除失败：${error.message}`); setLogs((p) => [...p, `ERROR: ${error.message}`]); })}>删除</button></div>)}
               </div>
+              {recordForm.id !== null && <div className="asset-form"><input value={recordForm.source} onChange={(event) => setRecordForm((form) => ({ ...form, source: event.target.value }))} placeholder="原文" /><input value={recordForm.target} onChange={(event) => setRecordForm((form) => ({ ...form, target: event.target.value }))} placeholder="修正译文" /><button className="btn primary" onClick={() => saveRecord().catch((error) => setLogs((p) => [...p, `ERROR: ${error.message}`]))}>保存修正</button></div>}
+              <div className="asset-actions"><button className="btn ghost" disabled={assets.records.page <= 1} onClick={() => { const page = recordPage - 1; setRecordPage(page); refreshAssets(page).catch(() => {}); }}>上一页</button><span>第 {assets.records.page} 页 · 共 {assets.records.total} 条</span><button className="btn ghost" disabled={assets.records.page * assets.records.page_size >= assets.records.total} onClick={() => { const page = recordPage + 1; setRecordPage(page); refreshAssets(page).catch(() => {}); }}>下一页</button></div>
             </>}
             {assetTab === "usage" && <div className="usage-grid">
               <section><h3>DeepL</h3>{assets.deepl_remote?.available ? <p>{assets.deepl_remote.characters.toLocaleString()} / {assets.deepl_remote.limit.toLocaleString()} 字符</p> : <p>{assets.deepl_remote?.message || "点击此页自动读取"}</p>}<small>本软件本月：{(assets.usage?.deepl?.characters || 0).toLocaleString()} 字符，{assets.usage?.deepl?.requests || 0} 次请求</small></section>
@@ -644,6 +660,9 @@ export default function App() {
                 options={[["source", "保持源格式"], ["dxf", "DXF"], ["dwg", "DWG"]]}
               />
             </Field>
+            <Field label="专业分类">
+              <SelectMenu value={profession} onChange={setProfession} options={professions} />
+            </Field>
             <Field label="输出版本（ODA）">
               <SelectMenu
                 value={version}
@@ -660,6 +679,15 @@ export default function App() {
               <span>翻译块定义中的文字（推荐）</span>
             </label>
             <p className="hint">已开启以覆盖图框、目录和复用图例；关闭后仍会翻译可见表格和标注。</p>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={mergeSplitText}
+                onChange={(e) => setMergeSplitText(e.target.checked)}
+              />
+              <span>智能合并拆行文字</span>
+            </label>
+            <p className="hint">默认关闭；仅合并同样式、对齐且紧邻的短标签和房间名，不处理段落或多行文字。</p>
             <Field label="翻译服务">
               <SelectMenu
                 value={provider}
@@ -717,7 +745,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.8.8 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
+        <span className="footer-meta">v1.9.2 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
       </motion.footer>
     </div>
   );

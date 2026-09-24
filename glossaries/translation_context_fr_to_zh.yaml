@@ -1,486 +1,3630 @@
-context_fr_to_zh:
-  JOUR: 挑空
-  LOCAL BATTERIE: 蓄电池房
-  LOCAL GROUPE ÉLECTROGÈNE: 发电机房
-  LOCAL INFORMATIQUE: 计算机房
-  LOCAL ONDULEUR: UPS 机房
-  LOCAL SERVEUR: 服务器机房
-  LOCAUX PMR: 无障碍区域
-  RÉSERVE TECHNIQUE: 技术备用间
-  SALLE SERVEUR: 服务器机房
-  VIDE: 镂空
-  VIDE SUR SÉJOUR: 客厅中庭挑空
-  alarme: 报警
-  air neuf: 新风
-  alimentation électrique: 电源供电
-  alimentation générale: 总电源
-  alimentation de secours: 应急电源
-  alimentation en eau: 供水
-  alimentation eau froide: 冷水供水
-  alimentation eau chaude: 热水供水
-  alimentation d'eau potable: 生活给水
-  ascenseur: 电梯
-  axe: 轴线
-  bouche d'air: 风口
-  bouche de reprise: 回风口
-  bouche de soufflage: 出风口
-  chemin de câbles: 桥架
-  climatisation: 空调
-  conduite d'air: 风管
-  conduite d'eau: 水管
-  conduite de condensat: 冷凝水管
-  centrale de traitement d'air: 新风机
-  contrôle: 控制
-  couloir: 走廊
-  courant faible: 弱电
-  courant fort: 强电
-  cuisine: 厨房
-  eau chaude et froide: 冷热水
-  entrée: 入口
-  escalier: 楼梯
-  fondation: 基础
-  fourreau: 套管
-  garde-corps: 栏杆
-  goulotte de câbles: 线槽
-  extraction d'air: 排风
-  faux plafond: 吊顶
-  gaine technique: 管道井
-  grille d'air: 风口
-  interrupteur: 开关
-  local des machines: 机房
-  local technique: 设备间
-  mur: 墙面
-  mise à la terre: 接地
-  plomberie: 给排水
-  pompe à eau: 水泵
-  poteau: 柱
-  plafond: 天花
-  plan: 平面图
-  plan de plafond: 天花图
-  portes et fenêtres: 门窗
-  prise: 插座
-  poutre: 梁
-  poutre en acier: 钢梁
-  protection incendie: 消防
-  réservation: 预留洞
-  réservation dans mur: 墙体预留洞
-  réservation de dalle: 楼板预留洞
-  ouverture: 开洞
-  ouverture de mur: 墙体开洞
-  ouverture dans le mur: 墙体开洞
-  ouverture de dalle: 楼板开洞
-  percement: 开洞
-  percement de mur: 墙体开洞
-  trémie: 楼板预留洞
-  trémie d'escalier: 楼梯洞口
-  baie de porte: 门洞
-  baie de fenêtre: 窗洞
-  porte: 门
-  fenêtre: 窗
-  porte-fenêtre: 落地窗
-  linteau: 过梁
-  salle de bain: 卫生间
-  schéma de commande: 控制系统图
-  schéma de câblage: 接线图
-  schéma de distribution: 配电系统图
-  schéma de principe: 系统图
-  schéma de ventilation: 通风系统图
-  schéma fonctionnel: 功能图
-  schéma hydraulique: 水力系统图
-  schéma incendie: 消防系统图
-  schéma réseau: 网络结构图
-  schéma électrique: 电气系统图
-  shema: 示意图
-  sol: 地面
-  sortie: 出口
-  sécurité incendie: 消防
-  semelle isolée: 独立基础
-  tableau de distribution: 配电箱
-  tour de refroidissement: 冷却塔
-  tôle d'acier: 钢板
-  unité de climatisation: 空调机
-  unité de ventilation: 新风机
-  ventilateur: 风机
-  ventilation: 新风
-  ventilo-convecteur: 风机盘管
-  voile de contreventement: 剪力墙
-  vidéosurveillance: 监控
-  éclairage: 照明
-  écran: 屏幕
-  écran de contrôle: 控制屏
-  évacuation d'eau: 排水管
-  évacuation fumée: 排烟
-  désenfumage: 排烟
-  dalle: 楼板
-  cote: 标高
-  isolation thermique: 保温
-  YAOUNDE: 雅温得
-  Yaoundé: 雅温得
-  Douala: 杜阿拉
-  DOUALA: 杜阿拉
-  Bafoussam: 巴富萨姆
-  BAFOUSSAM: 巴富萨姆
-  Garoua: 加鲁阿
-  GAROUA: 加鲁阿
-  Maroua: 马鲁阿
-  MAROUA: 马鲁阿
-  Ngaoundéré: 恩冈代雷
-  NGAOUNDÉRÉ: 恩冈代雷
-  Bertoua: 贝托阿
-  BERTOUA: 贝托阿
-  Ebolowa: 埃博洛瓦
-  EBOLOWA: 埃博洛瓦
-  Abidjan: 阿比让
-  ABIDJAN: 阿比让
-  Yamoussoukro: 亚穆苏克罗
-  YAMOUSSOUKRO: 亚穆苏克罗
-  Bouaké: 布瓦凯
-  BOUAKÉ: 布瓦凯
-  Daloa: 达洛阿
-  DALOA: 达洛阿
-  Korhogo: 科霍戈
-  KORHOGO: 科霍戈
-  San Pedro: 圣佩德罗
-  SAN PEDRO: 圣佩德罗
-  Man: 曼城
-  MAN: 曼城
-  Gagnoa: 加尼奥阿
-  GAGNOA: 加尼奥阿
-  Divo: 迪沃
-  DIVO: 迪沃
-    # 阿尔及利亚
-  Algeria: 阿尔及利亚
-  Algiers: 阿尔及尔
-  ALGIERS: 阿尔及尔
-  Oran: 奥兰
-  ORAN: 奥兰
-  Constantine: 君士坦丁
-  CONSTANTINE: 君士坦丁
-  Annaba: 安纳巴
-  ANNABA: 安纳巴
-
-    # 安哥拉
-  Angola: 安哥拉
-  Luanda: 罗安达
-  LUANDA: 罗安达
-  Huambo: 万博
-  HUAMBO: 万博
-  Lobito: 洛比托
-  LOBITO: 洛比托
-  Benguela: 本格拉
-  BENGUELA: 本格拉
-
-    # 贝宁
-  Benin: 贝宁
-  Porto-Novo: 波多诺伏
-  PORTO-NOVO: 波多诺伏
-  Cotonou: 科托努
-  COTONOU: 科托努
-  Parakou: 帕拉库
-  PARAKOU: 帕拉库
-  Djougou: 朱古
-  DJOUGOU: 朱古
-
-    # 博茨瓦纳
-  Botswana: 博茨瓦纳
-  Gaborone: 哈博罗内
-  GABORONE: 哈博罗内
-  Francistown: 弗朗西斯敦
-  FRANCISTOWN: 弗朗西斯敦
-  Molepolole: 莫莱波洛莱
-  MOLEPOLOLE: 莫莱波洛莱
-  Maun: 马翁
-  MAUN: 马翁
-
-    # 布基纳法索
-  Burkina Faso: 布基纳法索
-  Ouagadougou: 瓦加杜古
-  OUAGADOUGOU: 瓦加杜古
-  Bobo-Dioulasso: 博博-迪乌拉索
-  BOBO-DIOULASSO: 博博-迪乌拉索
-  Koudougou: 库杜古
-  KOUDOUGOU: 库杜古
-  Banfora: 班福拉
-  BANFORA: 班福拉
-
-    # 布隆迪
-  Burundi: 布隆迪
-  Gitega: 基特加
-  GITEGA: 基特加
-  Bujumbura: 布琼布拉
-  BUJUMBURA: 布琼布拉
-  Ngozi: 昂戈齐
-  NGOZI: 昂戈齐
-  Muyinga: 穆因加
-  MUYINGA: 穆因加
-
-    # 喀麦隆
-  Cameroon: 喀麦隆
-  Yaoundé: 雅温得
-  YAOUNDÉ: 雅温得
-  Douala: 杜阿拉
-  DOUALA: 杜阿拉
-  Garoua: 加鲁阿
-  GAROUA: 加鲁阿
-  Bamenda: 巴门达
-  BAMENDA: 巴门达
-
-    # 佛得角
-  Cape Verde: 佛得角
-  Praia: 普拉亚
-  PRAIA: 普拉亚
-  Mindelo: 明德卢
-  MINDELO: 明德卢
-  Santa Maria: 圣玛丽亚
-  SANTA MARIA: 圣玛丽亚
-  Assomada: 阿索马达
-  ASSOMADA: 阿索马达
-
-    # 中非共和国
-  Central African Republic: 中非共和国
-  Bangui: 班吉
-  BANGUI: 班吉
-  Bimbo: 宾博
-  BIMBO: 宾博
-  Berbérati: 贝尔贝拉蒂
-  BERBÉRATI: 贝尔贝拉蒂
-  Carnot: 卡尔诺
-  CARNOT: 卡尔诺
-
-    # 乍得
-  Chad: 乍得
-  N'Djamena: 恩贾梅纳
-  N'DJAMENA: 恩贾梅纳
-  Moundou: 穆恩杜
-  MOUNDOU: 穆恩杜
-  Sarh: 萨尔
-  SARH: 萨尔
-  Abéché: 阿贝歇
-  ABÉCHÉ: 阿贝歇
-
-    # 科摩罗
-  Comoros: 科摩罗
-  Moroni: 莫罗尼
-  MORONI: 莫罗尼
-  Mutsamudu: 穆察穆杜
-  MUTSAMUDU: 穆察穆杜
-  Fomboni: 丰博尼
-  FOMBONI: 丰博尼
-  Domoni: 多莫尼
-  DOMONI: 多莫尼
-
-    # 刚果（布）
-  Republic of the Congo: 刚果（布）
-  Brazzaville: 布拉柴维尔
-  BRAZZAVILLE: 布拉柴维尔
-  Pointe-Noire: 黑角
-  POINTE-NOIRE: 黑角
-  Dolisie: 多利济
-  DOLISIE: 多利济
-  Nkayi: 恩卡伊
-  NKAYI: 恩卡伊
-
-    # 刚果（金）
-  Democratic Republic of the Congo: 刚果（金）
-  Kinshasa: 金沙萨
-  KINSHASA: 金沙萨
-  Lubumbashi: 卢本巴希
-  LUBUMBASHI: 卢本巴希
-  Mbuji-Mayi: 姆布吉马伊
-  MBUJI-MAYI: 姆布吉马伊
-  Kisangani: 基桑加尼
-  KISANGANI: 基桑加尼
-
-    # 科特迪瓦
-  Côte d'Ivoire: 科特迪瓦
-  Yamoussoukro: 亚穆苏克罗
-  YAMOUSSOUKRO: 亚穆苏克罗
-  Abidjan: 阿比让
-  ABIDJAN: 阿比让
-  Bouaké: 布瓦凯
-  BOUAKÉ: 布瓦凯
-  Daloa: 达洛亚
-  DALOA: 达洛亚
-
-    # 吉布提
-  Djibouti: 吉布提
-  Djibouti City: 吉布提市
-  DJIBOUTI CITY: 吉布提市
-  Ali Sabieh: 阿里萨比赫
-  ALI SABIEH: 阿里萨比赫
-  Tadjourah: 塔朱拉
-  TADJOURAH: 塔朱拉
-  Dikhil: 迪基尔
-  DIKHIL: 迪基尔
-
-    # 埃及
-  Egypt: 埃及
-  Cairo: 开罗
-  CAIRO: 开罗
-  Alexandria: 亚历山大
-  ALEXANDRIA: 亚历山大
-  Giza: 吉萨
-  GIZA: 吉萨
-  Shubra El Kheima: 舒布拉·哈伊马
-  SHUBRA EL KHEIMA: 舒布拉·哈伊马
-
-    # 赤道几内亚
-  Equatorial Guinea: 赤道几内亚
-  Malabo: 马拉博
-  MALABO: 马拉博
-  Bata: 巴塔
-  BATA: 巴塔
-  Ebebiyin: 埃贝比因
-  EBEBIYIN: 埃贝比因
-  Evinayong: 埃维纳永
-  EVINAYONG: 埃维纳永
-
-    # 厄立特里亚
-  Eritrea: 厄立特里亚
-  Asmara: 阿斯马拉
-  ASMARA: 阿斯马拉
-  Keren: 克伦
-  KEREN: 克伦
-  Massawa: 马萨瓦
-  MASSAWA: 马萨瓦
-  Assab: 阿萨布
-  ASSAB: 阿萨布
-
-    # 埃塞俄比亚
-  Ethiopia: 埃塞俄比亚
-  Addis Ababa: 亚的斯亚贝巴
-  ADDIS ABABA: 亚的斯亚贝巴
-  Dire Dawa: 德雷达瓦
-  DIRE DAWA: 德雷达瓦
-  Mekelle: 梅克莱
-  MEKELLE: 梅克莱
-  Gondar: 冈达尔
-  GONDAR: 冈达尔
-
-    # 加蓬
-  Gabon: 加蓬
-  Libreville: 利伯维尔
-  LIBREVILLE: 利伯维尔
-  Port-Gentil: 让蒂尔港
-  PORT-GENTIL: 让蒂尔港
-  Franceville: 弗朗斯维尔
-  FRANCEVILLE: 弗朗斯维尔
-  Oyem: 奥耶姆
-  OYEM: 奥耶姆
-
-    # 冈比亚
-  Gambia: 冈比亚
-  Banjul: 班珠尔
-  BANJUL: 班珠尔
-  Serekunda: 塞雷昆达
-  SEREKUNDA: 塞雷昆达
-  Brikama: 布里卡马
-  BRIKAMA: 布里卡马
-  Bakau: 巴考
-  BAKAU: 巴考
-
-  # 加纳
-  Ghana: 加纳
-  Accra: 阿克拉
-
-
-  # 马里
-  Mali: 马里
-  Bamako: 巴马科
-  BAMAKO: 巴马科
-  Sikasso: 锡卡索
-  SIKASSO: 锡卡索
-  Mopti: 莫普提
-  MOPTI: 莫普提
-  Kayes: 卡伊
-  KAYES: 卡伊
-
-  # 尼日尔
-  Niger: 尼日尔
-  Niamey: 尼亚美
-  NIAMEY: 尼亚美
-  Zinder: 津德尔
-  ZINDER: 津德尔
-  Maradi: 马拉迪
-  MARADI: 马拉迪
-  Agadez: 阿加德兹
-  AGADEZ: 阿加德兹
-
-  # 几内亚
-  Guinea: 几内亚
-  Conakry: 科纳克里
-  CONAKRY: 科纳克里
-  Kankan: 康康
-  KANKAN: 康康
-  Labé: 拉贝
-  LABÉ: 拉贝
-  Nzérékoré: 恩泽雷科雷
-  NZÉRÉKORÉ: 恩泽雷科雷
-
-  # 马达加斯加
-  Madagascar: 马达加斯加
-  Antananarivo: 塔那那利佛
-  ANTANANARIVO: 塔那那利佛
-  Toamasina: 图阿马西纳
-  TOAMASINA: 图阿马西纳
-  Antsirabe: 安齐拉贝
-  ANTSIRABE: 安齐拉贝
-  Mahajanga: 马哈赞加
-  MAHAJANGA: 马哈赞加
-
-  # 毛里塔尼亚
-  Mauritania: 毛里塔尼亚
-  Nouakchott: 努瓦克肖特
-  NOUAKCHOTT: 努瓦克肖特
-  Nouadhibou: 努瓦迪布
-  NOUADHIBOU: 努瓦迪布
-  Rosso: 罗索
-  ROSSO: 罗索
-  Kaédi: 凯迪
-  KAÉDI: 凯迪
-
-  # 卢旺达
-  Rwanda: 卢旺达
-  Kigali: 基加利
-  KIGALI: 基加利
-  Butare: 布塔雷
-  BUTARE: 布塔雷
-  Gisenyi: 基塞尼
-  GISENYI: 基塞尼
-  Ruhengeri: 鲁亨盖里
-  RUHENGERI: 鲁亨盖里
-
-  # 塞舌尔
-  Seychelles: 塞舌尔
-  Victoria: 维多利亚
-  VICTORIA: 维多利亚
-  Anse Boileau: 安斯博伊洛
-  ANSE BOILEAU: 安斯博伊洛
-  Bel Ombre: 贝尔翁布尔
-  BEL OMBRE: 贝尔翁布尔
-  Beau Vallon: 博瓦隆
-  BEAU VALLON: 博瓦隆
-
-  # 多哥
-  Togo: 多哥
-  Lomé: 洛美
-  LOMÉ: 洛美
-  Sokodé: 索科德
-  SOKODÉ: 索科德
-  Kara: 卡拉
-  KARA: 卡拉
-  Kpalimé: 卡帕利梅
-  KPALIMÉ: 卡帕利梅
-
-  # 塞内加尔
-  Senegal: 塞内加尔
-  Dakar: 达喀尔
-  DAKAR: 达喀尔
-  Thiès: 蒂耶斯
-  THIÈS: 蒂耶斯
-  Saint-Louis: 圣路易
-  SAINT-LOUIS: 圣路易
-  Kaolack: 考拉克
-  KAOLACK: 考拉克
-  COMMUNE DE YAOUNDE: 雅温得市
-  COMMUNE DE YAOUNDÉ: 雅温得市
+meta:
+  schema_version: 1
+  direction: fr_to_zh
+  professions:
+  - general
+  - electrical
+  - hvac
+  - plumbing
+  - architecture
+  - decoration
+  usage: 每个原文保留通用译文，并仅在专业译文不同于通用译文时补充对应专业字段。
+terms:
+  APPLIQUE LED 18W:
+    general: 18W LED壁灯
+    electrical: 18W LED壁灯
+  APPLIQUE LED 5W:
+    general: 5W LED壁灯
+    electrical: 5W LED壁灯
+  APPLIQUE MURAL POUR L'ECLAIRAGE EXTERIEUR:
+    general: 室外照明壁灯
+    electrical: 室外照明壁灯
+  BLOC D'ECLAIRAGE SECOURS 70Lm LED:
+    general: 70流明LED应急照明灯
+    electrical: 70流明LED自带电源应急照明灯具
+  BORNE POUR L'ECLAIRAGE EXTERIEUR:
+    general: 室外照明柱灯
+    electrical: 室外照明柱灯
+  INTERRUPTEUR SIMPLE ALLUMAGE:
+    general: 单联开关
+    electrical: 单联开关
+  INTERRUPTEUR SIMPLE ALLUMAGE ETANCHE:
+    general: 防水单联开关
+    electrical: 防水单联开关
+  INTERRUPTEUR VA ET VIENT:
+    general: 双控开关
+    electrical: 双控开关
+  PROJECTEUR POUR L'ECLAIRAGE EXTERIEUR:
+    general: 室外照明投光灯
+    electrical: 室外照明投光灯
+  SPOT AU SOL POUR L'ECLAIRAGE EXTERIEUR:
+    general: 室外地埋射灯
+    electrical: 室外地埋射灯
+  SPOT LED 18W:
+    general: 18W LED射灯
+    electrical: 18W LED射灯
+  SPOT LED 22W:
+    general: 22W LED射灯
+    electrical: 22W LED射灯
+  SPOT LED 25W / PLAFONNIÈRES 35W:
+    general: 25W LED射灯 / 35W吸顶灯
+    electrical: 25W LED射灯 / 35W吸顶灯
+  SPOT LED ETANCHE 10W:
+    general: 10W防水LED射灯
+    electrical: 10W防水LED射灯
+  TABLEAU ELECTRIQUE:
+    general: 配电箱
+    electrical: 配电箱
+  TABLEAU GENERAL BASSE TENSION:
+    general: 低压总配电柜
+    electrical: 低压总配电柜
+  Bureaux:
+    general: 办公室
+    architecture: 办公室
+  TOILET:
+    general: 卫生间
+    architecture: 卫生间
+  Hall Esc:
+    general: 楼梯厅
+    architecture: 楼梯厅
+  Hall Accueil:
+    general: 接待大厅
+    architecture: 接待大厅
+  Terrasse:
+    general: 露台
+    architecture: 露台
+  Guérite:
+    general: 门卫室
+    architecture: 门卫室
+  Salle d'attente:
+    general: 等候室
+    architecture: 等候室
+  Salle de réunion:
+    general: 会议室
+    architecture: 会议室
+  Dressing:
+    general: 衣帽间
+    architecture: 衣帽间
+  Local Synoptique:
+    general: 图控室
+    electrical: 图控室
+  Local Tech:
+    general: 技术间
+    architecture: 技术间
+  Parking Privé:
+    general: 私人停车场
+    architecture: 私人停车场
+  Régie:
+    general: 控制室
+    architecture: 控制室
+  Salle de Conférence:
+    general: 会议室
+    architecture: 会议室
+  salle de repos:
+    general: 休息室
+    architecture: 休息室
+  Salle Serveur:
+    general: 服务器机房
+    electrical: 服务器机房
+  SAS:
+    general: 前室
+    architecture: 前室
+  Stockage:
+    general: 储藏间
+    architecture: 储藏间
+  Toilettes:
+    general: 卫生间
+    architecture: 卫生间
+  Vestiaires:
+    general: 更衣室
+    architecture: 更衣室
+  Vestiaires femmes:
+    general: 女更衣室
+    architecture: 女更衣室
+  Vestiaires hommes:
+    general: 男更衣室
+    architecture: 男更衣室
+  Lampe de secours:
+    general: 应急灯
+    electrical: 应急灯
+  Sens d'évacuation:
+    general: 疏散方向
+    electrical: 疏散方向
+  Sortie d'évacuation:
+    general: 疏散出口
+    electrical: 疏散出口
+  SORTIE:
+    general: 出口
+    electrical: 出口
+  Utiliser les escaliers:
+    general: 请使用楼梯
+    electrical: 请使用楼梯
+  Centrale détection incendie adressable (ECS):
+    general: 地址型火灾报警控制器
+    electrical: 地址型火灾报警控制器
+  Centraliseur de mise en sécurité incendie:
+    general: 消防联动控制器
+    electrical: 消防联动控制器
+  DETECTION INCENDIE:
+    general: 火灾自动报警系统
+    electrical: 火灾自动报警系统
+  Diffuseur visuel d'alarme feu:
+    general: 火灾视觉警报器
+    electrical: 火灾视觉警报器
+  Déclencheur manuel adressable:
+    general: 地址型手动报警按钮
+    electrical: 地址型手动报警按钮
+  Détecteur optique de fumée adressable:
+    general: 地址型光电感烟探测器
+    electrical: 地址型光电感烟探测器
+  Détecteur thermovélocimétrique adressable:
+    general: 地址型差温感温探测器
+    electrical: 地址型差温感温探测器
+  Sirènes incendie:
+    general: 火灾警报器
+    electrical: 火灾警报器
+  RIA DN25:
+    general: DN25消防软管卷盘
+    plumbing: DN25消防软管卷盘
+  Robinet Incendie Armée DN 25:
+    general: DN25消防软管卷盘
+    plumbing: DN25消防软管卷盘
+  Poteau d'Incendie:
+    general: 室外消火栓
+    plumbing: 室外消火栓
+  EXTINCTEUR A CO2:
+    general: 二氧化碳灭火器
+  Extincteur au dioxyde de carbone 2kg:
+    general: 2公斤二氧化碳灭火器
+  Extincteur à eau H2O 6l:
+    general: 6升水基灭火器
+  Le local des pompes d'incendie:
+    general: 消防水泵房
+    plumbing: 消防水泵房
+  Pompes de surpression des bouches d'incendie:
+    general: 消防增压泵
+    plumbing: 消防增压泵
+  evacuateur de fumee:
+    general: 排烟风机
+    hvac: 排烟风机
+  JOUR:
+    general: 挑空
+  LOCAL BATTERIE:
+    general: 蓄电池房
+  LOCAL GROUPE ÉLECTROGÈNE:
+    general: 发电机房
+  LOCAL INFORMATIQUE:
+    general: 计算机房
+  LOCAL ONDULEUR:
+    general: UPS 机房
+  LOCAL SERVEUR:
+    general: 服务器机房
+  LOCAUX PMR:
+    general: 无障碍区域
+  RÉSERVE TECHNIQUE:
+    general: 技术备用间
+  SALLE SERVEUR:
+    general: 服务器机房
+  VIDE:
+    general: 镂空
+  VIDE SUR SÉJOUR:
+    general: 客厅中庭挑空
+  alarme:
+    general: 报警
+    electrical: 报警
+  air neuf:
+    general: 新风
+    hvac: 新风
+  alimentation électrique:
+    general: 电源供电
+  alimentation générale:
+    general: 总电源
+  alimentation de secours:
+    general: 应急电源
+    electrical: 应急电源
+  alimentation en eau:
+    general: 供水
+    plumbing: 供水
+  alimentation eau froide:
+    general: 冷水供水
+  alimentation eau chaude:
+    general: 热水供水
+  alimentation d'eau potable:
+    general: 生活给水
+  ascenseur:
+    general: 电梯
+    architecture: 电梯
+  axe:
+    general: 轴线
+  bouche d'air:
+    general: 风口
+  bouche de reprise:
+    general: 回风口
+  bouche de soufflage:
+    general: 出风口
+  chemin de câbles:
+    general: 桥架
+  climatisation:
+    general: 空调
+  conduite d'air:
+    general: 风管
+  conduite d'eau:
+    general: 水管
+  conduite de condensat:
+    general: 冷凝水管
+  centrale de traitement d'air:
+    general: 新风机
+  contrôle:
+    general: 控制
+  couloir:
+    general: 走廊
+  courant faible:
+    general: 弱电
+  courant fort:
+    general: 强电
+  cuisine:
+    general: 厨房
+  eau chaude et froide:
+    general: 冷热水
+  entrée:
+    general: 入口
+  escalier:
+    general: 楼梯
+  fondation:
+    general: 基础
+  fourreau:
+    general: 套管
+    electrical: 套管
+    hvac: 套管
+    plumbing: 套管
+  garde-corps:
+    general: 栏杆
+  goulotte de câbles:
+    general: 线槽
+  extraction d'air:
+    general: 排风
+    hvac: 排风
+  faux plafond:
+    general: 吊顶
+    electrical: 吊顶
+  gaine technique:
+    general: 管道井
+  grille d'air:
+    general: 风口
+  interrupteur:
+    general: 开关
+  local des machines:
+    general: 机房
+  local technique:
+    general: 设备间
+  mur:
+    general: 墙面
+  mise à la terre:
+    general: 接地
+  plomberie:
+    general: 给排水
+  pompe à eau:
+    general: 水泵
+  poteau:
+    general: 柱
+  plafond:
+    general: 天花
+    electrical: 天花
+    hvac: 天花
+  plan:
+    general: 平面图
+  plan de plafond:
+    general: 天花图
+  portes et fenêtres:
+    general: 门窗
+  prise:
+    general: 插座
+  poutre:
+    general: 梁
+  poutre en acier:
+    general: 钢梁
+  protection incendie:
+    general: 消防
+  réservation:
+    general: 预留洞
+    electrical: 预留洞
+    plumbing: 预留洞
+  réservation dans mur:
+    general: 墙体预留洞
+  réservation de dalle:
+    general: 楼板预留洞
+  ouverture:
+    general: 开洞
+  ouverture de mur:
+    general: 墙体开洞
+  ouverture dans le mur:
+    general: 墙体开洞
+  ouverture de dalle:
+    general: 楼板开洞
+  percement:
+    general: 开洞
+    electrical: 开洞
+  percement de mur:
+    general: 墙体开洞
+  trémie:
+    general: 楼板预留洞
+  trémie d'escalier:
+    general: 楼梯洞口
+  baie de porte:
+    general: 门洞
+  baie de fenêtre:
+    general: 窗洞
+  porte:
+    general: 门
+  fenêtre:
+    general: 窗
+  porte-fenêtre:
+    general: 落地窗
+  linteau:
+    general: 过梁
+  salle de bain:
+    general: 卫生间
+  schéma de commande:
+    general: 控制系统图
+  schéma de câblage:
+    general: 接线图
+  schéma de distribution:
+    general: 配电系统图
+  schéma de principe:
+    general: 系统图
+  schéma de ventilation:
+    general: 通风系统图
+  schéma fonctionnel:
+    general: 功能图
+  schéma hydraulique:
+    general: 水力系统图
+  schéma incendie:
+    general: 消防系统图
+  schéma réseau:
+    general: 网络结构图
+  schéma électrique:
+    general: 电气系统图
+  shema:
+    general: 示意图
+  sol:
+    general: 地面
+  sortie:
+    general: 出口
+    architecture: 出口
+  sécurité incendie:
+    general: 消防
+  semelle isolée:
+    general: 独立基础
+  tableau de distribution:
+    general: 配电箱
+  tour de refroidissement:
+    general: 冷却塔
+  tôle d'acier:
+    general: 钢板
+  unité de climatisation:
+    general: 空调机
+  unité de ventilation:
+    general: 新风机
+  ventilateur:
+    general: 风机
+  ventilation:
+    general: 新风
+  ventilo-convecteur:
+    general: 风机盘管
+  voile de contreventement:
+    general: 剪力墙
+  vidéosurveillance:
+    general: 监控
+  éclairage:
+    general: 照明
+  écran:
+    general: 屏幕
+  écran de contrôle:
+    general: 控制屏
+  évacuation d'eau:
+    general: 排水管
+  évacuation fumée:
+    general: 排烟
+  désenfumage:
+    general: 排烟
+  dalle:
+    general: 楼板
+  cote:
+    general: 标高
+  isolation thermique:
+    general: 保温
+    hvac: 保温
+  YAOUNDE:
+    general: 雅温得
+  Yaoundé:
+    general: 雅温得
+  Douala:
+    general: 杜阿拉
+  DOUALA:
+    general: 杜阿拉
+  Bafoussam:
+    general: 巴富萨姆
+  BAFOUSSAM:
+    general: 巴富萨姆
+  Garoua:
+    general: 加鲁阿
+  GAROUA:
+    general: 加鲁阿
+  Maroua:
+    general: 马鲁阿
+  MAROUA:
+    general: 马鲁阿
+  Ngaoundéré:
+    general: 恩冈代雷
+  NGAOUNDÉRÉ:
+    general: 恩冈代雷
+  Bertoua:
+    general: 贝托阿
+  BERTOUA:
+    general: 贝托阿
+  Ebolowa:
+    general: 埃博洛瓦
+  EBOLOWA:
+    general: 埃博洛瓦
+  Abidjan:
+    general: 阿比让
+  ABIDJAN:
+    general: 阿比让
+  Yamoussoukro:
+    general: 亚穆苏克罗
+  YAMOUSSOUKRO:
+    general: 亚穆苏克罗
+  Bouaké:
+    general: 布瓦凯
+  BOUAKÉ:
+    general: 布瓦凯
+  Daloa:
+    general: 达洛亚
+  DALOA:
+    general: 达洛亚
+  Korhogo:
+    general: 科霍戈
+  KORHOGO:
+    general: 科霍戈
+  San Pedro:
+    general: 圣佩德罗
+  SAN PEDRO:
+    general: 圣佩德罗
+  Man:
+    general: 曼城
+  MAN:
+    general: 曼城
+  Gagnoa:
+    general: 加尼奥阿
+  GAGNOA:
+    general: 加尼奥阿
+  Divo:
+    general: 迪沃
+  DIVO:
+    general: 迪沃
+  Algeria:
+    general: 阿尔及利亚
+  Algiers:
+    general: 阿尔及尔
+  ALGIERS:
+    general: 阿尔及尔
+  Oran:
+    general: 奥兰
+  ORAN:
+    general: 奥兰
+  Constantine:
+    general: 君士坦丁
+  CONSTANTINE:
+    general: 君士坦丁
+  Annaba:
+    general: 安纳巴
+  ANNABA:
+    general: 安纳巴
+  Angola:
+    general: 安哥拉
+  Luanda:
+    general: 罗安达
+  LUANDA:
+    general: 罗安达
+  Huambo:
+    general: 万博
+  HUAMBO:
+    general: 万博
+  Lobito:
+    general: 洛比托
+  LOBITO:
+    general: 洛比托
+  Benguela:
+    general: 本格拉
+  BENGUELA:
+    general: 本格拉
+  Benin:
+    general: 贝宁
+  Porto-Novo:
+    general: 波多诺伏
+  PORTO-NOVO:
+    general: 波多诺伏
+  Cotonou:
+    general: 科托努
+  COTONOU:
+    general: 科托努
+  Parakou:
+    general: 帕拉库
+  PARAKOU:
+    general: 帕拉库
+  Djougou:
+    general: 朱古
+  DJOUGOU:
+    general: 朱古
+  Botswana:
+    general: 博茨瓦纳
+  Gaborone:
+    general: 哈博罗内
+  GABORONE:
+    general: 哈博罗内
+  Francistown:
+    general: 弗朗西斯敦
+  FRANCISTOWN:
+    general: 弗朗西斯敦
+  Molepolole:
+    general: 莫莱波洛莱
+  MOLEPOLOLE:
+    general: 莫莱波洛莱
+  Maun:
+    general: 马翁
+  MAUN:
+    general: 马翁
+  Burkina Faso:
+    general: 布基纳法索
+  Ouagadougou:
+    general: 瓦加杜古
+  OUAGADOUGOU:
+    general: 瓦加杜古
+  Bobo-Dioulasso:
+    general: 博博-迪乌拉索
+  BOBO-DIOULASSO:
+    general: 博博-迪乌拉索
+  Koudougou:
+    general: 库杜古
+  KOUDOUGOU:
+    general: 库杜古
+  Banfora:
+    general: 班福拉
+  BANFORA:
+    general: 班福拉
+  Burundi:
+    general: 布隆迪
+  Gitega:
+    general: 基特加
+  GITEGA:
+    general: 基特加
+  Bujumbura:
+    general: 布琼布拉
+  BUJUMBURA:
+    general: 布琼布拉
+  Ngozi:
+    general: 昂戈齐
+  NGOZI:
+    general: 昂戈齐
+  Muyinga:
+    general: 穆因加
+  MUYINGA:
+    general: 穆因加
+  Cameroon:
+    general: 喀麦隆
+  YAOUNDÉ:
+    general: 雅温得
+  Bamenda:
+    general: 巴门达
+  BAMENDA:
+    general: 巴门达
+  Cape Verde:
+    general: 佛得角
+  Praia:
+    general: 普拉亚
+  PRAIA:
+    general: 普拉亚
+  Mindelo:
+    general: 明德卢
+  MINDELO:
+    general: 明德卢
+  Santa Maria:
+    general: 圣玛丽亚
+  SANTA MARIA:
+    general: 圣玛丽亚
+  Assomada:
+    general: 阿索马达
+  ASSOMADA:
+    general: 阿索马达
+  Central African Republic:
+    general: 中非共和国
+  Bangui:
+    general: 班吉
+  BANGUI:
+    general: 班吉
+  Bimbo:
+    general: 宾博
+  BIMBO:
+    general: 宾博
+  Berbérati:
+    general: 贝尔贝拉蒂
+  BERBÉRATI:
+    general: 贝尔贝拉蒂
+  Carnot:
+    general: 卡尔诺
+  CARNOT:
+    general: 卡尔诺
+  Chad:
+    general: 乍得
+  N'Djamena:
+    general: 恩贾梅纳
+  N'DJAMENA:
+    general: 恩贾梅纳
+  Moundou:
+    general: 穆恩杜
+  MOUNDOU:
+    general: 穆恩杜
+  Sarh:
+    general: 萨尔
+  SARH:
+    general: 萨尔
+  Abéché:
+    general: 阿贝歇
+  ABÉCHÉ:
+    general: 阿贝歇
+  Comoros:
+    general: 科摩罗
+  Moroni:
+    general: 莫罗尼
+  MORONI:
+    general: 莫罗尼
+  Mutsamudu:
+    general: 穆察穆杜
+  MUTSAMUDU:
+    general: 穆察穆杜
+  Fomboni:
+    general: 丰博尼
+  FOMBONI:
+    general: 丰博尼
+  Domoni:
+    general: 多莫尼
+  DOMONI:
+    general: 多莫尼
+  Republic of the Congo:
+    general: 刚果（布）
+  Brazzaville:
+    general: 布拉柴维尔
+  BRAZZAVILLE:
+    general: 布拉柴维尔
+  Pointe-Noire:
+    general: 黑角
+  POINTE-NOIRE:
+    general: 黑角
+  Dolisie:
+    general: 多利济
+  DOLISIE:
+    general: 多利济
+  Nkayi:
+    general: 恩卡伊
+  NKAYI:
+    general: 恩卡伊
+  Democratic Republic of the Congo:
+    general: 刚果（金）
+  Kinshasa:
+    general: 金沙萨
+  KINSHASA:
+    general: 金沙萨
+  Lubumbashi:
+    general: 卢本巴希
+  LUBUMBASHI:
+    general: 卢本巴希
+  Mbuji-Mayi:
+    general: 姆布吉马伊
+  MBUJI-MAYI:
+    general: 姆布吉马伊
+  Kisangani:
+    general: 基桑加尼
+  KISANGANI:
+    general: 基桑加尼
+  Côte d'Ivoire:
+    general: 科特迪瓦
+  Djibouti:
+    general: 吉布提
+  Djibouti City:
+    general: 吉布提市
+  DJIBOUTI CITY:
+    general: 吉布提市
+  Ali Sabieh:
+    general: 阿里萨比赫
+  ALI SABIEH:
+    general: 阿里萨比赫
+  Tadjourah:
+    general: 塔朱拉
+  TADJOURAH:
+    general: 塔朱拉
+  Dikhil:
+    general: 迪基尔
+  DIKHIL:
+    general: 迪基尔
+  Egypt:
+    general: 埃及
+  Cairo:
+    general: 开罗
+  CAIRO:
+    general: 开罗
+  Alexandria:
+    general: 亚历山大
+  ALEXANDRIA:
+    general: 亚历山大
+  Giza:
+    general: 吉萨
+  GIZA:
+    general: 吉萨
+  Shubra El Kheima:
+    general: 舒布拉·哈伊马
+  SHUBRA EL KHEIMA:
+    general: 舒布拉·哈伊马
+  Equatorial Guinea:
+    general: 赤道几内亚
+  Malabo:
+    general: 马拉博
+  MALABO:
+    general: 马拉博
+  Bata:
+    general: 巴塔
+  BATA:
+    general: 巴塔
+  Ebebiyin:
+    general: 埃贝比因
+  EBEBIYIN:
+    general: 埃贝比因
+  Evinayong:
+    general: 埃维纳永
+  EVINAYONG:
+    general: 埃维纳永
+  Eritrea:
+    general: 厄立特里亚
+  Asmara:
+    general: 阿斯马拉
+  ASMARA:
+    general: 阿斯马拉
+  Keren:
+    general: 克伦
+  KEREN:
+    general: 克伦
+  Massawa:
+    general: 马萨瓦
+  MASSAWA:
+    general: 马萨瓦
+  Assab:
+    general: 阿萨布
+  ASSAB:
+    general: 阿萨布
+  Ethiopia:
+    general: 埃塞俄比亚
+  Addis Ababa:
+    general: 亚的斯亚贝巴
+  ADDIS ABABA:
+    general: 亚的斯亚贝巴
+  Dire Dawa:
+    general: 德雷达瓦
+  DIRE DAWA:
+    general: 德雷达瓦
+  Mekelle:
+    general: 梅克莱
+  MEKELLE:
+    general: 梅克莱
+  Gondar:
+    general: 冈达尔
+  GONDAR:
+    general: 冈达尔
+  Gabon:
+    general: 加蓬
+  Libreville:
+    general: 利伯维尔
+  LIBREVILLE:
+    general: 利伯维尔
+  Port-Gentil:
+    general: 让蒂尔港
+  PORT-GENTIL:
+    general: 让蒂尔港
+  Franceville:
+    general: 弗朗斯维尔
+  FRANCEVILLE:
+    general: 弗朗斯维尔
+  Oyem:
+    general: 奥耶姆
+  OYEM:
+    general: 奥耶姆
+  Gambia:
+    general: 冈比亚
+  Banjul:
+    general: 班珠尔
+  BANJUL:
+    general: 班珠尔
+  Serekunda:
+    general: 塞雷昆达
+  SEREKUNDA:
+    general: 塞雷昆达
+  Brikama:
+    general: 布里卡马
+  BRIKAMA:
+    general: 布里卡马
+  Bakau:
+    general: 巴考
+  BAKAU:
+    general: 巴考
+  Ghana:
+    general: 加纳
+  Accra:
+    general: 阿克拉
+  Mali:
+    general: 马里
+  Bamako:
+    general: 巴马科
+  BAMAKO:
+    general: 巴马科
+  Sikasso:
+    general: 锡卡索
+  SIKASSO:
+    general: 锡卡索
+  Mopti:
+    general: 莫普提
+  MOPTI:
+    general: 莫普提
+  Kayes:
+    general: 卡伊
+  KAYES:
+    general: 卡伊
+  Niger:
+    general: 尼日尔
+  Niamey:
+    general: 尼亚美
+  NIAMEY:
+    general: 尼亚美
+  Zinder:
+    general: 津德尔
+  ZINDER:
+    general: 津德尔
+  Maradi:
+    general: 马拉迪
+  MARADI:
+    general: 马拉迪
+  Agadez:
+    general: 阿加德兹
+  AGADEZ:
+    general: 阿加德兹
+  Guinea:
+    general: 几内亚
+  Conakry:
+    general: 科纳克里
+  CONAKRY:
+    general: 科纳克里
+  Kankan:
+    general: 康康
+  KANKAN:
+    general: 康康
+  Labé:
+    general: 拉贝
+  LABÉ:
+    general: 拉贝
+  Nzérékoré:
+    general: 恩泽雷科雷
+  NZÉRÉKORÉ:
+    general: 恩泽雷科雷
+  Madagascar:
+    general: 马达加斯加
+  Antananarivo:
+    general: 塔那那利佛
+  ANTANANARIVO:
+    general: 塔那那利佛
+  Toamasina:
+    general: 图阿马西纳
+  TOAMASINA:
+    general: 图阿马西纳
+  Antsirabe:
+    general: 安齐拉贝
+  ANTSIRABE:
+    general: 安齐拉贝
+  Mahajanga:
+    general: 马哈赞加
+  MAHAJANGA:
+    general: 马哈赞加
+  Mauritania:
+    general: 毛里塔尼亚
+  Nouakchott:
+    general: 努瓦克肖特
+  NOUAKCHOTT:
+    general: 努瓦克肖特
+  Nouadhibou:
+    general: 努瓦迪布
+  NOUADHIBOU:
+    general: 努瓦迪布
+  Rosso:
+    general: 罗索
+  ROSSO:
+    general: 罗索
+  Kaédi:
+    general: 凯迪
+  KAÉDI:
+    general: 凯迪
+  Rwanda:
+    general: 卢旺达
+  Kigali:
+    general: 基加利
+  KIGALI:
+    general: 基加利
+  Butare:
+    general: 布塔雷
+  BUTARE:
+    general: 布塔雷
+  Gisenyi:
+    general: 基塞尼
+  GISENYI:
+    general: 基塞尼
+  Ruhengeri:
+    general: 鲁亨盖里
+  RUHENGERI:
+    general: 鲁亨盖里
+  Seychelles:
+    general: 塞舌尔
+  Victoria:
+    general: 维多利亚
+  VICTORIA:
+    general: 维多利亚
+  Anse Boileau:
+    general: 安斯博伊洛
+  ANSE BOILEAU:
+    general: 安斯博伊洛
+  Bel Ombre:
+    general: 贝尔翁布尔
+  BEL OMBRE:
+    general: 贝尔翁布尔
+  Beau Vallon:
+    general: 博瓦隆
+  BEAU VALLON:
+    general: 博瓦隆
+  Togo:
+    general: 多哥
+  Lomé:
+    general: 洛美
+  LOMÉ:
+    general: 洛美
+  Sokodé:
+    general: 索科德
+  SOKODÉ:
+    general: 索科德
+  Kara:
+    general: 卡拉
+  KARA:
+    general: 卡拉
+  Kpalimé:
+    general: 卡帕利梅
+  KPALIMÉ:
+    general: 卡帕利梅
+  Senegal:
+    general: 塞内加尔
+  Dakar:
+    general: 达喀尔
+  DAKAR:
+    general: 达喀尔
+  Thiès:
+    general: 蒂耶斯
+  THIÈS:
+    general: 蒂耶斯
+  Saint-Louis:
+    general: 圣路易
+  SAINT-LOUIS:
+    general: 圣路易
+  Kaolack:
+    general: 考拉克
+  KAOLACK:
+    general: 考拉克
+  COMMUNE DE YAOUNDE:
+    general: 雅温得市
+  COMMUNE DE YAOUNDÉ:
+    general: 雅温得市
+  COND.:
+    general: 冷凝水管
+    hvac: 冷凝水管
+  TR:
+    general: 冷却塔
+    hvac: 冷却塔
+  plénum/faux plafond:
+    general: 吊顶
+    hvac: 吊顶
+  FP:
+    general: 吊顶
+    architecture: 吊顶
+    decoration: 吊顶
+  BR:
+    general: 回风口
+    hvac: 回风口
+  niveau fini:
+    general: 地面
+    electrical: 地面
+  sol fini:
+    general: 地面
+    plumbing: 地面
+  SOL:
+    general: 地面
+    architecture: 地面
+    decoration: 地面
+  pose murale:
+    general: 墙面
+    electrical: 墙面
+  MUR:
+    general: 墙面
+    architecture: 墙面
+    decoration: 墙面
+  PLAF.:
+    general: 天花
+    architecture: 天花
+    decoration: 天花
+  PLAN FP:
+    general: 天花图
+    architecture: 天花图
+    decoration: 天花图
+  INT.:
+    general: 开关
+    electrical: 开关
+  CFA:
+    general: 弱电
+    electrical: 弱电
+  CFO:
+    general: 强电
+    electrical: 强电
+  alarme défaut:
+    general: 报警
+    hvac: 报警
+  extraction de fumées:
+    general: 排烟
+    hvac: 排烟
+  commande:
+    general: 控制
+    electrical: 控制
+  régulation:
+    general: 控制
+    hvac: 控制
+  PC:
+    general: 插座
+    electrical: 插座
+  aller:
+    general: 供水
+    hvac: 供水
+  EFS:
+    general: 冷水供水
+    plumbing: 冷水供水
+  EC A:
+    general: 热水供水
+    hvac: 热水供水
+  ECS:
+    general: 热水供水
+    plumbing: 热水供水
+    electrical: 火灾报警控制器
+  CAISSON AN:
+    general: 新风机
+    hvac: 新风机
+  local électrique:
+    general: 机房
+    electrical: 机房
+  local CVC:
+    general: 机房
+    hvac: 机房
+  local pompes:
+    general: 机房
+    plumbing: 机房
+  local machinerie:
+    general: 机房
+    architecture: 机房
+  chemin de câbles CFO:
+    general: 桥架
+    electrical: 桥架
+  ESC.:
+    general: 楼梯
+    architecture: 楼梯
+  alimentation ascenseur:
+    general: 电梯
+    electrical: 电梯
+  local plomberie:
+    general: 设备间
+    plumbing: 设备间
+  couloir/circulation:
+    general: 走廊
+    architecture: 走廊
+  bouche/grille:
+    general: 风口
+    hvac: 风口
+  grille:
+    general: 风口
+    architecture: 风口
+  VC:
+    general: 风机盘管
+    hvac: 风机盘管
+  GAINE:
+    general: 风管
+    hvac: 风管
+  gaine de désenfumage:
+    general: 风管
+    plumbing: 风管
+  DALLE:
+    general: 楼板
+    architecture: 楼板
+  VOILE BA:
+    general: 剪力墙
+    architecture: 剪力墙
+  POUT.:
+    general: 梁
+    architecture: 梁
+  POUT. MÉT.:
+    general: 钢梁
+    architecture: 钢梁
+  POT.:
+    general: 柱
+    architecture: 柱
+  massif béton:
+    general: 基础
+    electrical: 基础
+  FOND.:
+    general: 基础
+    architecture: 基础
+  SEM. ISOL.:
+    general: 独立基础
+    architecture: 独立基础
+  hauteur/niveau:
+    general: 标高
+    electrical: 标高
+  niveau/cote:
+    general: 标高
+    hvac: 标高
+  fil d'eau/cote:
+    general: 标高
+    plumbing: 标高
+  NIV.:
+    general: 标高
+    architecture: 标高
+  AXE:
+    general: 轴线
+    architecture: 轴线
+  GC:
+    general: 栏杆
+    architecture: 栏杆
+  GOUL.:
+    general: 线槽
+    electrical: 线槽
+  profilé/goulotte:
+    general: 线槽
+    architecture: 线槽
+  MALT:
+    general: 接地
+    electrical: 接地
+  FOURREAU:
+    general: 套管
+    architecture: 套管
+  réservation pour gaine:
+    general: 预留洞
+    hvac: 预留洞
+  RÉSERV.:
+    general: 预留洞
+    architecture: 预留洞
+  RÉSERV. MUR:
+    general: 墙体预留洞
+    architecture: 墙体预留洞
+  RÉSERV. DALLE:
+    general: 楼板预留洞
+    architecture: 楼板预留洞
+  OUV.:
+    general: 洞口
+    architecture: 洞口
+  percement pour gaine:
+    general: 开洞
+    hvac: 开洞
+  carottage/percement:
+    general: 开洞
+    plumbing: 开洞
+  PERCEMENT:
+    general: 开洞
+    architecture: 开洞
+  PERC. MUR:
+    general: 墙体开洞
+    architecture: 墙体开洞
+  PERC. DALLE:
+    general: 楼板开洞
+    architecture: 楼板开洞
+  BAIE PORTE:
+    general: 门洞
+    architecture: 门洞
+  BAIE FEN.:
+    general: 窗洞
+    architecture: 窗洞
+  porte contrôlée:
+    general: 门
+    electrical: 门
+  PORTE:
+    general: 门
+    architecture: 门
+  ouvrant/grille selon contexte:
+    general: 窗
+    hvac: 窗
+  FEN.:
+    general: 窗
+    architecture: 窗
+  PF:
+    general: 落地窗
+    architecture: 落地窗
+  LINTEAU:
+    general: 过梁
+    architecture: 过梁
+  calorifuge:
+    general: 保温
+    plumbing: 保温
+  ISOL.:
+    general: 保温
+    architecture: 保温
+  PLB:
+    general: 给排水
+    plumbing: 给排水
+  LOC. CCTV:
+    general: 监控室
+    electrical: 监控室
+  PC SÉCU.:
+    general: 安防中心
+    electrical: 安防中心
+  S. SERV.:
+    general: 服务器机房
+    electrical: 服务器机房
+  LOC. INFO.:
+    general: 网络机房
+    electrical: 网络机房
+  LOC. CFA:
+    general: 弱电机房
+    electrical: 弱电机房
+  LOC. TGBT:
+    general: 低压配电室
+    electrical: 低压配电室
+  LOC. MT:
+    general: 中压配电室
+    electrical: 中压配电室
+  LOC. HT:
+    general: 高压配电室
+    electrical: 高压配电室
+  LOC. TRANSFO:
+    general: 变压器室
+    electrical: 变压器室
+  LOC. GE:
+    general: 发电机房
+    electrical: 发电机房
+  LOC. UPS:
+    general: UPS机房
+    electrical: UPS机房
+  LOC. BAT.:
+    general: 电池室
+    electrical: 电池室
+  LOC. POMPES INC.:
+    general: 消防泵房
+    plumbing: 消防泵房
+  CAGE ESC.:
+    general: 楼梯间
+    architecture: 楼梯间
+  sas d'ascenseur:
+    general: 电梯前室
+    architecture: 电梯前室
+  RAMPE:
+    general: 坡道
+    architecture: 坡道
+  TOIT.:
+    general: 屋面
+    architecture: 屋面
+  TERR.:
+    general: 露台
+    architecture: 露台
+  BALC.:
+    general: 阳台
+    architecture: 阳台
+  COUR:
+    general: 庭院
+    architecture: 庭院
+  BAC PLANT.:
+    general: 花池
+    architecture: 花池
+  CTA:
+    general: 空气处理机组
+    hvac: 空气处理机组
+  VE:
+    general: 排风机
+    hvac: 排风机
+  VS:
+    general: 送风机
+    hvac: 送风机
+  VDF:
+    general: 排烟风机
+    hvac: 排烟风机
+  V SURP.:
+    general: 加压风机
+    hvac: 加压风机
+  V AXIAL:
+    general: 轴流风机
+    hvac: 轴流风机
+  V CENTR.:
+    general: 离心风机
+    hvac: 离心风机
+  soufflage:
+    general: 送风
+    hvac: 送风
+  reprise d'air:
+    general: 回风
+    hvac: 回风
+  retour if hydronic:
+    general: 回风
+    plumbing: 回风
+  air de compensation:
+    general: 补风
+    hvac: 补风
+  BS:
+    general: 送风口
+    hvac: 送风口
+  BE:
+    general: 排风口
+    hvac: 排风口
+  PAE:
+    general: 新风口
+    hvac: 新风口
+  GRILLE:
+    general: 百叶风口
+    hvac: 百叶风口
+  DIFF.:
+    general: 散流器
+    hvac: 散流器
+  DIFF. LIN.:
+    general: 线性风口
+    hvac: 线性风口
+  REG.:
+    general: 风阀
+    hvac: 风阀
+  clapet/volet:
+    general: 风阀
+    plumbing: 风阀
+  REG. RÉGL.:
+    general: 调节风阀
+    hvac: 调节风阀
+  CCF:
+    general: 防火阀
+    hvac: 防火阀
+    plumbing: 防火阀
+  VD:
+    general: 排烟阀
+    hvac: 排烟阀
+    plumbing: 排烟阀
+  CLAPET AR:
+    general: 止回风阀
+    hvac: 止回风阀
+  SIL.:
+    general: 消声器
+    hvac: 消声器
+  MANCH. SOUPLE:
+    general: 软接
+    hvac: 软接
+  GAINE S:
+    general: 送风管
+    hvac: 送风管
+  GAINE R:
+    general: 回风管
+    hvac: 回风管
+  GAINE EXT.:
+    general: 排风管
+    hvac: 排风管
+  GAINE DÉS.:
+    general: 排烟风管
+    hvac: 排烟风管
+    plumbing: 排烟风管
+  GAINE AN:
+    general: 新风管
+    hvac: 新风管
+  FRIGO:
+    general: 冷媒管
+    hvac: 冷媒管
+  LL:
+    general: 液管
+    hvac: 液管
+  LG:
+    general: 气管
+    hvac: 气管
+  MONITEUR INT.:
+    general: 室内机
+    electrical: 室内机
+  UI:
+    general: 室内机
+    hvac: 室内机
+  UE:
+    general: 室外机
+    hvac: 室外机
+  GF:
+    general: 冷水机组
+    hvac: 冷水机组
+  SPLIT:
+    general: 分体空调
+    hvac: 分体空调
+  VRV:
+    general: 多联机
+    hvac: 多联机
+  Pf:
+    general: 制冷量
+    hvac: 制冷量
+  Pc:
+    general: 制热量
+    hvac: 制热量
+  TH:
+    general: 温控器
+    hvac: 温控器
+  ST:
+    general: 温度传感器
+    hvac: 温度传感器
+  SH:
+    general: 湿度传感器
+    hvac: 湿度传感器
+  FILTRE:
+    general: 过滤器
+    hvac: 过滤器
+  PRÉFILTRE:
+    general: 初效过滤器
+    hvac: 初效过滤器
+  Q AIR:
+    general: 风量
+    hvac: 风量
+  PS:
+    general: 静压
+    hvac: 静压
+  PSE:
+    general: 机外静压
+    hvac: 机外静压
+  VR/h:
+    general: 换气次数
+    hvac: 换气次数
+  GAINE ISOL.:
+    general: 保温风管
+    hvac: 保温风管
+  GAINE FLEX.:
+    general: 柔性风管
+    hvac: 柔性风管
+  EC R:
+    general: 热水回水
+    hvac: 热水回水
+  BECS:
+    general: 热水回水
+    plumbing: 热水回水
+  EVAC.:
+    general: 排水
+    plumbing: 排水
+  EU:
+    general: 污水
+    plumbing: 污水
+  EV:
+    general: 废水
+    plumbing: 废水
+  EP:
+    general: 雨水
+    plumbing: 雨水
+  VENT.:
+    general: 通气管
+    plumbing: 通气管
+  TP:
+    general: 溢流管
+    plumbing: 溢流管
+  VID.:
+    general: 泄水管
+    plumbing: 泄水管
+  SDS:
+    general: 地漏
+    plumbing: 地漏
+  CO:
+    general: 清扫口
+    plumbing: 清扫口
+  trappe de visite:
+    general: 检查口
+    hvac: 检查口
+  TV:
+    general: 检查口
+    plumbing: 检查口
+  trappe:
+    general: 检查口
+    architecture: 检查口
+  SIPHON:
+    general: 存水弯
+    plumbing: 存水弯
+  BAC GRAISSES:
+    general: 隔油池
+    plumbing: 隔油池
+  FS:
+    general: 化粪池
+    plumbing: 化粪池
+  PUISARD:
+    general: 集水坑
+    plumbing: 集水坑
+  PR EU:
+    general: 污水提升泵
+    plumbing: 污水提升泵
+  PPE SUBM.:
+    general: 潜水泵
+    plumbing: 潜水泵
+  PPE SURP.:
+    general: 增压泵
+    plumbing: 增压泵
+  GS:
+    general: 增压泵组
+    plumbing: 增压泵组
+  CPT EAU:
+    general: 水表
+    plumbing: 水表
+  ballon/réservoir:
+    general: 水箱
+    hvac: 水箱
+  RÉS. EAU:
+    general: 水箱
+    plumbing: 水箱
+  AEP:
+    general: 饮用水
+    plumbing: 饮用水
+  ENP:
+    general: 非饮用水
+    plumbing: 非饮用水
+  ERU:
+    general: 中水
+    plumbing: 中水
+  EA:
+    general: 软化水
+    plumbing: 软化水
+  MANO.:
+    general: 压力表
+    plumbing: 压力表
+  THERMO.:
+    general: 温度计
+    plumbing: 温度计
+  DÉBITM.:
+    general: 流量计
+    plumbing: 流量计
+  ROB.:
+    general: 水龙头
+    plumbing: 水龙头
+  LAV.:
+    general: 洗手盆
+    plumbing: 洗手盆
+  ÉVIER:
+    general: 洗涤盆
+    plumbing: 洗涤盆
+  WC:
+    general: 坐便器
+    plumbing: 坐便器
+  UR:
+    general: 小便器
+    plumbing: 小便器
+  DOUCHE:
+    general: 淋浴器
+    plumbing: 淋浴器
+  CHASSE:
+    general: 冲洗阀
+    plumbing: 冲洗阀
+  FLEX.:
+    general: 软管
+    plumbing: 软管
+  CANIVEAU:
+    general: 排水沟
+    plumbing: 排水沟
+  CANIV. INT.:
+    general: 截水沟
+    plumbing: 截水沟
+  NAISS. EP:
+    general: 雨水斗
+    plumbing: 雨水斗
+  AVALOIR EP:
+    general: 屋面雨水口
+    plumbing: 屋面雨水口
+  RV:
+    general: 检查井
+    plumbing: 检查井
+  RV EU:
+    general: 污水井
+    plumbing: 污水井
+  RV EP:
+    general: 雨水井
+    plumbing: 雨水井
+  PR:
+    general: 排水泵
+    plumbing: 排水泵
+  vanne:
+    general: 阀门
+    hvac: 阀门
+    plumbing: 阀门
+  V OP.:
+    general: 闸阀
+    plumbing: 闸阀
+  V SOUP.:
+    general: 截止阀
+    plumbing: 截止阀
+  V BS:
+    general: 球阀
+    plumbing: 球阀
+  V PAP.:
+    general: 蝶阀
+    plumbing: 蝶阀
+  CAR:
+    general: 止回阀
+    plumbing: 止回阀
+  RP:
+    general: 减压阀
+    plumbing: 减压阀
+  SOUP. SÉC.:
+    general: 安全阀
+    plumbing: 安全阀
+  V MOT.:
+    general: 电动阀
+    plumbing: 电动阀
+  V ÉQ.:
+    general: 平衡阀
+    hvac: 平衡阀
+    plumbing: 平衡阀
+  V FLOT.:
+    general: 浮球阀
+    plumbing: 浮球阀
+  PURG.:
+    general: 排气阀
+    plumbing: 排气阀
+  PURG. AUTO:
+    general: 自动排气阀
+    plumbing: 自动排气阀
+  SOUP. DÉCH.:
+    general: 泄压阀
+    plumbing: 泄压阀
+  FILTRE Y:
+    general: Y型过滤器
+    plumbing: Y型过滤器
+  EAU INC.:
+    general: 消防给水
+    plumbing: 消防给水
+  RIA:
+    general: 消火栓
+    plumbing: 消火栓
+  COFFRET RIA:
+    general: 消防栓箱
+    plumbing: 消防栓箱
+  SPRINKLER:
+    general: 喷淋系统
+    plumbing: 喷淋系统
+  SPK:
+    general: 喷头
+    plumbing: 喷头
+  RÉSERVE INC.:
+    general: 消防水池
+    plumbing: 消防水池
+  RÉS. INC.:
+    general: 消防水箱
+    plumbing: 消防水箱
+  PPE INC.:
+    general: 消防泵
+    plumbing: 消防泵
+  PPE JOCKEY:
+    general: 稳压泵
+    plumbing: 稳压泵
+  POSTE SPRK:
+    general: 湿式报警阀
+    plumbing: 湿式报警阀
+  IF:
+    general: 水流指示器
+    plumbing: 水流指示器
+  ESSAI FIN:
+    general: 末端试水装置
+    plumbing: 末端试水装置
+  SSI:
+    general: 火灾报警系统
+    electrical: 火灾报警系统
+  DF:
+    general: 感烟探测器
+    electrical: 感烟探测器
+  DT:
+    general: 感温探测器
+    electrical: 感温探测器
+  DM:
+    general: 手动报警按钮
+    electrical: 手动报警按钮
+  DS+DL:
+    general: 声光报警器
+    electrical: 声光报警器
+  SONO SÉC.:
+    general: 消防广播
+    electrical: 消防广播
+  BAES:
+    general: 应急照明
+    electrical: 自带电源应急照明灯具
+  SIGN. ÉVAC.:
+    general: 疏散指示
+    electrical: 疏散指示
+  PCF:
+    general: 防火门
+    architecture: 防火门
+  RAC. POMPIER:
+    general: 消防接口
+    plumbing: 消防接口
+  TÉL. INC.:
+    general: 消防电话
+    electrical: 消防电话
+  M.S.:
+    general: 消防联动
+    electrical: 消防联动
+  HT:
+    general: 高压
+    electrical: 高压
+  MT:
+    general: 中压
+    electrical: 中压
+  BT:
+    general: 低压
+    electrical: 低压
+  TGBT:
+    general: 低压总配电柜
+    electrical: 低压总配电柜
+  TD:
+    general: 分配电箱
+    electrical: 分配电箱
+  TD ÉCL.:
+    general: 照明配电箱
+    electrical: 照明配电箱
+  TD FORCE:
+    general: 动力配电箱
+    electrical: 动力配电箱
+  ARM. CMD:
+    general: 控制柜
+    electrical: 控制柜
+  armoire de régulation:
+    general: 控制柜
+    hvac: 控制柜
+  CPT:
+    general: 电表
+    electrical: 电表
+  DJ:
+    general: 断路器
+    electrical: 断路器
+  MCB:
+    general: 微型断路器
+    electrical: 微型断路器
+  MCCB:
+    general: 塑壳断路器
+    electrical: 塑壳断路器
+  ACB:
+    general: 空气断路器
+    electrical: 空气断路器
+  IS:
+    general: 隔离开关
+    electrical: 隔离开关
+  FUS.:
+    general: 熔断器
+    electrical: 熔断器
+  KM:
+    general: 接触器
+    electrical: 接触器
+  REL.:
+    general: 继电器
+    electrical: 继电器
+  DDR:
+    general: 漏电保护器
+    electrical: 漏电保护器
+  SPD:
+    general: 浪涌保护器
+    electrical: 浪涌保护器
+  TRANSFO:
+    general: 变压器
+    electrical: 变压器
+  GE:
+    general: 发电机
+    electrical: 发电机
+  UPS:
+    general: 不间断电源
+    electrical: 不间断电源
+  CÂBLE:
+    general: 电缆
+    electrical: 电缆
+  FIL:
+    general: 电线
+    electrical: 电线
+  CDC:
+    general: 电缆桥架
+    electrical: 电缆桥架
+  CONDUIT:
+    general: 穿线管
+    electrical: 穿线管
+  BD:
+    general: 接线盒
+    electrical: 接线盒
+  PE:
+    general: 接地线
+    electrical: 接地线
+  PRISE TERRE:
+    general: 接地极
+    electrical: 接地极
+  LEP:
+    general: 等电位连接
+    electrical: 等电位连接
+  PC IP55:
+    general: 防水插座
+    electrical: 防水插座
+  PC SOL:
+    general: 地插
+    electrical: 地插
+  VV:
+    general: 双控开关
+    electrical: 双控开关
+  LUM.:
+    general: 灯具
+    electrical: 灯具
+  SPOT:
+    general: 筒灯
+    electrical: 筒灯
+  APPL.:
+    general: 壁灯
+    electrical: 壁灯
+  SUSP.:
+    general: 吊灯
+    electrical: 吊灯
+  LUM. LIN.:
+    general: 线性灯
+    electrical: 线性灯
+  LED:
+    general: LED灯
+    electrical: LED灯
+  CIRC. ÉCL.:
+    general: 照明回路
+    electrical: 照明回路
+  CIRC. PC:
+    general: 插座回路
+    electrical: 插座回路
+  CIRC. FORCE:
+    general: 动力回路
+    electrical: 动力回路
+  RÉSERVE:
+    general: 备用回路
+    electrical: 备用回路
+  JDB:
+    general: 母线
+    electrical: 母线
+  CEP:
+    general: 母线槽
+    electrical: 母线槽
+  CDC VERT.:
+    general: 竖向桥架
+    electrical: 竖向桥架
+  CDC HORIZ.:
+    general: 水平桥架
+    electrical: 水平桥架
+  PFOUDRE:
+    general: 防雷
+    electrical: 防雷
+  PARAT.:
+    general: 避雷针
+    electrical: 避雷针
+  DESC. FOUDRE:
+    general: 引下线
+    electrical: 引下线
+  RÉSEAU TERRE:
+    general: 接地网
+    electrical: 接地网
+  VDI:
+    general: 综合布线
+    electrical: 综合布线
+  réseau électrique:
+    general: 网络
+    electrical: 网络
+  réseau de tuyauterie:
+    general: 网络
+    plumbing: 网络
+  CÂBLE DATA:
+    general: 网线
+    electrical: 网线
+  FO:
+    general: 光纤
+    electrical: 光纤
+  RJ45:
+    general: 网络插座
+    electrical: 网络插座
+  BAIE:
+    general: 机柜
+    electrical: 机柜
+  BAIE IT:
+    general: 网络机柜
+    electrical: 网络机柜
+  BAIE SERV.:
+    general: 服务器机柜
+    electrical: 服务器机柜
+  SW:
+    general: 交换机
+    electrical: 交换机
+  CORE SW:
+    general: 核心交换机
+    electrical: 核心交换机
+  RTR:
+    general: 路由器
+    electrical: 路由器
+  FW:
+    general: 防火墙
+    electrical: 防火墙
+  CCTV:
+    general: 视频监控
+    electrical: 视频监控
+  CAM. CCTV:
+    general: 监控摄像头
+    electrical: 监控摄像头
+  CAM.:
+    general: 摄像机
+    electrical: 摄像机
+  CA:
+    general: 门禁
+    electrical: 门禁
+  LB:
+    general: 读卡器
+    electrical: 读卡器
+  CTRL CA:
+    general: 门禁控制器
+    electrical: 门禁控制器
+  BP SORTIE:
+    general: 出门按钮
+    electrical: 出门按钮
+  INTERPH.:
+    general: 对讲系统
+    electrical: 对讲系统
+  VDP:
+    general: 可视对讲
+    electrical: 可视对讲
+  RJ11:
+    general: 电话插座
+    electrical: 电话插座
+  AP:
+    general: 无线接入点
+    electrical: 无线接入点
+  Wi-Fi:
+    general: 无线网络
+    electrical: 无线网络
+  PP:
+    general: 配线架
+    electrical: 配线架
+  TFO:
+    general: 光纤配线架
+    electrical: 光纤配线架
+  PT DATA:
+    general: 信息点
+    electrical: 信息点
+  PT TÉL.:
+    general: 语音点
+    electrical: 语音点
+  CDP:
+    general: 门磁
+    electrical: 门磁
+  PIR:
+    general: 红外探测器
+    electrical: 红外探测器
+  AI:
+    general: 入侵报警
+    electrical: 入侵报警
+  CENTRALE AI:
+    general: 报警主机
+    electrical: 报警主机
+  RONDE:
+    general: 电子巡更
+    electrical: 电子巡更
+  PARKING:
+    general: 停车管理系统
+    electrical: 停车管理系统
+  LAPI:
+    general: 车牌识别
+    electrical: 车牌识别
+  BARRIÈRE:
+    general: 道闸
+    electrical: 道闸
+  CLOISON:
+    general: 隔墙
+    architecture: 隔墙
+  CLOISON LÉG.:
+    general: 轻质隔墙
+    architecture: 轻质隔墙
+  MUR MAÇ.:
+    general: 砌体墙
+    architecture: 砌体墙
+  MUR BA:
+    general: 混凝土墙
+    architecture: 混凝土墙
+  POT. BA:
+    general: 混凝土柱
+    architecture: 混凝土柱
+  POT. MÉT.:
+    general: 钢柱
+    architecture: 钢柱
+  POUT. BA:
+    general: 混凝土梁
+    architecture: 混凝土梁
+  DALLE STR.:
+    general: 结构板
+    architecture: 结构板
+  SEM. FIL.:
+    general: 条形基础
+    architecture: 条形基础
+  RADIER:
+    general: 筏板基础
+    architecture: 筏板基础
+  MASSIF:
+    general: 承台
+    architecture: 承台
+  PIEU:
+    general: 桩
+    architecture: 桩
+  LONGRINE:
+    general: 地梁
+    architecture: 地梁
+  MUR SOUT.:
+    general: 挡土墙
+    architecture: 挡土墙
+  PAROI MOULÉE:
+    general: 地下连续墙
+    architecture: 地下连续墙
+  COFFRET CMD:
+    general: 控制箱
+    electrical: 控制箱
+  coffret de régulation:
+    general: 控制箱
+    hvac: 控制箱
+  coffret de commande:
+    general: 控制箱
+    plumbing: 控制箱
+  contrôleur:
+    general: 控制器
+    electrical: 控制器
+  régulateur:
+    general: 控制器
+    hvac: 控制器
+  câble de commande:
+    general: 控制线
+    electrical: 控制线
+  câble de régulation:
+    general: 控制线
+    hvac: 控制线
+  regard:
+    general: 井
+    plumbing: 井
+  gaine:
+    general: 井
+    architecture: 井
+  gaine électrique:
+    general: 管井
+    electrical: 管井
+  gaine CVC:
+    general: 管井
+    hvac: 管井
+  gaine plomberie:
+    general: 管井
+    plumbing: 管井
+  coffret/tableau:
+    general: 箱
+    electrical: 箱
+  coffret:
+    general: 箱
+    plumbing: 箱
+  armoire/tableau:
+    general: 柜
+    electrical: 柜
+  armoire:
+    general: 柜
+    hvac: 柜
+  tableau:
+    general: 盘
+    electrical: 盘
+  panneau:
+    general: 盘
+    hvac: 盘
+    architecture: 盘
+  bouche:
+    general: 口
+    hvac: 口
+  orifice:
+    general: 口
+    plumbing: 口
+  circuit:
+    general: 回路
+    electrical: 回路
+  circuit/câblage:
+    general: 线路
+    electrical: 线路
+  liaison principale:
+    general: 干线
+    electrical: 干线
+  réseau principal:
+    general: 干线
+    hvac: 干线
+  collecteur principal:
+    general: 干线
+    plumbing: 干线
+  circuit secondaire:
+    general: 支线
+    electrical: 支线
+  réseau secondaire:
+    general: 支线
+    hvac: 支线
+  branche secondaire:
+    general: 支线
+    plumbing: 支线
+  gaine/conduite principale:
+    general: 主管
+    hvac: 主管
+  canalisation principale:
+    general: 主管
+    plumbing: 主管
+  piquage secondaire:
+    general: 支管
+    hvac: 支管
+  canalisation secondaire:
+    general: 支管
+    plumbing: 支管
+  gaine montante:
+    general: 立管
+    electrical: 立管
+  colonne verticale:
+    general: 立管
+    hvac: 立管
+  COL.:
+    general: 立管
+    plumbing: 立管
+  conduite horizontale:
+    general: 横管
+    hvac: 横管
+  canalisation horizontale:
+    general: 横管
+    plumbing: 横管
+  en attente:
+    general: 预留
+    electrical: 预留
+    plumbing: 预留
+  réservation/en attente:
+    general: 预留
+    hvac: 预留
+  point:
+    general: 点位
+    electrical: 点位
+    hvac: 点位
+  point d'attente:
+    general: 点位
+    plumbing: 点位
+  terminal:
+    general: 终端
+    electrical: 终端
+    hvac: 终端
+  détecteur anti-intrusion:
+    general: 探测器
+    electrical: 探测器
+  sonde/capteur:
+    general: 探测器
+    hvac: 探测器
+  capteur:
+    general: 传感器
+    electrical: 传感器
+  module:
+    general: 模块
+    electrical: 模块
+  module de régulation:
+    general: 模块
+    hvac: 模块
+  équipement principal:
+    general: 主机
+    electrical: 主机
+  unité principale:
+    general: 主机
+    hvac: 主机
+  extrémité de réseau:
+    general: 末端
+    plumbing: 末端
+  vanne/registe:
+    general: 阀
+    hvac: 阀
+  pompe de circulation:
+    general: 泵
+    hvac: 泵
+  pompe:
+    general: 泵
+    plumbing: 泵
+  réservoir/bassin:
+    general: 水池
+    plumbing: 水池
+  bassin:
+    general: 水池
+    architecture: 水池
+  conduit:
+    general: 管
+    electrical: 管
+  conduite/tuyauterie:
+    general: 管
+    hvac: 管
+  canalisation/tube:
+    general: 管
+    plumbing: 管
+  tuyauterie/gaine:
+    general: 管道
+    hvac: 管道
+  canalisation:
+    general: 管道
+    plumbing: 管道
+  conducteur de protection:
+    general: 地线
+    electrical: 地线
+  plaque de finition:
+    general: 面板
+    electrical: 面板
+  panneau de commande:
+    general: 面板
+    hvac: 面板
+  afficheur:
+    general: 屏
+    electrical: 屏
+    hvac: 屏
+  persienne de ventilation:
+    general: 百叶
+    electrical: 百叶
+  grille à lames:
+    general: 百叶
+    hvac: 百叶
+    architecture: 百叶
+  socle équipement:
+    general: 设备基础
+    hvac: 设备基础
+  SOCLE:
+    general: 设备基础
+    architecture: 设备基础
+  support de chemin de câbles:
+    general: 支架
+    electrical: 支架
+  support de gaine/tuyauterie:
+    general: 支架
+    hvac: 支架
+  support de tuyauterie:
+    general: 支架
+    plumbing: 支架
+  support suspendu:
+    general: 吊架
+    electrical: 吊架
+    hvac: 吊架
+    plumbing: 吊架
+  étanche/IP:
+    general: 防水
+    electrical: 防水
+  étanchéité:
+    general: 防水
+    plumbing: 防水
+  ÉTANCH.:
+    general: 防水
+    architecture: 防水
+  hauteur de pose:
+    general: 高度
+    electrical: 高度
+    hvac: 高度
+  hauteur:
+    general: 高度
+    plumbing: 高度
+    architecture: 高度
+  hauteur d'axe:
+    general: 中心标高
+    electrical: 中心标高
+  cote d'axe:
+    general: 中心标高
+    hvac: 中心标高
+    plumbing: 中心标高
+  cote sous-face:
+    general: 底标高
+    hvac: 底标高
+  cote fil d'eau:
+    general: 底标高
+    plumbing: 底标高
+  cote inférieure:
+    general: 底标高
+    architecture: 底标高
+  cote supérieure:
+    general: 顶标高
+    hvac: 顶标高
+    architecture: 顶标高
+  hauteur libre sous réseau:
+    general: 净高
+    hvac: 净高
+  H LIBRE:
+    general: 净高
+    architecture: 净高
+  dimensions gaine:
+    general: 尺寸
+    hvac: 尺寸
+  diamètre/dimension:
+    general: 尺寸
+    plumbing: 尺寸
+  dimension:
+    general: 尺寸
+    architecture: 尺寸
+  diamètre conduit:
+    general: 直径
+    electrical: 直径
+  diamètre:
+    general: 直径
+    hvac: 直径
+    plumbing: 直径
+  DN:
+    general: 口径
+    hvac: 口径
+  diamètre nominal:
+    general: 口径
+    plumbing: 口径
+  pression if equipment only:
+    general: 压力
+    electrical: 压力
+  pression:
+    general: 压力
+    hvac: 压力
+    plumbing: 压力
+  débit d'air/eau:
+    general: 流量
+    hvac: 流量
+  débit d'eau:
+    general: 流量
+    plumbing: 流量
+  puissance électrique:
+    general: 功率
+    electrical: 功率
+    hvac: 功率
+  capacité/puissance:
+    general: 容量
+    electrical: 容量
+  capacité frigorifique:
+    general: 容量
+    hvac: 容量
+  volume:
+    general: 容量
+    plumbing: 容量
+  charge électrique:
+    general: 负荷
+    electrical: 负荷
+  charge thermique:
+    general: 负荷
+    hvac: 负荷
+  charge:
+    general: 负荷
+    architecture: 负荷
+  retour eau glacée/eau chaude:
+    general: 回水
+    hvac: 回水
+  retour d'eau:
+    general: 回水
+    plumbing: 回水
+  N° CIRC.:
+    general: 回路编号
+    electrical: 回路编号
+  réseau/système:
+    general: 系统
+    electrical: 系统
+  système CVC:
+    general: 系统
+    hvac: 系统
+  bus de communication:
+    general: 总线
+    electrical: 总线
+  borne:
+    general: 端子
+    electrical: 端子
+  TRAPPE:
+    general: 检修口
+    hvac: 检修口
+    architecture: 检修口
+  gaine verticale d'air:
+    general: 风井
+    hvac: 风井
+  gaine d'extraction de fumées:
+    general: 排烟井
+    hvac: 排烟井
+  GAINE CFA:
+    general: 弱电井
+    electrical: 弱电井
+  gaine courants forts:
+    general: 强电井
+    electrical: 强电井
+  puits:
+    general: 水井
+    architecture: 水井
+  sas:
+    general: 前室
+    architecture: 前室
+  circulation:
+    general: 走道
+    architecture: 走道
+  sortie de secours:
+    general: 安全出口
+    architecture: 安全出口
+  évacuation:
+    general: 疏散
+    architecture: 疏散
+  circulation d'évacuation:
+    general: 疏散通道
+    architecture: 疏散通道
+  apparent:
+    general: 明装
+    electrical: 明装
+    hvac: 明装
+    plumbing: 明装
+  encastré:
+    general: 暗装
+    electrical: 暗装
+    hvac: 暗装
+    plumbing: 暗装
+  mural:
+    general: 壁挂式
+    electrical: 壁挂式
+    hvac: 壁挂式
+  suspendu:
+    general: 吊装
+    electrical: 吊装
+    hvac: 吊装
+  sur socle:
+    general: 落地式
+    electrical: 落地式
+  au sol:
+    general: 落地式
+    hvac: 落地式
+  CVC:
+    general: 暖通
+    hvac: 暖通
+  CLIM.:
+    general: 空调系统
+    hvac: 空调系统
+  VENT. MÉC.:
+    general: 机械通风
+    hvac: 机械通风
+  VENT. NAT.:
+    general: 自然通风
+    hvac: 自然通风
+  S/E AIR:
+    general: 送排风系统
+    hvac: 送排风系统
+  DÉSENF.:
+    general: 排烟系统
+    hvac: 排烟系统
+  SURPRESS.:
+    general: 加压送风系统
+    hvac: 加压送风系统
+  AN:
+    general: 新风系统
+    hvac: 新风系统
+  REP.:
+    general: 回风系统
+    hvac: 回风系统
+  EAU CVC:
+    general: 空调水系统
+    hvac: 空调水系统
+  EG:
+    general: 冷冻水
+    hvac: 冷冻水
+  EG A:
+    general: 冷冻水供水
+    hvac: 冷冻水供水
+  EG R:
+    general: 冷冻水回水
+    hvac: 冷冻水回水
+  ER:
+    general: 冷却水
+    hvac: 冷却水
+  ER A:
+    general: 冷却水供水
+    hvac: 冷却水供水
+  ER R:
+    general: 冷却水回水
+    hvac: 冷却水回水
+  COL. COND.:
+    general: 冷凝水立管
+    hvac: 冷凝水立管
+  ASP.:
+    general: 吸气管
+    hvac: 吸气管
+  REF.:
+    general: 排气管
+    hvac: 排气管
+  REFNET:
+    general: 分歧管
+    hvac: 分歧管
+  DIST. FRIGO:
+    general: 冷媒分配器
+    hvac: 冷媒分配器
+  RÉSEAU FRIGO:
+    general: 冷媒系统
+    hvac: 冷媒系统
+  CTA AN:
+    general: 新风处理机组
+    hvac: 新风处理机组
+  VC CASSETTE:
+    general: 卡式风机盘管
+    hvac: 卡式风机盘管
+  VC ENC.:
+    general: 卧式暗装风机盘管
+    hvac: 卧式暗装风机盘管
+  VC VERT.:
+    general: 立式风机盘管
+    hvac: 立式风机盘管
+  CLIM. ARMOIRE:
+    general: 柜式空调机
+    hvac: 柜式空调机
+  SPLIT MURAL:
+    general: 壁挂空调
+    hvac: 壁挂空调
+  SPLIT COLONNE:
+    general: 柜机
+    hvac: 柜机
+  V COMP.:
+    general: 补风机
+    hvac: 补风机
+  V TOIT.:
+    general: 屋顶风机
+    hvac: 屋顶风机
+  JET FAN:
+    general: 诱导风机
+    hvac: 诱导风机
+  RIDEAU AIR:
+    general: 风幕机
+    hvac: 风幕机
+  RÉCUP. CHAL.:
+    general: 热回收机
+    hvac: 热回收机
+  ERV:
+    general: 全热交换器
+    hvac: 全热交换器
+  ÉCH.:
+    general: 换热器
+    hvac: 换热器
+  ÉCH. PLAQUES:
+    general: 板式换热器
+    hvac: 板式换热器
+  GF AIR:
+    general: 风冷冷水机组
+    hvac: 风冷冷水机组
+  GF EAU:
+    general: 水冷冷水机组
+    hvac: 水冷冷水机组
+  PPE EG:
+    general: 冷冻水泵
+    hvac: 冷冻水泵
+  PPE ER:
+    general: 冷却水泵
+    hvac: 冷却水泵
+  PPE EC:
+    general: 热水循环泵
+    hvac: 热水循环泵
+  PPE BECS:
+    general: 热水循环泵
+    plumbing: 热水循环泵
+  PPE CIRC.:
+    general: 循环泵
+    hvac: 循环泵
+  VASE EXP.:
+    general: 膨胀水箱
+    hvac: 膨胀水箱
+  MAINT. P:
+    general: 定压补水装置
+    hvac: 定压补水装置
+  MODULE HYD.:
+    general: 水力模块
+    hvac: 水力模块
+  COLLECTEUR:
+    general: 分集水器
+    hvac: 分集水器
+  COLL. ALLER:
+    general: 分水器
+    hvac: 分水器
+  COLL. RET.:
+    general: 集水器
+    hvac: 集水器
+  GAINE RECT.:
+    general: 矩形风管
+    hvac: 矩形风管
+  GAINE CIRC.:
+    general: 圆形风管
+    hvac: 圆形风管
+  GAINE SPIRO:
+    general: 螺旋风管
+    hvac: 螺旋风管
+  GAINE COMP.:
+    general: 补风管
+    hvac: 补风管
+  GAINE SURP.:
+    general: 加压送风管
+    hvac: 加压送风管
+  GAINE HOTTE:
+    general: 厨房排油烟管
+    hvac: 厨房排油烟管
+  DIFF. CARRÉ:
+    general: 方形散流器
+    hvac: 方形散流器
+  DIFF. CIRC.:
+    general: 圆形散流器
+    hvac: 圆形散流器
+  DIFF. TOURB.:
+    general: 旋流风口
+    hvac: 旋流风口
+  BUSE:
+    general: 喷口
+    hvac: 喷口
+  GRILLE PARE-PLUIE:
+    general: 防雨百叶
+    hvac: 防雨百叶
+  CHAPEAU:
+    general: 风帽
+    hvac: 风帽
+  GRILLE ACOUST.:
+    general: 消声百叶
+    hvac: 消声百叶
+  REG. MOT.:
+    general: 电动风阀
+    hvac: 电动风阀
+  CCF 70°C:
+    general: 70度防火阀
+    hvac: 70度防火阀
+  CCF 280°C:
+    general: 280度防火阀
+    hvac: 280度防火阀
+  CCF DÉS.:
+    general: 排烟防火阀
+    hvac: 排烟防火阀
+    plumbing: 排烟防火阀
+  BOUCHE SURP.:
+    general: 正压送风口
+    hvac: 正压送风口
+  PLÉNUM ACOUST.:
+    general: 消声静压箱
+    hvac: 消声静压箱
+  PLÉNUM:
+    general: 静压箱
+    hvac: 静压箱
+  TRAPPE VIS.:
+    general: 检修门
+    hvac: 检修门
+  PORTE VIS.:
+    general: 检修门
+    architecture: 检修门
+  TRAPPE NETT.:
+    general: 风管清扫口
+    hvac: 风管清扫口
+  SDP:
+    general: 压差传感器
+    hvac: 压差传感器
+  SP:
+    general: 压力传感器
+    hvac: 压力传感器
+  SCO2:
+    general: 二氧化碳传感器
+    hvac: 二氧化碳传感器
+  IAQ:
+    general: 空气质量传感器
+    hvac: 空气质量传感器
+  SQ:
+    general: 风量传感器
+    hvac: 风量传感器
+  V2V MOT.:
+    general: 电动二通阀
+    hvac: 电动二通阀
+  V3V MOT.:
+    general: 电动三通阀
+    hvac: 电动三通阀
+  V ÉQ. DYN.:
+    general: 动态平衡阀
+    hvac: 动态平衡阀
+  V BP ΔP:
+    general: 压差旁通阀
+    hvac: 压差旁通阀
+  FILTRE MOY.:
+    general: 中效过滤器
+    hvac: 中效过滤器
+  HEPA:
+    general: 高效过滤器
+    hvac: 高效过滤器
+  Q AN:
+    general: 新风量
+    hvac: 新风量
+  Q EXT.:
+    general: 排风量
+    hvac: 排风量
+  Q S:
+    general: 送风量
+    hvac: 送风量
+  Q R:
+    general: 回风量
+    hvac: 回风量
+  Ps:
+    general: 显冷量
+    hvac: 显冷量
+  Pl:
+    general: 潜冷量
+    hvac: 潜冷量
+  PT:
+    general: 全压
+    hvac: 全压
+  dB(A):
+    general: 噪声
+    hvac: 噪声
+  V AIR:
+    general: 风速
+    hvac: 风速
+  Q EAU:
+    general: 水流量
+    hvac: 水流量
+  T A/R:
+    general: 供回水温度
+    hvac: 供回水温度
+  FLUIDE FRIGO:
+    general: 冷媒
+    hvac: 冷媒
+  GRAV.:
+    general: 重力排水
+    plumbing: 重力排水
+  EPUR:
+    general: 纯水
+    plumbing: 纯水
+  APPOINT:
+    general: 补水
+    plumbing: 补水
+  EU/EV:
+    general: 污废合流
+    plumbing: 污废合流
+  EV CUIS.:
+    general: 厨房废水
+    plumbing: 厨房废水
+  EO:
+    general: 含油废水
+    plumbing: 含油废水
+  EU REF.:
+    general: 压力污水
+    plumbing: 压力污水
+  EP REF.:
+    general: 压力雨水
+    plumbing: 压力雨水
+  TUBE EFS:
+    general: 给水管
+    plumbing: 给水管
+  TUBE ECS:
+    general: 热水管
+    plumbing: 热水管
+  TUBE BECS:
+    general: 热水回水管
+    plumbing: 热水回水管
+  COL. EFS:
+    general: 给水立管
+    plumbing: 给水立管
+  COL. ECS:
+    general: 热水立管
+    plumbing: 热水立管
+  COL. EU:
+    general: 污水立管
+    plumbing: 污水立管
+  COL. EV:
+    general: 废水立管
+    plumbing: 废水立管
+  COL. EP:
+    general: 雨水立管
+    plumbing: 雨水立管
+  COL. VENT.:
+    general: 通气立管
+    plumbing: 通气立管
+  BR. HORIZ.:
+    general: 横支管
+    plumbing: 横支管
+  COLLECTEUR H.:
+    general: 横干管
+    plumbing: 横干管
+  SDS ANTI-ODEUR:
+    general: 防臭地漏
+    plumbing: 防臭地漏
+  SDS LL:
+    general: 洗衣机地漏
+    plumbing: 洗衣机地漏
+  SIPHON P:
+    general: P型存水弯
+    plumbing: P型存水弯
+  SIPHON S:
+    general: S型存水弯
+    plumbing: S型存水弯
+  NAISS. LAT.:
+    general: 侧排雨水斗
+    plumbing: 侧排雨水斗
+  CANIV. LIN.:
+    general: 线性排水沟
+    plumbing: 线性排水沟
+  RV VANNE:
+    general: 阀门井
+    plumbing: 阀门井
+  RV CPT:
+    general: 水表井
+    plumbing: 水表井
+  BASSIN DÉC.:
+    general: 沉淀池
+    plumbing: 沉淀池
+  BAC NEUTR.:
+    general: 中和池
+    plumbing: 中和池
+  STEP:
+    general: 污水处理设备
+    plumbing: 污水处理设备
+  PR EP:
+    general: 雨水提升泵
+    plumbing: 雨水提升泵
+  PPE EFS:
+    general: 生活水泵
+    plumbing: 生活水泵
+  RÉS. EFS:
+    general: 生活水箱
+    plumbing: 生活水箱
+  BALLON ECS:
+    general: 热水箱
+    plumbing: 热水箱
+  BALLON P:
+    general: 气压罐
+    plumbing: 气压罐
+  CPT EAU TÉLÉ.:
+    general: 远传水表
+    plumbing: 远传水表
+  BA:
+    general: 倒流防止器
+    plumbing: 倒流防止器
+  CASSE-VIDE:
+    general: 真空破坏器
+    plumbing: 真空破坏器
+  RACC. FLEX.:
+    general: 软接头
+    plumbing: 软接头
+  MANCH. FLEX.:
+    general: 可曲挠橡胶接头
+    plumbing: 可曲挠橡胶接头
+  BRIDE:
+    general: 法兰
+    plumbing: 法兰
+  COUDE:
+    general: 弯头
+    plumbing: 弯头
+  TÉ:
+    general: 三通
+    plumbing: 三通
+  CROIX:
+    general: 四通
+    plumbing: 四通
+  RÉD.:
+    general: 异径管
+    plumbing: 异径管
+  RÉD. EXC.:
+    general: 偏心异径管
+    plumbing: 偏心异径管
+  RÉD. CONC.:
+    general: 同心异径管
+    plumbing: 同心异径管
+  UNION:
+    general: 活接
+    plumbing: 活接
+  BOUCHON:
+    general: 管帽
+    plumbing: 管帽
+  COLLIER:
+    general: 管卡
+    plumbing: 管卡
+  VASQUE:
+    general: 台盆
+    plumbing: 台盆
+  BAC MÉN.:
+    general: 拖布池
+    plumbing: 拖布池
+  WC TURC:
+    general: 蹲便器
+    plumbing: 蹲便器
+  BAIGN.:
+    general: 浴缸
+    plumbing: 浴缸
+  MITIG.:
+    general: 混合龙头
+    plumbing: 混合龙头
+  ROB. AUTO:
+    general: 感应龙头
+    plumbing: 感应龙头
+  ÉLEC.:
+    general: 电气
+    electrical: 电气
+  ALIM. ÉLEC.:
+    general: 供电系统
+    electrical: 供电系统
+  DIST. ÉLEC.:
+    general: 配电系统
+    electrical: 配电系统
+  ÉCL.:
+    general: 照明系统
+    electrical: 照明系统
+  FORCE:
+    general: 动力系统
+    electrical: 动力系统
+  ALIM. SEC.:
+    general: 应急电源系统
+    electrical: 应急电源系统
+  TRANSFO/DIST.:
+    general: 变配电
+    electrical: 变配电
+  POSTE TRANSFO:
+    general: 变电站
+    electrical: 变电站
+  POSTE DIST.:
+    general: 配电站
+    electrical: 配电站
+  TD ÉT.:
+    general: 楼层配电箱
+    electrical: 楼层配电箱
+  TD ÉCL. SEC.:
+    general: 应急照明配电箱
+    electrical: 应急照明配电箱
+  TD INC.:
+    general: 消防配电箱
+    electrical: 消防配电箱
+  TD CVC:
+    general: 空调配电箱
+    electrical: 空调配电箱
+  TD ASC.:
+    general: 电梯配电箱
+    electrical: 电梯配电箱
+  ATS:
+    general: ATS柜
+    electrical: ATS柜
+  ARMOIRE COMP.:
+    general: 电容补偿柜
+    electrical: 电容补偿柜
+  ARMOIRE COMPT.:
+    general: 计量柜
+    electrical: 计量柜
+  COUPLAGE:
+    general: 母联柜
+    electrical: 母联柜
+  ARRIVÉE:
+    general: 进线柜
+    electrical: 进线柜
+  DÉPART:
+    general: 出线柜
+    electrical: 出线柜
+  ARMOIRE VFD:
+    general: 变频柜
+    electrical: 变频柜
+  ARMOIRE SS:
+    general: 软启动柜
+    electrical: 软启动柜
+  RCBO:
+    general: 漏电断路器
+    electrical: 漏电断路器
+  INT. CHARGE:
+    general: 负荷开关
+    electrical: 负荷开关
+  RT:
+    general: 热继电器
+    electrical: 热继电器
+  KT:
+    general: 时间继电器
+    electrical: 时间继电器
+  TC:
+    general: 电流互感器
+    electrical: 电流互感器
+  TT:
+    general: 电压互感器
+    electrical: 电压互感器
+  CPT MULTI:
+    general: 多功能电表
+    electrical: 多功能电表
+  CPT kWh:
+    general: 有功电表
+    electrical: 有功电表
+  TRANSFO SEC:
+    general: 干式变压器
+    electrical: 干式变压器
+  RÉG. U:
+    general: 稳压器
+    electrical: 稳压器
+  REDR.:
+    general: 整流器
+    electrical: 整流器
+  OND.:
+    general: 逆变器
+    electrical: 逆变器
+  BAT.:
+    general: 蓄电池
+    electrical: 蓄电池
+  CHARGEUR:
+    general: 充电器
+    electrical: 充电器
+  CÂBLE CFO:
+    general: 电力电缆
+    electrical: 电力电缆
+  CÂBLE CMD:
+    general: 控制电缆
+    electrical: 控制电缆
+  CÂBLE CR1:
+    general: 耐火电缆
+    electrical: 耐火电缆
+  CÂBLE C2:
+    general: 阻燃电缆
+    electrical: 阻燃电缆
+  CÂBLE MI:
+    general: 矿物绝缘电缆
+    electrical: 矿物绝缘电缆
+  PH:
+    general: 相线
+    electrical: 相线
+  N:
+    general: 中性线
+    electrical: 中性线
+  CDC ÉCHELLE:
+    general: 梯式桥架
+    electrical: 梯式桥架
+  CDC DALLE:
+    general: 托盘式桥架
+    electrical: 托盘式桥架
+  CDC FIL:
+    general: 网格式桥架
+    electrical: 网格式桥架
+  CDC CFO:
+    general: 强电桥架
+    electrical: 强电桥架
+  CDC CFA:
+    general: 弱电桥架
+    electrical: 弱电桥架
+  CDC INC.:
+    general: 消防桥架
+    electrical: 消防桥架
+  GOUL. MÉT.:
+    general: 金属线槽
+    electrical: 金属线槽
+  CONDUIT PVC:
+    general: PVC电线管
+    electrical: PVC电线管
+  CONDUIT MÉT.:
+    general: 金属管
+    electrical: 金属管
+  BOÎTE TIRAGE:
+    general: 拉线盒
+    electrical: 拉线盒
+  BOÎTE ENC.:
+    general: 底盒
+    electrical: 底盒
+  BARRE TERRE:
+    general: 接地母排
+    electrical: 接地母排
+  LEP PRINC.:
+    general: 总等电位
+    electrical: 总等电位
+  LEP LOC.:
+    general: 局部等电位
+    electrical: 局部等电位
+  CONDUCTEUR TOIT.:
+    general: 接闪带
+    electrical: 接闪带
+  PT TEST:
+    general: 测试点
+    electrical: 测试点
+  2PC:
+    general: 双联插座
+    electrical: 双联插座
+  3PC:
+    general: 三联插座
+    electrical: 三联插座
+  PC CLIM.:
+    general: 空调插座
+    electrical: 空调插座
+  PC FRIGO:
+    general: 冰箱插座
+    electrical: 冰箱插座
+  PC LL:
+    general: 洗衣机插座
+    electrical: 洗衣机插座
+  PC CE:
+    general: 热水器插座
+    electrical: 热水器插座
+  PC DÉD.:
+    general: 专用插座
+    electrical: 专用插座
+  INT. 1G:
+    general: 单联开关
+    electrical: 单联开关
+  INT. 2G:
+    general: 双联开关
+    electrical: 双联开关
+  INT. 3G:
+    general: 三联开关
+    electrical: 三联开关
+  VAR.:
+    general: 调光开关
+    electrical: 调光开关
+  DÉT. PRÉS.:
+    general: 感应开关
+    electrical: 感应开关
+  RUBAN LED:
+    general: 灯带
+    electrical: 灯带
+  LUM. GRILLE:
+    general: 格栅灯
+    electrical: 格栅灯
+  BAES SORTIE:
+    general: 疏散指示灯
+    electrical: 疏散指示灯
+  3P:
+    general: 三相
+    electrical: 三相
+  1P:
+    general: 单相
+    electrical: 单相
+  3P+N:
+    general: 三相四线
+    electrical: 三相四线
+  3P+N+PE:
+    general: 三相五线
+    electrical: 三相五线
+  U:
+    general: 电压
+    electrical: 电压
+  I:
+    general: 电流
+    electrical: 电流
+  f:
+    general: 频率
+    electrical: 频率
+  cosφ:
+    general: 功率因数
+    electrical: 功率因数
+  P:
+    general: 有功功率
+    electrical: 有功功率
+  Q:
+    general: 无功功率
+    electrical: 无功功率
+  S:
+    general: 视在功率
+    electrical: 视在功率
+  Ku:
+    general: 需用系数
+    electrical: 需用系数
+  Ks:
+    general: 同时系数
+    electrical: 同时系数
+  P calc.:
+    general: 计算负荷
+    electrical: 计算负荷
+  P inst.:
+    general: 装机容量
+    electrical: 装机容量
+  Pn:
+    general: 额定功率
+    electrical: 额定功率
+  Icc:
+    general: 短路电流
+    electrical: 短路电流
+  In:
+    general: 额定电流
+    electrical: 额定电流
+  SMSI:
+    general: 消防联动系统
+    electrical: 消防联动系统
+  SDI:
+    general: 火灾自动报警
+    electrical: 火灾自动报警
+  PPE INC. PRINC.:
+    general: 主消防泵
+    plumbing: 主消防泵
+  PPE INC. SEC.:
+    general: 备用消防泵
+    plumbing: 备用消防泵
+  PI:
+    general: 室外消火栓
+    plumbing: 室外消火栓
+  SPK PEND.:
+    general: 下喷喷头
+    plumbing: 下喷喷头
+  SPK UP:
+    general: 上喷喷头
+    plumbing: 上喷喷头
+  SPK MURAL:
+    general: 侧墙喷头
+    plumbing: 侧墙喷头
+  SPK CACHÉ:
+    general: 隐蔽喷头
+    plumbing: 隐蔽喷头
+  SPK QR:
+    general: 快速响应喷头
+    plumbing: 快速响应喷头
+  V PAP. SUP.:
+    general: 信号蝶阀
+    plumbing: 信号蝶阀
+  V ESSAI:
+    general: 末端试水阀
+    plumbing: 末端试水阀
+  PRESSOSTAT:
+    general: 压力开关
+    plumbing: 压力开关
+  TUBE INC.:
+    general: 消防管
+    plumbing: 消防管
+  TUBE SPK:
+    general: 喷淋管
+    plumbing: 喷淋管
+  TUBE RIA:
+    general: 消火栓管
+    plumbing: 消火栓管
+  COL. INC.:
+    general: 消防立管
+    plumbing: 消防立管
+  COL. SPK:
+    general: 喷淋立管
+    plumbing: 喷淋立管
+  CMSI:
+    general: 消防联动控制器
+    electrical: 消防联动控制器
+  AES:
+    general: 消防电源
+    electrical: 消防电源
+  CENTRALE TÉL. INC.:
+    general: 消防电话主机
+    electrical: 消防电话主机
+  CENTRALE SONO:
+    general: 消防广播主机
+    electrical: 消防广播主机
+  DF OPT.:
+    general: 光电感烟探测器
+    electrical: 光电感烟探测器
+  DMC:
+    general: 感温感烟探测器
+    electrical: 感温感烟探测器
+  DFL:
+    general: 火焰探测器
+    electrical: 火焰探测器
+  DGAZ:
+    general: 可燃气体探测器
+    electrical: 可燃气体探测器
+  DÉT. LIN. FUMÉE:
+    general: 线型感烟探测器
+    electrical: 线型感烟探测器
+  BP RIA:
+    general: 消火栓按钮
+    plumbing: 消火栓按钮
+  DS:
+    general: 警铃
+    electrical: 警铃
+  DL:
+    general: 光报警器
+    electrical: 光报警器
+  MI:
+    general: 输入模块
+    electrical: 输入模块
+  MO:
+    general: 输出模块
+    electrical: 输出模块
+  MIO:
+    general: 输入输出模块
+    electrical: 输入输出模块
+  ISO:
+    general: 隔离模块
+    electrical: 隔离模块
+  COFFRET MOD.:
+    general: 模块箱
+    plumbing: 模块箱
+  BOUCLE SSI:
+    general: 报警回路
+    electrical: 报警回路
+  BOUCLE SDI:
+    general: 探测回路
+    electrical: 探测回路
+  EXT. EAU:
+    general: 水基灭火器
+    plumbing: 水基灭火器
+  COFFRET EXT.:
+    general: 灭火器箱
+    plumbing: 灭火器箱
+  LAN:
+    general: 网络系统
+    electrical: 网络系统
+  TÉL.:
+    general: 电话系统
+    electrical: 电话系统
+  BAIE MUR.:
+    general: 壁挂机柜
+    electrical: 壁挂机柜
+  BAIE SOL:
+    general: 落地机柜
+    electrical: 落地机柜
+  GUIDE CÂBLES:
+    general: 理线架
+    electrical: 理线架
+  SW ACC.:
+    general: 接入交换机
+    electrical: 接入交换机
+  SW PoE:
+    general: POE交换机
+    electrical: POE交换机
+  WLC:
+    general: 无线控制器
+    electrical: 无线控制器
+  SERV.:
+    general: 服务器
+    electrical: 服务器
+  NAS:
+    general: 存储服务器
+    electrical: 存储服务器
+  NVR:
+    general: 录像机
+    electrical: 录像机
+  CAM. DÔME:
+    general: 半球摄像机
+    electrical: 半球摄像机
+  CAM. BULLET:
+    general: 枪式摄像机
+    electrical: 枪式摄像机
+  PTZ:
+    general: 球机
+    electrical: 球机
+  CAM. IP:
+    general: 网络摄像机
+    electrical: 网络摄像机
+  CAM. EXT.:
+    general: 室外摄像机
+    electrical: 室外摄像机
+  CAM. INT.:
+    general: 室内摄像机
+    electrical: 室内摄像机
+  CTRL 1P:
+    general: 单门控制器
+    electrical: 单门控制器
+  CTRL 2P:
+    general: 双门控制器
+    electrical: 双门控制器
+  CTRL 4P:
+    general: 四门控制器
+    electrical: 四门控制器
+  LECT. EMP.:
+    general: 指纹读卡器
+    electrical: 指纹读卡器
+  TERM. FACE:
+    general: 人脸识别终端
+    electrical: 人脸识别终端
+  SERR. ÉLEC.:
+    general: 电插锁
+    electrical: 电插锁
+  BP URG.:
+    general: 紧急开门按钮
+    electrical: 紧急开门按钮
+  ALIM. CA:
+    general: 门禁电源
+    electrical: 门禁电源
+  COFFRET CA:
+    general: 门禁箱
+    electrical: 门禁箱
+  CÂBLE CA:
+    general: 门禁线
+    electrical: 门禁线
+  PLATINE RUE:
+    general: 门口机
+    electrical: 门口机
+  POSTE GARDIEN:
+    general: 管理机
+    electrical: 管理机
+  2xRJ45:
+    general: 双口信息插座
+    electrical: 双口信息插座
+  CAT6:
+    general: 六类网线
+    electrical: 六类网线
+  CAT6A:
+    general: 超六类网线
+    electrical: 超六类网线
+  JARRETIÈRE FO:
+    general: 光纤跳线
+    electrical: 光纤跳线
+  CORDON RJ45:
+    general: 网络跳线
+    electrical: 网络跳线
+  PT AP:
+    general: 无线点
+    electrical: 无线点
+  PT CCTV:
+    general: 摄像机点
+    electrical: 摄像机点
+  PT CA:
+    general: 门禁点
+    electrical: 门禁点
+  DÉT. AI:
+    general: 入侵探测器
+    electrical: 入侵探测器
+  DÉT. DOUBLE TECH.:
+    general: 双鉴探测器
+    electrical: 双鉴探测器
+  DÉT. BRIS VERRE:
+    general: 玻璃破碎探测器
+    electrical: 玻璃破碎探测器
+  CLAVIER AI:
+    general: 报警键盘
+    electrical: 报警键盘
+  PT RONDE:
+    general: 巡更点
+    electrical: 巡更点
+  DÉT. VÉH.:
+    general: 车辆检测器
+    electrical: 车辆检测器
+  ARCH.:
+    general: 建筑
+    architecture: 建筑
+  STR.:
+    general: 结构
+    architecture: 结构
+  PLAN:
+    general: 平面图
+    architecture: 平面图
+  PLAN MASSE:
+    general: 总平面图
+    architecture: 总平面图
+  PLAN RDC:
+    general: 首层平面图
+    architecture: 首层平面图
+  PLAN SS:
+    general: 地下室平面图
+    architecture: 地下室平面图
+  PLAN TOIT.:
+    general: 屋面平面图
+    architecture: 屋面平面图
+  COUPE:
+    general: 剖面图
+    architecture: 剖面图
+  ÉLÉV.:
+    general: 立面图
+    architecture: 立面图
+  DÉT.:
+    general: 详图
+    architecture: 详图
+  DÉT. TYPE:
+    general: 节点详图
+    architecture: 节点详图
+  TAB. PORTES/FEN.:
+    general: 门窗表
+    architecture: 门窗表
+  NOM LOCAL:
+    general: 房间名称
+    architecture: 房间名称
+  N° LOCAL:
+    general: 房间编号
+    architecture: 房间编号
+  REP. AXE:
+    general: 轴号
+    architecture: 轴号
+  NIV. ABS.:
+    general: 绝对标高
+    architecture: 绝对标高
+  NIV. REL.:
+    general: 相对标高
+    architecture: 相对标高
+  NIV. FINI:
+    general: 完成面标高
+    architecture: 完成面标高
+  NIV. BRUT:
+    general: 结构标高
+    architecture: 结构标高
+  NIV. SOL FINI:
+    general: 室内地坪
+    architecture: 室内地坪
+  NIV. EXT.:
+    general: 室外地坪
+    architecture: 室外地坪
+  H ÉT.:
+    general: 层高
+    architecture: 层高
+  HSP:
+    general: 吊顶高度
+    architecture: 吊顶高度
+    decoration: 吊顶高度
+  CLOISON BA13:
+    general: 石膏板隔墙
+    architecture: 石膏板隔墙
+  ACROT.:
+    general: 女儿墙
+    architecture: 女儿墙
+  MC:
+    general: 扶手
+    architecture: 扶手
+  MARCHE:
+    general: 踏步
+    architecture: 踏步
+  CONTREMARCHE:
+    general: 踢面
+    architecture: 踢面
+  PALIER:
+    general: 平台
+    architecture: 平台
+  PORTE VITR.:
+    general: 玻璃门
+    architecture: 玻璃门
+    decoration: 玻璃门
+  PORTE 2V:
+    general: 双开门
+    architecture: 双开门
+  PORTE 1V:
+    general: 单开门
+    architecture: 单开门
+  PERS.:
+    general: 百叶窗
+    architecture: 百叶窗
+  APPUI:
+    general: 窗台
+    architecture: 窗台
+  SEUIL:
+    general: 门槛
+    architecture: 门槛
+  MR:
+    general: 幕墙
+    architecture: 幕墙
+  MR VITR.:
+    general: 玻璃幕墙
+    architecture: 玻璃幕墙
+    decoration: 玻璃幕墙
+  VERRE:
+    general: 玻璃
+    architecture: 玻璃
+    decoration: 玻璃
+  V. TREM.:
+    general: 钢化玻璃
+    architecture: 钢化玻璃
+    decoration: 钢化玻璃
+  V. FEUIL.:
+    general: 夹胶玻璃
+    architecture: 夹胶玻璃
+    decoration: 夹胶玻璃
+  DV:
+    general: 中空玻璃
+    architecture: 中空玻璃
+    decoration: 中空玻璃
+  DV LOW-E:
+    general: Low-E玻璃
+    architecture: Low-E玻璃
+    decoration: Low-E玻璃
+  FP BA13:
+    general: 石膏板吊顶
+    architecture: 石膏板吊顶
+    decoration: 石膏板吊顶
+  FP DALLES:
+    general: 矿棉板吊顶
+    architecture: 矿棉板吊顶
+    decoration: 矿棉板吊顶
+  PLINTHE:
+    general: 踢脚线
+    architecture: 踢脚线
+    decoration: 踢脚线
+  CARREL.:
+    general: 瓷砖
+    architecture: 瓷砖
+    decoration: 瓷砖
+  CARREL. SOL:
+    general: 地砖
+    architecture: 地砖
+  FAÏENCE:
+    general: 墙砖
+    architecture: 墙砖
+  PIERRE:
+    general: 石材
+    architecture: 石材
+    decoration: 石材
+  GRANIT:
+    general: 花岗岩
+    architecture: 花岗岩
+  MARBRE:
+    general: 大理石
+    architecture: 大理石
+  PEINT.:
+    general: 涂料
+    architecture: 涂料
+    decoration: 涂料
+  PEINT. ACRYL.:
+    general: 乳胶漆
+    architecture: 乳胶漆
+  ISOL. TH.:
+    general: 保温层
+    architecture: 保温层
+  ISOL. ACOUST.:
+    general: 隔音
+    architecture: 隔音
+  PARE-VAPEUR:
+    general: 防潮层
+    architecture: 防潮层
+  FOURREAU MUR:
+    general: 过墙套管
+    architecture: 过墙套管

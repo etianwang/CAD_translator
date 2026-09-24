@@ -8,7 +8,7 @@ spec_dir = os.path.dirname(os.path.abspath(SPEC))
 codesign_identity = os.environ.get("MACOS_CODESIGN_IDENTITY") or None
 data_files = ["changelog.json", "license_public_key.txt"]
 glossary_files = [
-    "translation_abbreviations.yaml", "translation_context.yaml",
+    "translation_abbreviations.yaml", "translation_context_zh_to_fr.yaml",
     "translation_context_fr_to_zh.yaml", "translation_context_zh_to_en.yaml",
     "translation_context_en_to_zh.yaml", "translation_corrections.yaml",
 ]

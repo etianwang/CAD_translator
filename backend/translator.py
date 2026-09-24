@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import json
+import math
 import threading
 import queue
 import urllib.request
@@ -30,7 +31,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.8.8"
+APP_VERSION = "1.9.2"
 
 # ODA can export legacy SHX/GBK text as ``\M+5C6BD`` rather than Unicode.
 # The leading nibble identifies the legacy codepage; the following four hex
@@ -63,6 +64,12 @@ def load_yaml_data(filename):
         with open(full_path, 'r', encoding='utf-8') as f:
             return yaml.safe_load(f)
     return {}
+
+
+def load_glossary_terms(filename):
+    """Load the source-term glossary; tolerate an empty asset."""
+    terms = load_yaml_data(filename).get("terms", {})
+    return {source.strip().casefold(): values for source, values in terms.items() if isinstance(source, str) and isinstance(values, dict)}
 
 def get_installed_fonts():
     fonts = set()
@@ -131,27 +138,28 @@ class CADChineseTranslator:
     def __init__(self, log_callback=None):
         self.translated_cache = {}
         self.language_assets = LanguageAssets()
-        self.project_package_path = ""
+        self.current_drawing_name = ""
         self.default_font = pick_available_font()
         self.log_callback = log_callback
         self.deepl_api_key = os.environ.get("DEEPL_API_KEY")
         self.deepl_translator = None
         self.translation_provider = "deepl"
+        self.profession = "general"
         self.azure_translator = None
         self.cleaner = TextCleaner()
         abbrev_data = load_yaml_data("glossaries/translation_abbreviations.yaml")
         self.abbrev_map_fr_to_zh = abbrev_data.get("abbrev_map", {})
 
-        context_zh_to_fr = load_yaml_data("glossaries/translation_context.yaml").get("context_zh_to_fr", {})
-        context_fr_to_zh = load_yaml_data("glossaries/translation_context_fr_to_zh.yaml").get("context_fr_to_zh", {})
-        context_zh_to_en = load_yaml_data("glossaries/translation_context_zh_to_en.yaml").get("context_zh_to_en", {})
-        context_en_to_zh = load_yaml_data("glossaries/translation_context_en_to_zh.yaml").get("context_en_to_zh", {})
+        context_zh_to_fr = load_glossary_terms("glossaries/translation_context_zh_to_fr.yaml")
+        context_fr_to_zh = load_glossary_terms("glossaries/translation_context_fr_to_zh.yaml")
+        context_zh_to_en = load_glossary_terms("glossaries/translation_context_zh_to_en.yaml")
+        context_en_to_zh = load_glossary_terms("glossaries/translation_context_en_to_zh.yaml")
         corrections_fr_to_zh = load_yaml_data("glossaries/translation_corrections.yaml").get("corrections_fr_to_zh", {})
 
-        self.context_zh_to_fr = context_zh_to_fr
-        self.context_fr_to_zh = context_fr_to_zh
-        self.context_zh_to_en = context_zh_to_en
-        self.context_en_to_zh = context_en_to_zh
+        self.context_zh_to_fr = {key: value.get("general", "") for key, value in context_zh_to_fr.items()}
+        self.context_fr_to_zh = {key: value.get("general", "") for key, value in context_fr_to_zh.items()}
+        self.context_zh_to_en = {key: value.get("general", "") for key, value in context_zh_to_en.items()}
+        self.context_en_to_zh = {key: value.get("general", "") for key, value in context_en_to_zh.items()}
         self.corrections_fr_to_zh = corrections_fr_to_zh
 
         self.language_configs = {
@@ -180,10 +188,8 @@ class CADChineseTranslator:
                 'context': self.context_en_to_zh
             }
         }
-        for config in self.language_configs.values():
-            config['glossary'] = {
-                term.casefold(): translation for term, translation in config['context'].items()
-            }
+        for mode, glossary in (("zh_to_fr", context_zh_to_fr), ("fr_to_zh", context_fr_to_zh), ("zh_to_en", context_zh_to_en), ("en_to_zh", context_en_to_zh)):
+            self.language_configs[mode]['glossary'] = glossary
         if self.deepl_api_key:
             try:
                 self.deepl_translator = deepl.Translator(self.deepl_api_key)
@@ -216,9 +222,6 @@ class CADChineseTranslator:
     def configure_azure(self, key, region=""):
         self.translation_provider = "azure"
         self.azure_translator = AzureTranslator(key, region) if key else None
-
-    def configure_language_assets(self, project_package_path=""):
-        self.project_package_path = project_package_path or ""
 
     def preprocess_abbreviations(self, text, lang_config_key):
         """在翻译前处理常见缩写，例如 W:800mm → 宽度:800mm，W400*H650 → 宽度400×高度650"""
@@ -267,19 +270,10 @@ class CADChineseTranslator:
             return f"建筑术语: {'; '.join(hints[:3])}."
         return text
 
-    def get_glossary_translation(self, text, lang_config_key):
-        return self.language_configs[lang_config_key]['glossary'].get(text.strip().casefold())
+    def get_glossary_translation(self, text, lang_config_key, profession="general"):
+        term = self.language_configs[lang_config_key]['glossary'].get(text.strip().casefold(), {})
+        return term.get(profession) or term.get("general")
 
-    def get_layer_glossary_translation(self, text, lang_config_key, layer):
-        if lang_config_key != 'fr_to_zh' or text.strip().casefold() != 'alimentation':
-            return None
-        layer = (layer or '').casefold()
-        if any(term in layer for term in ('eau', 'plomb', 'sanit', 'hydrau', 'aep')):
-            return '供水'
-        if any(term in layer for term in ('elec', 'élec', 'cfo', 'cfa', 'power', 'courant')):
-            return '供电'
-        return None
-    
     def post_process_translation(self, text, original, lang_config_key):
         if '建筑术语:' in text and '原文:' in text:
             text = text.split('原文:')[-1].strip()
@@ -313,7 +307,7 @@ class CADChineseTranslator:
         if not text or not lang_config_key:
             return text
 
-        cache_key = (text, lang_config_key, (layer or '').casefold())
+        cache_key = (text, lang_config_key, self.language_assets.cache_revision())
 
         # Step 1: 预清洗
         cleaned = self.cleaner.full_clean(text)
@@ -342,6 +336,7 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(cleaned)
 
         # Step 3: 缩写处理 & 中文校验
+        glossary_source = cleaned
         cleaned = self.preprocess_abbreviations(cleaned, lang_config_key)
         cleaned = self.cleaner.safe_utf8(cleaned)
 
@@ -354,16 +349,17 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(text)
 
         lang_config = self.language_configs[lang_config_key]
-        glossary_translation = self.language_assets.lookup_term(cleaned, lang_config_key, layer, self.project_package_path)
-        glossary_translation = glossary_translation or self.get_layer_glossary_translation(cleaned, lang_config_key, layer)
-        glossary_translation = glossary_translation or self.get_glossary_translation(cleaned, lang_config_key)
+        glossary_translation = self.language_assets.lookup_term(glossary_source, lang_config_key, self.profession)
+        glossary_translation = glossary_translation or self.get_glossary_translation(glossary_source, lang_config_key, self.profession)
+        glossary_translation = glossary_translation or self.language_assets.lookup_term(cleaned, lang_config_key, self.profession)
+        glossary_translation = glossary_translation or self.get_glossary_translation(cleaned, lang_config_key, self.profession)
         if glossary_translation:
             final = self.cleaner.safe_utf8(self.cleaner.full_clean(glossary_translation)).strip()
             self.translated_cache[cache_key] = final
             self.safe_log(f"✔ 术语表命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
             return final
 
-        memory_translation = self.language_assets.lookup_memory(cleaned, lang_config_key, layer)
+        memory_translation = self.language_assets.lookup_record(cleaned, lang_config_key, self.current_drawing_name, self.profession)
         if memory_translation:
             final = self.cleaner.safe_utf8(self.cleaner.full_clean(memory_translation)).strip()
             self.translated_cache[cache_key] = final
@@ -419,7 +415,7 @@ class CADChineseTranslator:
                 final = self.cleaner.safe_utf8(final)
 
             self.translated_cache[cache_key] = final
-            self.language_assets.record_memory(cleaned, final, lang_config_key, layer, self.translation_provider)
+            self.language_assets.record_provider_result(cleaned, final, lang_config_key, self.translation_provider, self.current_drawing_name, self.profession)
             self.language_assets.record_usage(self.translation_provider, len(cleaned))
             self.safe_log(f"✔ 翻译完成 ({'Azure Translator' if self.translation_provider == 'azure' else 'DeepL'}): \"{cleaned}\" → \"{final}\"")
             time.sleep(0.5)
@@ -579,6 +575,91 @@ class CADChineseTranslator:
             'location': layout.name if hasattr(layout, 'name') else 'Unknown',
             'type': entity.dxftype(),
         })
+
+    def _split_text_merge_signature(self, item):
+        """Return conservative geometry metadata for a standalone TEXT label."""
+        if item.get('type') != 'TEXT' or item.get('field') != 'text' or '|块:' in item.get('location', ''):
+            return None
+        entity = item['entity']
+        dxf = entity.dxf
+        try:
+            point = dxf.insert
+            height = float(dxf.height)
+        except (AttributeError, TypeError, ValueError):
+            return None
+        if height <= 0 or len(item['original_text']) > 32 or re.fullmatch(r'\d+(?:[.,]\d+)?\s*(?:m²|m2)', item['original_text'], re.IGNORECASE):
+            return None
+        return (
+            item['location'], item['layer'], getattr(dxf, 'style', ''),
+            round(float(getattr(dxf, 'rotation', 0.0)) % 360, 3), round(height, 4),
+            int(getattr(dxf, 'halign', 0)), int(getattr(dxf, 'valign', 0)),
+            float(point.x), float(point.y),
+        )
+
+    def build_translation_units(self, items, merge_split_text=False):
+        """Optionally join a short, vertically aligned run of standalone TEXT labels."""
+        if not merge_split_text:
+            return [{'items': [item], 'source': item['original_text']} for item in items]
+        indexed = [(index, item, self._split_text_merge_signature(item)) for index, item in enumerate(items)]
+        groups, consumed = [], set()
+        for index, item, signature in indexed:
+            if index in consumed or signature is None:
+                continue
+            base = signature[:7]
+            height, x, y = signature[4], signature[7], signature[8]
+            if any(
+                candidate_signature and candidate_signature[:7] == base
+                and 0.25 * height <= candidate_signature[8] - y <= 3.0 * height
+                and abs(candidate_signature[7] - x) <= 3.5 * height
+                for candidate_index, _, candidate_signature in indexed
+                if candidate_index not in consumed
+            ):
+                continue
+            run = [(index, item, x, y)]
+            candidates = sorted(
+                (candidate for candidate in indexed if candidate[0] not in consumed and candidate[2] and candidate[2][:7] == base),
+                key=lambda candidate: candidate[2][8], reverse=True,
+            )
+            # Only follow immediate vertical neighbours; this is deliberately conservative.
+            for candidate_index, candidate_item, candidate_signature in candidates:
+                if candidate_index == index or len(run) == 3:
+                    continue
+                candidate_x, candidate_y = candidate_signature[7], candidate_signature[8]
+                previous_y = run[-1][3]
+                gap = previous_y - candidate_y
+                if 0.25 * height <= gap <= 3.0 * height and abs(candidate_x - run[-1][2]) <= 3.5 * height:
+                    run.append((candidate_index, candidate_item, candidate_x, candidate_y))
+            if len(run) > 1:
+                ordered = [entry[1] for entry in run]
+                source = ' '.join(entry['original_text'] for entry in ordered)
+                if len(source) <= 60:
+                    groups.append((min(entry[0] for entry in run), {'items': ordered, 'source': source}))
+                    consumed.update(entry[0] for entry in run)
+        units = groups + [(index, {'items': [item], 'source': item['original_text']}) for index, item, _ in indexed if index not in consumed]
+        return [unit for _, unit in sorted(units, key=lambda entry: entry[0])]
+
+    @staticmethod
+    def reflow_split_text(text, line_count, source_lines=None):
+        if line_count <= 1:
+            return [text]
+        if source_lines and '/' in text:
+            separator_line = next((index for index, source in enumerate(source_lines) if '/' in source), None)
+            if separator_line is not None:
+                before, after = text.split('/', 1)
+                before_lines = separator_line + 1
+                before_parts = CADChineseTranslator.reflow_split_text(before, before_lines)
+                after_parts = CADChineseTranslator.reflow_split_text(after, line_count - before_lines)
+                return before_parts[:-1] + [before_parts[-1] + '/'] + after_parts
+        words = text.split()
+        if len(words) >= line_count:
+            result, cursor = [], 0
+            for line in range(line_count):
+                remaining_words, remaining_lines = len(words) - cursor, line_count - line
+                take = max(1, math.ceil(remaining_words / remaining_lines))
+                result.append(' '.join(words[cursor:cursor + take]))
+                cursor += take
+            return result
+        return [text[round(len(text) * line / line_count):round(len(text) * (line + 1) / line_count)] for line in range(line_count)]
 
     def _should_translate_attdef_tag(self, tag, default_text):
         """
@@ -865,21 +946,23 @@ class CADChineseTranslator:
             self.safe_log(f"写回失败: {e}\n{traceback.format_exc()}")
             raise
 
-    def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False, output_format="source", output_version="", resume_event=None, cancel_event=None):
+    def translate_cad_file(self, input_file, output_file, lang_config, include_blocks=False, output_format="source", output_version="", resume_event=None, cancel_event=None, profession="general", merge_split_text=False):
         from backend.cad import CadConversionSession
 
         wait_for_translation(resume_event, cancel_event)
+        self.current_drawing_name = Path(input_file).name
+        self.profession = profession
         with CadConversionSession(input_file, self.safe_log, output_format, output_version) as session:
             work_input = session.work_input
             work_output = session.work_output_path() or output_file
             wait_for_translation(resume_event, cancel_event)
-            self._translate_cad_file_dxf(work_input, work_output, lang_config, include_blocks, input_file, "", resume_event, cancel_event)
+            self._translate_cad_file_dxf(work_input, work_output, lang_config, include_blocks, input_file, "", resume_event, cancel_event, merge_split_text)
             if session.meta.is_dwg or output_version or output_format == "dwg":
                 wait_for_translation(resume_event, cancel_event)
                 session.finalize(work_output, output_file)
 
     def _translate_cad_file_dxf(
-        self, input_file, output_file, lang_config, include_blocks=False, source_label=None, output_version="", resume_event=None, cancel_event=None
+        self, input_file, output_file, lang_config, include_blocks=False, source_label=None, output_version="", resume_event=None, cancel_event=None, merge_split_text=False
     ):
         display_name = source_label or input_file
         self.safe_log(f"正在读取: {display_name}")
@@ -906,47 +989,53 @@ class CADChineseTranslator:
         # ============================================================
         # 执行翻译循环
         # ============================================================
-        total_items = len(items)
-        if total_items == 0:
+        units = self.build_translation_units(items, merge_split_text)
+        total_units = len(units)
+        if total_units == 0:
             self.safe_log("⚠️ 未找到任何可翻译的文本对象。")
         else:
-            self.safe_log(f"🚀 开始翻译，共发现 {total_items} 个文本对象...")
+            self.safe_log(f"🚀 开始翻译，共发现 {len(items)} 个文本对象...")
+            if merge_split_text and total_units != len(items):
+                self.safe_log(f"🧩 智能合并拆行文字：{len(items) - total_units} 个文本并入相邻短标签。")
             
             successful_translations = 0
             skipped_invalid = 0
 
-            for i, item in enumerate(items, 1):
+            for i, unit in enumerate(units, 1):
                 wait_for_translation(resume_event, cancel_event)
-                original_text = item['original_text']
+                original_text = unit['source']
                 
                 if not self.is_valid_text_for_translation(original_text):
                     skipped_invalid += 1
-                    item['translated_text'] = original_text
+                    for item in unit['items']:
+                        item['translated_text'] = item['original_text']
                     continue
 
-                translated = self.translate_text(original_text, lang_config, item.get('layer', ''))
-                item['translated_text'] = translated
-
-                if translated != original_text:
+                translated = self.translate_text(original_text, lang_config, unit['items'][0].get('layer', ''))
+                translated_lines = self.reflow_split_text(translated, len(unit['items']), [item['original_text'] for item in unit['items']])
+                for item, translated_line in zip(unit['items'], translated_lines):
+                    item['translated_text'] = translated_line
+                    if translated_line == item['original_text']:
+                        continue
                     try:
                         self.write_back_translation(
                             item['entity'],
-                            translated,
+                            translated_line,
                             item.get('field', 'text'),
                         )
                         if item.get('field') == 'tag':
                             self._sync_attrib_tags(
                                 doc,
                                 item.get('raw_source', original_text),
-                                translated,
+                                translated_line,
                             )
                         successful_translations += 1
                     except Exception as e:
                         self.safe_log(f" ❌ 写回实体失败: {e}", level="error")
                         raise RuntimeError(f"写回 CAD 实体失败: {e}") from e
                 
-                if i % 10 == 0 or i == total_items:
-                    self.safe_log(f"   进度: {i}/{total_items} ({i/total_items*100:.1f}%)")
+                if i % 10 == 0 or i == total_units:
+                    self.safe_log(f"   进度: {i}/{total_units} ({i/total_units*100:.1f}%)")
 
             self.safe_log(f"翻译统计：成功 {successful_translations}, 跳过 {skipped_invalid}")
 

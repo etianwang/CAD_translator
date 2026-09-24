@@ -1,58 +1,126 @@
-context_zh_to_en:
-  天花: ceiling
-  吊顶: suspended ceiling
-  天花图: reflected ceiling plan
-  楼板: floor slab
-  钢板: steel plate
-  墙: wall
-  剪力墙: shear wall
-  梁: beam
-  钢梁: steel beam
-  柱: column
-  基础: foundation
-  独立基础: isolated footing
-  标高: elevation
-  轴线: grid line
-  楼梯: stair
-  栏杆: guardrail
-  桥架: cable tray
-  线槽: cable trunking
-  风管: air duct
-  风口: air grille
-  新风: outdoor air
-  供电: power supply
-  电源供电: electrical power supply
-  总电源: main power supply
-  应急电源: emergency power supply
-  供水: water supply
-  冷水供水: cold water supply
-  热水供水: hot water supply
-  生活给水: potable water supply
-  新风机: fresh air handling unit
-  排风: exhaust air
-  排烟: smoke extraction
-  配电箱: distribution board
-  接地: grounding
-  套管: sleeve
-  预留洞: reserved opening
-  墙体预留洞: wall reservation
-  楼板预留洞: slab reservation
-  洞口: opening
-  开洞: opening
-  墙体开洞: wall opening
-  楼板开洞: floor opening
-  楼梯洞口: stair opening
-  门洞: door opening
-  窗洞: window opening
-  门: door
-  窗: window
-  落地窗: French window
-  过梁: lintel
-  保温: thermal insulation
-  管道井: service shaft
-  给排水: plumbing
-  消防: fire protection
-  空调: air conditioning
-  风机: fan
-  风机盘管: fan coil unit
-  水泵: water pump
+meta:
+  schema_version: 1
+  direction: zh_to_en
+  professions:
+  - general
+  - electrical
+  - hvac
+  - plumbing
+  - architecture
+  - decoration
+  usage: 每个原文保留通用译文，并仅在专业译文不同于通用译文时补充对应专业字段。
+terms:
+  天花:
+    general: ceiling
+  吊顶:
+    general: suspended ceiling
+  天花图:
+    general: reflected ceiling plan
+  楼板:
+    general: floor slab
+  钢板:
+    general: steel plate
+  墙:
+    general: wall
+  剪力墙:
+    general: shear wall
+  梁:
+    general: beam
+  钢梁:
+    general: steel beam
+  柱:
+    general: column
+  基础:
+    general: foundation
+  独立基础:
+    general: isolated footing
+  标高:
+    general: elevation
+  轴线:
+    general: grid line
+  楼梯:
+    general: stair
+  栏杆:
+    general: guardrail
+  桥架:
+    general: cable tray
+  线槽:
+    general: cable trunking
+  风管:
+    general: air duct
+  风口:
+    general: air grille
+  新风:
+    general: outdoor air
+  供电:
+    general: power supply
+  电源供电:
+    general: electrical power supply
+  总电源:
+    general: main power supply
+  应急电源:
+    general: emergency power supply
+  供水:
+    general: water supply
+  冷水供水:
+    general: cold water supply
+  热水供水:
+    general: hot water supply
+  生活给水:
+    general: potable water supply
+  新风机:
+    general: fresh air handling unit
+  排风:
+    general: exhaust air
+  排烟:
+    general: smoke extraction
+  配电箱:
+    general: distribution board
+  接地:
+    general: grounding
+  套管:
+    general: sleeve
+  预留洞:
+    general: reserved opening
+  墙体预留洞:
+    general: wall reservation
+  楼板预留洞:
+    general: slab reservation
+  洞口:
+    general: opening
+  开洞:
+    general: opening
+  墙体开洞:
+    general: wall opening
+  楼板开洞:
+    general: floor opening
+  楼梯洞口:
+    general: stair opening
+  门洞:
+    general: door opening
+  窗洞:
+    general: window opening
+  门:
+    general: door
+  窗:
+    general: window
+  落地窗:
+    general: French window
+  过梁:
+    general: lintel
+  保温:
+    general: thermal insulation
+  管道井:
+    general: service shaft
+  给排水:
+    general: plumbing
+  消防:
+    general: fire protection
+  空调:
+    general: air conditioning
+  风机:
+    general: fan
+  风机盘管:
+    general: fan coil unit
+  水泵:
+    general: water pump

@@ -1,4 +1,4 @@
-# Honsen CAD 中法英互译工具 v1.8.8
+# Honsen CAD 中法英互译工具 v1.9.2
 
 面向建筑、结构和机电图纸的 Windows/macOS 桌面翻译工具。它读取 CAD 图纸文字，使用 DeepL 或 Azure Translator F0 与工程术语表生成独立的译文图纸，支持单文件和可恢复的批量翻译队列。
 
@@ -8,7 +8,9 @@
 
 - 支持 `.dxf` 直接翻译；配置 [ODA File Converter](https://www.opendesign.com/guestfiles/oda_file_converter) 后支持 `.dwg`。
 - 支持中文→法语、法语→中文、中文→英语、英语→中文；每一批队列使用一个统一翻译方向。
-- 内置中法、法中、中英、英中 CAD 术语表。完整标签命中术语表时直接采用术语译文；其余文字交由所选翻译服务处理。
+- 内置中法、法中、中英、英中 CAD 术语表。完整标签命中术语表时直接采用术语译文；可在翻译时选择通用、电气、暖通、给排水、建筑或装饰专业分类，本地优先选用该分类术语后再回退通用术语。该分类不会传给 DeepL 或 Azure。
+- 可选开启“智能合并拆行文字”：仅将同样式、对齐且紧邻的短 `TEXT` 标签或房间名合并后翻译，再按原行数写回；默认关闭，不处理段落或 `MTEXT`。
+- 翻译记录会保存成功的 DeepL/Azure 结果；可按四个语言方向搜索、筛选、编辑，并将确认结果升为对应方向术语库。人工修正会在下一次翻译立即复用。
 - 可选择 DeepL 或 Azure Translator F0。Azure F0 用尽月度免费额度时会显示额度已用尽并停止该任务，不会反复重试；可等待下月额度重置。
 - 翻译 `TEXT`、`MTEXT`、`ATTDEF`、`ATTRIB` 与 `MULTILEADER` 文字；可选翻译块定义文字。
 - 支持输出为源格式、DXF 或 DWG，并可选择 ODA 支持的输出版本（AutoCAD R9 至 2018）。输出文件按目标语言添加 `fr_`、`en_` 或 `zh_` 前缀，不覆盖源文件。
@@ -23,7 +25,7 @@
 
 ## 使用
 
-1. 启动程序，选择翻译服务并填写对应 API Key；Azure 区域资源还需填写 Region。再选择输出目录、统一翻译方向、输出格式和版本。
+1. 启动程序，选择翻译服务并填写对应 API Key；Azure 区域资源还需填写 Region。再选择输出目录、统一翻译方向、专业分类、输出格式和版本；如图纸有被拆开的短房间名，可选择开启“智能合并拆行文字”。每次启动默认“通用”且该开关默认关闭，批量开始后两者均锁定。
 2. 点击“添加文件”选择一个或多个 DXF/DWG 文件；添加不会立即调用 ODA 或 DeepL。
 3. 点击“开始翻译”。处理中可暂停或停止，失败项可单独重翻。
 4. 在输出目录中查看带语言前缀的译文图纸，并在 CAD 软件中复核文字与版式。
@@ -102,10 +104,10 @@ cd frontend
 npm install
 npm run build
 cd ..
-pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.8.8.spec
+pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.9.2.spec
 ```
 
-生成文件为 `dist/Honsen_CAD_Translator_v1.8.8.exe`。如需开箱支持 DWG，请将完整 ODA 目录放在 `dist/ODAFileConverter/`。
+生成文件为 `dist/Honsen_CAD_Translator_v1.9.2.exe`。如需开箱支持 DWG，请将完整 ODA 目录放在 `dist/ODAFileConverter/`。
 
 安装 Inno Setup 6 后可生成安装包：
 
@@ -125,7 +127,7 @@ cd frontend && npm ci && npm run build && cd ..
 python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg
 ```
 
-生成单个 `dist/Honsen CAD Translator.app` 与可分发的 `dist/Honsen_CAD_Translator_v1.8.8_macOS_arm64.dmg`；官方 ODA DMG 会嵌入应用的 `Contents/Resources/ODAFileConverter.dmg`。程序需要 ODA 时将其只读挂载，直接调用官方签名的 `ODAFileConverter.app`，关闭时卸载。构建脚本会校验 DMG 签名、Gatekeeper 状态与架构，拒绝将 x86_64 ODA 搭配 arm64 主程序，反之亦然。
+生成单个 `dist/Honsen CAD Translator.app` 与可分发的 `dist/Honsen_CAD_Translator_v1.9.2_macOS_arm64.dmg`；官方 ODA DMG 会嵌入应用的 `Contents/Resources/ODAFileConverter.dmg`。程序需要 ODA 时将其只读挂载，直接调用官方签名的 `ODAFileConverter.app`，关闭时卸载。构建脚本会校验 DMG 签名、Gatekeeper 状态与架构，拒绝将 x86_64 ODA 搭配 arm64 主程序，反之亦然。
 
 默认 `--identity -` 仅用于本机测试签名。发布时在对应架构的 macOS/Python 环境分别生成 Apple Silicon 和 Intel 版，并传入 `--identity "Developer ID Application: ..."`，然后对成品进行 Apple 公证。当前 Homebrew Python 只有 arm64 切片，不能在本机交叉产出真正的 Intel 主应用。
 

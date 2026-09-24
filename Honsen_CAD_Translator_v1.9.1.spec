@@ -16,7 +16,7 @@ datas += [(os.path.join(spec_dir, "glossaries", name), "glossaries") for name in
 for folder, _, names in os.walk(os.path.join(spec_dir, "frontend", "dist")):
     for name in names:
         source = os.path.join(folder, name)
-        datas.append((source, os.path.join("frontend", "dist", os.path.relpath(folder, os.path.join(spec_dir, "frontend", "dist")))))
+        datas.append((source, os.path.join("frontend", "dist", os.path.relpath(folder, os.path.join(spec_dir, "frontend", "dist")))) )
 
 hiddenimports = [
     "backend.api", "backend.cad", "backend.language_assets", "backend.licensing", "backend.providers.azure", "backend.queue", "backend.storage", "backend.text_cleaning", "backend.translator", "desktop.launcher", "desktop.native_bridge", "python_multipart",
@@ -25,7 +25,4 @@ hiddenimports = [
 
 a = Analysis(["run.py"], pathex=[spec_dir], binaries=[], datas=datas, hiddenimports=hiddenimports)
 pyz = PYZ(a.pure)
-exe = EXE(
-    pyz, a.scripts, a.binaries, a.datas, [], name="Honsen_CAD_Translator_v1.8.8",
-    console=False, icon=[os.path.join(spec_dir, "ico.ico")],
-)
+exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], name="Honsen_CAD_Translator_v1.9.1", console=False, icon=[os.path.join(spec_dir, "ico.ico")])

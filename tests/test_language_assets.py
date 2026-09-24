@@ -1,4 +1,4 @@
-"""No-network checks for the local language asset precedence and storage."""
+"""No-network v1.9.0 language-asset checks."""
 
 import tempfile
 from pathlib import Path
@@ -9,28 +9,38 @@ from backend.translator import CADChineseTranslator
 
 with tempfile.TemporaryDirectory() as tmp:
     assets = LanguageAssets(Path(tmp) / "assets.sqlite3")
-    project_path = Path(tmp) / "project.hcterms.json"
-    assets.create_project(project_path, "Test project")
 
-    assets.upsert_term("global", "fr_to_zh", "service label", "全局译文")
-    assets.upsert_term("project", "fr_to_zh", "service label", "项目译文", project_path=str(project_path))
-    assert assets.lookup_term("SERVICE LABEL", "fr_to_zh", project_path=str(project_path)) == "项目译文"
-    assert assets.lookup_term("SERVICE LABEL", "fr_to_zh") == "全局译文"
+    assets.upsert_term("fr_to_zh", "S.A.S", "前室")
+    assert assets.lookup_term("s-a-s", "fr_to_zh") == "前室"
+    assert assets.lookup_term("S_A_S", "fr_to_zh") == "前室"
+    assert assets.lookup_term("SAS", "fr_to_zh") == "前室"
+    assets.upsert_term("fr_to_zh", "A-01", "编号")
+    assert assets.lookup_term("A01", "fr_to_zh") is None
 
-    assets.record_memory("memory label", "接口译文", "fr_to_zh", "ELEC", "deepl")
-    assert assets.lookup_memory("MEMORY LABEL", "fr_to_zh", "ELEC") == "接口译文"
-    assets.upsert_memory("fr_to_zh", "memory label", "人工译文", "ELEC")
-    assets.record_memory("memory label", "接口新译文", "fr_to_zh", "ELEC", "azure")
-    assert assets.lookup_memory("memory label", "fr_to_zh", "ELEC") == "人工译文"
+    assets.upsert_term("zh_to_fr", "控制", "CMD")
+    assets.upsert_term("zh_to_fr", "控制", "régulation", profession="hvac")
+    assert assets.lookup_term("控制", "zh_to_fr", "hvac") == "régulation"
+    assert assets.lookup_term("控制", "zh_to_fr", "electrical") == "CMD"
+
+    assets.record_provider_result("service label", "接口译文", "fr_to_zh", "deepl", "first.dxf")
+    assert assets.lookup_record("SERVICE LABEL", "fr_to_zh", "second.dwg") == "接口译文"
+    record = assets.list_records("fr_to_zh", search="service")
+    assert record["total"] == 1 and set(record["items"][0]["drawings"].split("、")) == {"first.dxf", "second.dwg"}
+    record_id = record["items"][0]["id"]
+    assets.update_record(record_id, "service label", "人工译文")
+    assets.record_provider_result("service label", "接口新译文", "fr_to_zh", "azure", "third.dxf")
+    assert assets.lookup_record("service label", "fr_to_zh") == "人工译文"
+    assets.promote_record(record_id)
+    assert assets.lookup_term("service label", "fr_to_zh") == "人工译文"
 
     translator = CADChineseTranslator(log_callback=lambda *_args, **_kwargs: None)
     translator.language_assets = assets
-    translator.configure_language_assets(str(project_path))
-    assert translator.translate_text("service label", "fr_to_zh") == "项目译文"
-    assert translator.translate_text("memory label", "fr_to_zh", "ELEC") == "人工译文"
+    translator.deepl_translator = None
+    assert translator.translate_text("service label", "fr_to_zh") == "人工译文"
+    assets.upsert_term("fr_to_zh", "service label", "术语覆盖")
+    assert translator.translate_text("service label", "fr_to_zh") == "术语覆盖"
 
-    assets.record_usage("azure", 123)
-    usage = assets.usage()
-    assert usage["azure"]["characters"] == 123 and usage["azure"]["remaining"] == 2_000_000 - 123
-    assert len(assets.list_terms(str(project_path))) == 2
-    assert project_path.is_file()
+    assets.record_provider_result("风机", "ventilateur", "zh_to_fr", "deepl", profession="hvac")
+    assets.record_provider_result("风机", "fan", "zh_to_fr", "deepl", profession="electrical")
+    assert assets.lookup_record("风机", "zh_to_fr", profession="hvac") == "ventilateur"
+    assert assets.lookup_record("风机", "zh_to_fr", profession="plumbing") is None

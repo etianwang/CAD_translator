@@ -43,12 +43,8 @@ DROPPED_FILE_RETENTION_SECONDS = 30 * 24 * 60 * 60
 QR_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 QR_CACHE_DIR = Path.home() / ".cad_translator_qr_cache"
 _QR_CACHE_LOCK = threading.Lock()
-BUILTIN_GLOSSARIES = {
-    "zh_to_fr": ("glossaries/translation_context.yaml", "context_zh_to_fr"),
-    "fr_to_zh": ("glossaries/translation_context_fr_to_zh.yaml", "context_fr_to_zh"),
-    "zh_to_en": ("glossaries/translation_context_zh_to_en.yaml", "context_zh_to_en"),
-    "en_to_zh": ("glossaries/translation_context_en_to_zh.yaml", "context_en_to_zh"),
-}
+BUILTIN_GLOSSARIES = {"zh_to_fr": "glossaries/translation_context_zh_to_fr.yaml", "fr_to_zh": "glossaries/translation_context_fr_to_zh.yaml", "zh_to_en": "glossaries/translation_context_zh_to_en.yaml", "en_to_zh": "glossaries/translation_context_en_to_zh.yaml"}
+PROFESSIONS = {"general", "electrical", "hvac", "plumbing", "architecture", "decoration"}
 SYSTEM_ACCENT_FALLBACK = (0.56, 0.56, 0.58)  # macOS Graphite-like neutral fallback
 
 
@@ -99,9 +95,10 @@ def preload_support_qrcodes() -> None:
 def builtin_terms() -> list[dict]:
     """Expose the shipped YAML glossary as a read-only asset list."""
     entries = []
-    for mode, (filename, key) in BUILTIN_GLOSSARIES.items():
-        for index, (source, target) in enumerate(load_yaml_data(filename).get(key, {}).items()):
-            entries.append({"id": f"{mode}:{index}", "scope": "builtin", "mode": mode, "source": source, "target": target, "layer_contains": ""})
+    for mode, filename in BUILTIN_GLOSSARIES.items():
+        for index, (source, values) in enumerate(load_yaml_data(filename).get("terms", {}).items()):
+            for profession, target in values.items():
+                entries.append({"id": f"{mode}:{index}:{profession}", "scope": "builtin", "mode": mode, "source": source, "target": target, "profession": profession})
     return entries
 
 
@@ -119,7 +116,9 @@ class TranslateBody(BaseModel):
     output_dir: str
     output_name: str
     translation_mode: str = "zh_to_fr"
+    profession: str = "general"
     translate_blocks: bool = False
+    merge_split_text: bool = False
     deepl_key: str
     provider: str = "deepl"
     azure_key: str = ""
@@ -134,7 +133,9 @@ class BatchBody(BaseModel):
 class BatchStartBody(BaseModel):
     output_dir: str = ""
     translation_mode: str = "zh_to_fr"
+    profession: str = "general"
     translate_blocks: bool = False
+    merge_split_text: bool = False
     output_format: str = "source"
     output_version: str = ""
     deepl_key: str = ""
@@ -145,19 +146,21 @@ class BatchStartBody(BaseModel):
 
 
 class AssetTermBody(BaseModel):
-    scope: str = "global"
     mode: str
     source: str
     target: str
-    layer_contains: str = ""
-    project_package_path: str = ""
+    profession: str = "general"
     id: Optional[int] = None
 
 
 class AssetDeleteBody(BaseModel):
-    scope: str = "global"
     id: int
-    project_package_path: str = ""
+
+
+class TranslationRecordBody(BaseModel):
+    id: int
+    source: str
+    target: str
 
 
 class ProjectPackageBody(BaseModel):
@@ -221,14 +224,13 @@ class TranslationService:
         name = f"{output_prefix(task['translation_mode'])}_{Path(task['input_file']).stem}"
         output = self.reserve_output(task, name, ext)
         translator = CADChineseTranslator(log_callback=log)
-        translator.configure_language_assets(task.get("project_package_path") or config.get("project_package_path", ""))
         if provider == "azure":
             translator.configure_azure(key, task.get("azure_region") or config.get("azure_region", ""))
         else:
             translator.deepl_api_key = key
             if not translator.deepl_translator:
                 raise RuntimeError("DeepL 初始化失败，请检查 API Key")
-        translator.translate_cad_file(task["input_file"], output, task["translation_mode"], task["translate_blocks"], fmt, task.get("output_version", ""), resume_event, cancel_event)
+        translator.translate_cad_file(task["input_file"], output, task["translation_mode"], task["translate_blocks"], fmt, task.get("output_version", ""), resume_event, cancel_event, task.get("profession", "general"), task.get("merge_split_text", False))
         return output
 
     def reserve_output(self, task: dict, name: str, ext: str) -> str:
@@ -366,6 +368,8 @@ class TranslationService:
             return "请输入输出文件名"
         if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
             return "不支持的翻译方向"
+        if body.profession not in PROFESSIONS:
+            return "不支持的专业分类"
         if body.provider not in {"deepl", "azure"}:
             return "不支持的翻译服务"
         if not (body.azure_key if body.provider == "azure" else body.deepl_key).strip():
@@ -388,7 +392,6 @@ class TranslationService:
 
         def worker():
             translator = CADChineseTranslator(log_callback=self.emit_log)
-            translator.configure_language_assets(body.project_package_path)
             if body.provider == "azure":
                 translator.configure_azure(body.azure_key, body.azure_region)
             else:
@@ -408,6 +411,8 @@ class TranslationService:
                     output_file,
                     body.translation_mode,
                     body.translate_blocks,
+                    profession=body.profession,
+                    merge_split_text=body.merge_split_text,
                 )
                 self.emit_log("=" * 40)
                 self.set_status("success", "翻译完成！")
@@ -495,31 +500,19 @@ def post_config(body: ConfigBody):
 
 
 @app.get("/api/language-assets")
-def get_language_assets():
-    config = service.load_config()
-    project_path = config.get("project_package_path", "")
-    try:
-        project = service.language_assets.project_info(project_path) if project_path else {"path": "", "name": "", "terms": []}
-    except ValueError as exc:
-        project = {"path": project_path, "name": "", "terms": [], "error": str(exc)}
-    return {"project": project, "terms": service.language_assets.list_terms(project_path), "builtin_terms": builtin_terms(), "memory": service.language_assets.list_memory(), "usage": service.language_assets.usage()}
-
-
-@app.post("/api/language-assets/project")
-def select_project_package(body: ProjectPackageBody):
-    try:
-        project = service.language_assets.create_project(body.path, body.name) if body.create else service.language_assets.project_info(body.path)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    config = service.load_config()
-    service.save_config(config["deepl_key"], config["output_dir"], config["provider"], config["azure_key"], config["azure_region"], project["path"])
-    return project
+def get_language_assets(mode: str = "zh_to_fr", search: str = "", profession: str = "general", provider: str = "", manual: str = "", drawing: str = "", page: int = 1):
+    return {
+        "terms": service.language_assets.list_terms(mode, search, profession),
+        "builtin_terms": [term for term in builtin_terms() if term["mode"] == mode and term["profession"] == profession],
+        "records": service.language_assets.list_records(mode, search, provider, manual, drawing, page, profession=profession),
+        "usage": service.language_assets.usage(),
+    }
 
 
 @app.post("/api/language-assets/terms")
 def save_language_term(body: AssetTermBody):
     try:
-        service.language_assets.upsert_term(body.scope, body.mode, body.source, body.target, body.layer_contains, body.project_package_path, body.id)
+        service.language_assets.upsert_term(body.mode, body.source, body.target, body.id, body.profession)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"ok": True}
@@ -527,22 +520,31 @@ def save_language_term(body: AssetTermBody):
 
 @app.post("/api/language-assets/terms/delete")
 def remove_language_term(body: AssetDeleteBody):
-    service.language_assets.delete_term(body.scope, body.id, body.project_package_path)
+    service.language_assets.delete_term(body.id)
     return {"ok": True}
 
 
-@app.post("/api/language-assets/memory")
-def save_translation_memory(body: AssetTermBody):
+@app.post("/api/language-assets/records")
+def save_translation_record(body: TranslationRecordBody):
     try:
-        service.language_assets.upsert_memory(body.mode, body.source, body.target, body.layer_contains, body.id)
+        service.language_assets.update_record(body.id, body.source, body.target)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"ok": True}
 
 
-@app.post("/api/language-assets/memory/delete")
-def remove_translation_memory(body: AssetDeleteBody):
-    service.language_assets.delete_memory(body.id)
+@app.post("/api/language-assets/records/delete")
+def remove_translation_record(body: AssetDeleteBody):
+    service.language_assets.delete_record(body.id)
+    return {"ok": True}
+
+
+@app.post("/api/language-assets/records/promote")
+def promote_translation_record(body: AssetDeleteBody):
+    try:
+        service.language_assets.promote_record(body.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"ok": True}
 
 
@@ -616,6 +618,8 @@ def start_batch(body: BatchStartBody):
     os.makedirs(output_dir, exist_ok=True)
     if body.translation_mode not in {"zh_to_fr", "fr_to_zh", "zh_to_en", "en_to_zh"}:
         raise HTTPException(status_code=400, detail="不支持的翻译方向")
+    if body.profession not in PROFESSIONS:
+        raise HTTPException(status_code=400, detail="不支持的专业分类")
     if body.provider not in {"deepl", "azure"}:
         raise HTTPException(status_code=400, detail="不支持的翻译服务")
     if body.output_format not in {"source", "dxf", "dwg"}:

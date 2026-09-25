@@ -105,6 +105,75 @@ class TranslationModeTests(unittest.TestCase):
         self.assertEqual(translator.translate_text("WALL OPENING", "en_to_zh"), "墙体开洞")
         self.assertEqual(translator.translate_text("POWER SUPPLY", "en_to_zh"), "供电")
 
+    def test_french_room_labels_strip_areas_before_glossary_lookup(self):
+        class Translator:
+            def translate_text(self, *args, **kwargs):
+                raise AssertionError("room labels in the bundled glossary must not call a provider")
+
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        cad_translator.deepl_translator = Translator()
+        self.assertEqual(cad_translator.translate_text("Loge/PC Sécurité53.30m²", "fr_to_zh"), "门卫室/安保控制室 53.30平方米")
+        self.assertEqual(cad_translator.translate_text("Local Autocom-Info.11.39m²", "fr_to_zh"), "电话交换机/信息机房 11.39平方米")
+        self.assertEqual(cad_translator.translate_text("Bureau PsychologueScolaire13.90m²", "fr_to_zh"), "学校心理咨询师办公室 13.90平方米")
+        self.assertEqual(cad_translator.translate_text("Salle de propreté15.37m²", "fr_to_zh"), "清洁间 15.37平方米")
+        self.assertEqual(cad_translator.translate_text("Stockage Jeux Primaire14.26m²", "fr_to_zh"), "小学游戏器材储藏室 14.26平方米")
+        self.assertEqual(cad_translator.translate_text("Vide sur Terrasse", "fr_to_zh"), "露台上空")
+        self.assertEqual(cad_translator.translate_text("Vide sur Parking", "fr_to_zh"), "停车场上空")
+        self.assertEqual(cad_translator.translate_text("Vide sur Cours anglaise", "fr_to_zh"), "下沉庭院上空")
+        self.assertEqual(cad_translator.translate_text("Cours anglaise", "fr_to_zh"), "下沉庭院")
+        self.assertEqual(cad_translator.translate_text("Cour anglaise", "fr_to_zh"), "下沉庭院")
+        self.assertEqual(cad_translator.translate_text("Salle d'Atelier 1Classe de CP60.48m²", "fr_to_zh"), "一年级活动教室 60.48平方米")
+        self.assertEqual(cad_translator.translate_text("Salle des Maitres Primaire15.73m²", "fr_to_zh"), "小学教师办公室 15.73平方米")
+        self.assertEqual(cad_translator.translate_text("Préau Primaire76.77m²", "fr_to_zh"), "小学风雨操场 76.77平方米")
+        self.assertEqual(cad_translator.translate_text("CANIVEAUX", "fr_to_zh"), "排水沟")
+
+    def test_french_room_area_is_reappended_after_provider_translation(self):
+        class Translator:
+            def translate_text(self, *args, **kwargs):
+                return SimpleNamespace(text="会议室")
+
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        cad_translator.deepl_translator = Translator()
+        self.assertEqual(cad_translator.translate_text("Salle inconnue12.50m²", "fr_to_zh"), "会议室 12.50平方米")
+        self.assertEqual(cad_translator.language_assets.lookup_record("Salle inconnue", "fr_to_zh"), "会议室")
+
+    def test_cad_sizes_are_excluded_from_label_lookup_without_changing_the_size(self):
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        cad_translator.language_assets.upsert_term("fr_to_zh", "Canalisation", "管道")
+        cad_translator.language_assets.upsert_term("fr_to_zh", "Porte", "门")
+        self.assertEqual(cad_translator.translate_text("CanalisationDN100", "fr_to_zh"), "管道 DN100")
+        self.assertEqual(cad_translator.translate_text("PorteØ110mm", "fr_to_zh"), "门 Ø110mm")
+        self.assertEqual(cad_translator.translate_text("Porte90×210", "fr_to_zh"), "门 90×210")
+        self.assertEqual(cad_translator.split_cad_suffix("400mm"), ("400mm", "", False))
+
+    def test_french_window_sill_labels_bypass_bad_translation_records(self):
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        cad_translator.language_assets.record_provider_result(
+            "FC 450*240 Allège 110", "FC 450*240 Spandrel 110", "fr_to_zh", "azure"
+        )
+        self.assertEqual(
+            cad_translator.translate_text("FC 450*240 Allège 110", "fr_to_zh"),
+            "FC 450×240 窗台高 110",
+        )
+        self.assertEqual(
+            cad_translator.translate_text("FC 300*240 Allège 110", "fr_to_zh"),
+            "FC 300×240 窗台高 110",
+        )
+
+    def test_cad_codes_with_dimensions_bypass_bad_translation_records(self):
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        cad_translator.language_assets.record_provider_result(
+            "BC 200*240", "公元前200年×240年", "fr_to_zh", "azure"
+        )
+        self.assertEqual(cad_translator.translate_text("BC 200*240", "fr_to_zh"), "BC 200×240")
+        self.assertEqual(cad_translator.translate_text("PP1 100×240", "fr_to_zh"), "PP1 100×240")
+
+    def test_french_cad_rules_are_loaded_from_the_glossary(self):
+        cad_translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        self.assertEqual(cad_translator.get_rule_translation("Cours anglaise", "fr_to_zh"), "下沉庭院")
+        self.assertEqual(cad_translator.get_rule_translation("Vide sur Cour anglaise", "fr_to_zh"), "下沉庭院上空")
+        self.assertEqual(cad_translator.get_rule_translation("FC 450*240 Allège 110", "fr_to_zh"), "FC 450×240 窗台高 110")
+
     def test_french_abbreviation_uses_professional_glossary_before_legacy_expansion(self):
         translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
         translator.profession = "electrical"

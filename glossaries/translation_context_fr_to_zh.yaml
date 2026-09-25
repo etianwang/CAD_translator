@@ -9,7 +9,73 @@ meta:
   - architecture
   - decoration
   usage: 每个原文保留通用译文，并仅在专业译文不同于通用译文时补充对应专业字段。
+rules:
+  - pattern: 'Vide\s+sur\s+Cours?\s+anglaise'
+    target: 下沉庭院上空
+  - pattern: 'Cours?\s+anglaise'
+    target: 下沉庭院
+  - pattern: '(?P<code>[A-Za-z][A-Za-z0-9]*)\s+(?P<width>\d+(?:[.,]\d+)?)\s*[*×x]\s*(?P<height>\d+(?:[.,]\d+)?)\s+Allège\s+(?P<sill>\d+(?:[.,]\d+)?)'
+    target: '{code} {width}×{height} 窗台高 {sill}'
+  - pattern: '(?P<code>[A-Z]{1,4}\d*)\s+(?P<width>\d+(?:[.,]\d+)?)\s*[*×x]\s*(?P<height>\d+(?:[.,]\d+)?)'
+    target: '{code} {width}×{height}'
 terms:
+  Loge/PC Sécurité:
+    general: 门卫室/安保控制室
+    architecture: 门卫室/安保控制室
+  Local Autocom-Info.:
+    general: 电话交换机/信息机房
+    electrical: 电话交换机/信息机房
+  Bureau PsychologueScolaire:
+    general: 学校心理咨询师办公室
+    architecture: 学校心理咨询师办公室
+  Salle de propreté:
+    general: 清洁间
+    architecture: 清洁间
+  Stockage Jeux Primaire:
+    general: 小学游戏器材储藏室
+    architecture: 小学游戏器材储藏室
+  Stockage Jeux Maternelle:
+    general: 幼儿园游戏器材储藏室
+    architecture: 幼儿园游戏器材储藏室
+  Vide sur Terrasse:
+    general: 露台上空
+    architecture: 露台上空
+  Vide sur Parking:
+    general: 停车场上空
+    architecture: 停车场上空
+  Vide sur Cours anglaise:
+    general: 下沉庭院上空
+    architecture: 下沉庭院上空
+  Vide sur Cour anglaise:
+    general: 下沉庭院上空
+    architecture: 下沉庭院上空
+  Cours anglaise:
+    general: 下沉庭院
+    architecture: 下沉庭院
+  Cour anglaise:
+    general: 下沉庭院
+    architecture: 下沉庭院
+  Salle d'Atelier 1Classe de CP:
+    general: 一年级活动教室
+    architecture: 一年级活动教室
+  Salle des Maitres Primaire:
+    general: 小学教师办公室
+    architecture: 小学教师办公室
+  Préau Primaire:
+    general: 小学风雨操场
+    architecture: 小学风雨操场
+  Salle à Manger Primaire:
+    general: 小学餐厅
+    architecture: 小学餐厅
+  CANIVEAUX:
+    general: 排水沟
+    plumbing: 排水沟
+  FRIGO:
+    general: 冰箱
+    architecture: 冰箱
+  Plaque+Four+Hotte:
+    general: 灶台+烤箱+油烟机
+    architecture: 灶台+烤箱+油烟机
   APPLIQUE LED 18W:
     general: 18W LED壁灯
     electrical: 18W LED壁灯

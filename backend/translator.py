@@ -109,6 +109,16 @@ OUTPUT_PREFIXES = {
     "en_to_zh": "zh",
 }
 
+CAD_SUFFIX_RE = re.compile(
+    r"^(?P<label>.*?)(?P<suffix>"
+    r"\d+(?:[.,]\d+)?\s*m(?:²|2)"
+    r"|(?:DN|Ø|Φ)\s*\d+(?:[.,]\d+)?(?:\s*mm)?"
+    r"|\d+(?:[.,]\d+)?\s*(?:mm|cm|m)"
+    r"|\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?(?:\s*(?:mm|cm|m))?"
+    r")\s*$",
+    re.IGNORECASE,
+)
+
 
 def output_prefix(mode):
     return OUTPUT_PREFIXES.get(mode, "fr")
@@ -154,6 +164,7 @@ class CADChineseTranslator:
         context_fr_to_zh = load_glossary_terms("glossaries/translation_context_fr_to_zh.yaml")
         context_zh_to_en = load_glossary_terms("glossaries/translation_context_zh_to_en.yaml")
         context_en_to_zh = load_glossary_terms("glossaries/translation_context_en_to_zh.yaml")
+        rules_fr_to_zh = load_yaml_data("glossaries/translation_context_fr_to_zh.yaml").get("rules", [])
         corrections_fr_to_zh = load_yaml_data("glossaries/translation_corrections.yaml").get("corrections_fr_to_zh", {})
 
         self.context_zh_to_fr = {key: value.get("general", "") for key, value in context_zh_to_fr.items()}
@@ -173,7 +184,8 @@ class CADChineseTranslator:
                 'source': 'fr',
                 'target': 'zh-cn',
                 'name': '法语→中文',
-                'context': self.context_fr_to_zh
+                'context': self.context_fr_to_zh,
+                'rules': rules_fr_to_zh,
             },
             'zh_to_en': {
                 'source': 'zh-cn',
@@ -302,6 +314,37 @@ class CADChineseTranslator:
             text = re.sub(rf'\b{re.escape(wrong)}\b', right, text)
 
         return self.cleaner.normalize_whitespace(text)
+
+    @staticmethod
+    def split_cad_suffix(text):
+        """Keep trailing CAD areas, pipe sizes, and dimensions out of label lookup."""
+        match = CAD_SUFFIX_RE.fullmatch(text.strip())
+        if not match:
+            return text, "", False
+        label, suffix = match.group("label").strip(), match.group("suffix").strip()
+        if not label or not re.search(r"[^\d\s.,]", label):
+            return text, "", False
+        return label, suffix, bool(re.fullmatch(r"\d+(?:[.,]\d+)?\s*m(?:²|2)", suffix, re.IGNORECASE))
+
+    @staticmethod
+    def append_cad_suffix(text, suffix, is_area, lang_config_key):
+        if not suffix:
+            return text
+        if is_area and lang_config_key.endswith("_to_zh"):
+            suffix = f"{suffix[:-2].strip()}平方米"
+        return f"{text} {suffix}"
+
+    def get_rule_translation(self, text, lang_config_key):
+        """Apply ordered, full-label CAD rules from the direction glossary."""
+        rules = self.language_configs.get(lang_config_key, {}).get("rules", [])
+        for rule in rules:
+            pattern, target = rule.get("pattern"), rule.get("target")
+            if not isinstance(pattern, str) or not isinstance(target, str):
+                continue
+            match = re.fullmatch(pattern, text.strip(), re.IGNORECASE)
+            if match:
+                return target.format(**match.groupdict())
+        return None
    
     def translate_text(self, text, lang_config_key, layer=''):
         if not text or not lang_config_key:
@@ -336,8 +379,9 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(cleaned)
 
         # Step 3: 缩写处理 & 中文校验
-        glossary_source = cleaned
-        cleaned = self.preprocess_abbreviations(cleaned, lang_config_key)
+        raw_source = cleaned
+        glossary_source, suffix, is_area = self.split_cad_suffix(cleaned)
+        cleaned = self.preprocess_abbreviations(glossary_source, lang_config_key)
         cleaned = self.cleaner.safe_utf8(cleaned)
 
         if lang_config_key.startswith("zh_to_") and not re.search(r'[\u4e00-\u9fff]', cleaned):
@@ -349,12 +393,19 @@ class CADChineseTranslator:
             return self.cleaner.safe_utf8(text)
 
         lang_config = self.language_configs[lang_config_key]
+        rule_translation = self.get_rule_translation(raw_source, lang_config_key)
+        if rule_translation:
+            final = rule_translation
+            self.translated_cache[cache_key] = final
+            self.safe_log(f"✔ CAD 规则命中 ({lang_config['name']}): \"{raw_source}\" → \"{final}\"")
+            return final
         glossary_translation = self.language_assets.lookup_term(glossary_source, lang_config_key, self.profession)
         glossary_translation = glossary_translation or self.get_glossary_translation(glossary_source, lang_config_key, self.profession)
         glossary_translation = glossary_translation or self.language_assets.lookup_term(cleaned, lang_config_key, self.profession)
         glossary_translation = glossary_translation or self.get_glossary_translation(cleaned, lang_config_key, self.profession)
         if glossary_translation:
             final = self.cleaner.safe_utf8(self.cleaner.full_clean(glossary_translation)).strip()
+            final = self.append_cad_suffix(final, suffix, is_area, lang_config_key)
             self.translated_cache[cache_key] = final
             self.safe_log(f"✔ 术语表命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
             return final
@@ -362,6 +413,7 @@ class CADChineseTranslator:
         memory_translation = self.language_assets.lookup_record(cleaned, lang_config_key, self.current_drawing_name, self.profession)
         if memory_translation:
             final = self.cleaner.safe_utf8(self.cleaner.full_clean(memory_translation)).strip()
+            final = self.append_cad_suffix(final, suffix, is_area, lang_config_key)
             self.translated_cache[cache_key] = final
             self.safe_log(f"✔ 翻译记忆命中 ({lang_config['name']}): \"{cleaned}\" → \"{final}\"")
             return final
@@ -408,6 +460,8 @@ class CADChineseTranslator:
             final = self.cleaner.safe_utf8(final)
             final = self.cleaner.full_clean(final)
             final = self.cleaner.safe_utf8(final).strip()  # ✨ 此处加入 strip
+            record_final = final
+            final = self.append_cad_suffix(final, suffix, is_area, lang_config_key)
 
             if self.contains_surrogates(final):
                 self.safe_log(f"⚠ 最终翻译仍包含代理字符，将用占位符替换: {repr(final)}")
@@ -415,7 +469,7 @@ class CADChineseTranslator:
                 final = self.cleaner.safe_utf8(final)
 
             self.translated_cache[cache_key] = final
-            self.language_assets.record_provider_result(cleaned, final, lang_config_key, self.translation_provider, self.current_drawing_name, self.profession)
+            self.language_assets.record_provider_result(cleaned, record_final, lang_config_key, self.translation_provider, self.current_drawing_name, self.profession)
             self.language_assets.record_usage(self.translation_provider, len(cleaned))
             self.safe_log(f"✔ 翻译完成 ({'Azure Translator' if self.translation_provider == 'azure' else 'DeepL'}): \"{cleaned}\" → \"{final}\"")
             time.sleep(0.5)

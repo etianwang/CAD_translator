@@ -340,6 +340,8 @@ class TranslationModeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             drawing = f"{tmp}/drawing.dxf"
             open(drawing, "w", encoding="utf-8").close()
+            facade = TranslateBody(input_file=drawing, output_dir=tmp, output_name="output", profession="facade", deepl_key="key")
+            self.assertIsNone(service.validate(facade))
             body = TranslateBody(input_file=drawing, output_dir=tmp, output_name="output", profession="unknown", deepl_key="key")
             self.assertEqual(service.validate(body), "不支持的专业分类")
 

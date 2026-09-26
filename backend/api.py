@@ -27,6 +27,7 @@ from backend.translator import CADChineseTranslator, CONFIG_PATH, load_yaml_data
 from backend.licensing import LICENSE_ENFORCEMENT_ENABLED, SUPPORT_ALIPAY_QR_URL, SUPPORT_WECHAT_QR_URL, LicenseManager
 from backend.language_assets import LanguageAssets
 from backend.storage import atomic_write_bytes, atomic_write_json, quarantine_corrupt_file
+from backend.updater import UpdateError, check_for_update, download_update
 
 
 def _frontend_dist() -> Path:
@@ -44,7 +45,7 @@ QR_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 QR_CACHE_DIR = Path.home() / ".cad_translator_qr_cache"
 _QR_CACHE_LOCK = threading.Lock()
 BUILTIN_GLOSSARIES = {"zh_to_fr": "glossaries/translation_context_zh_to_fr.yaml", "fr_to_zh": "glossaries/translation_context_fr_to_zh.yaml", "zh_to_en": "glossaries/translation_context_zh_to_en.yaml", "en_to_zh": "glossaries/translation_context_en_to_zh.yaml"}
-PROFESSIONS = {"general", "electrical", "hvac", "plumbing", "architecture", "decoration"}
+PROFESSIONS = {"general", "electrical", "hvac", "plumbing", "architecture", "decoration", "facade"}
 SYSTEM_ACCENT_FALLBACK = (0.56, 0.56, 0.58)  # macOS Graphite-like neutral fallback
 
 
@@ -67,17 +68,33 @@ def _qr_cache_path(kind: str) -> Path:
     return QR_CACHE_DIR / f"{kind}.bin"
 
 
-def _download_qr(kind: str) -> bytes:
+def _qr_urls(kind: str) -> list[str]:
     url = {"wechat": SUPPORT_WECHAT_QR_URL, "alipay": SUPPORT_ALIPAY_QR_URL}.get(kind)
     if not url:
+        return []
+    urls = [url]
+    if url.startswith("https://raw.giteeusercontent.com/"):
+        urls.append(url.replace("https://raw.giteeusercontent.com/", "https://gitee.com/", 1))
+    return urls
+
+
+def _download_qr(kind: str) -> bytes:
+    urls = _qr_urls(kind)
+    if not urls:
         raise ValueError("未配置收款码")
-    request = urllib.request.Request(url, headers={"User-Agent": "HonsenCADTranslator/1"})
-    with urllib.request.urlopen(request, timeout=10) as remote:
-        content = remote.read()
-        content_type = remote.headers.get_content_type()
-    if not content_type.startswith("image/"):
-        raise ValueError("外部链接未返回图片")
-    return content
+    errors = []
+    for url in urls:
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "HonsenCADTranslator/1"})
+            with urllib.request.urlopen(request, timeout=10) as remote:
+                content = remote.read()
+                content_type = remote.headers.get_content_type()
+            if not content_type.startswith("image/"):
+                raise ValueError("未返回图片")
+            return content
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+    raise RuntimeError("；".join(errors))
 
 
 def preload_support_qrcodes() -> None:
@@ -434,7 +451,7 @@ app = FastAPI(title="CAD Translator API")
 
 @app.middleware("http")
 async def require_license(request: Request, call_next):
-    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/license/status", "/api/license/activate", "/api/support"}:
+    if not request.url.path.startswith("/api/") or request.url.path in {"/api/health", "/api/license/status", "/api/license/activate", "/api/support", "/api/update", "/api/update/download"}:
         return await call_next(request)
     status = license_manager.status()
     if not status["usable"]:
@@ -561,6 +578,19 @@ def get_changelog():
         return {"changelog": []}
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+@app.get("/api/update")
+def get_update():
+    return check_for_update()
+
+
+@app.post("/api/update/download")
+def get_update_installer():
+    try:
+        return download_update()
+    except UpdateError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/status")

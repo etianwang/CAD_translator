@@ -8,6 +8,7 @@ meta:
   - plumbing
   - architecture
   - decoration
+  - facade
   usage: 每个原文保留通用译文，并仅在专业译文不同于通用译文时补充对应专业字段。
 terms:
   天花:

@@ -2,10 +2,10 @@
 ; 源文件目录：E:\Project\Honsen DrawTranslate
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
-#define MyAppName "Honsen CAD图纸中英法翻译器"
-#define MyAppVersion "1.9.2"
+#define MyAppName "Honsen CAD Translator"
+#define MyAppVersion "1.9.4"
 #define MyAppPublisher "Honsen-Etienne"
-#define MyAppExeName "Honsen_CAD_Translator_v1.9.2.exe"
+#define MyAppExeName "Honsen DrawTranslate v1.9.4.exe"
 #define MyAppURL "https://github.com/etianwang/CAD_translator"
 
 [Setup]
@@ -40,17 +40,16 @@ DisableReadyPage=no
 DisableDirPage=no
 UsePreviousAppDir=no
 [Languages]
-; 简体中文为非官方语言包，已放在本项目 Languages\ 目录（Inno Setup 默认安装不含此文件）
-Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加选项:"; Flags: checkedonce
 
 [Files]
 ; 主程序
-Source: "{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 ; ODA File Converter 及依赖（完整子目录）
-Source: "ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; 开始菜单

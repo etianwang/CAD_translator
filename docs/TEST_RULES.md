@@ -15,6 +15,13 @@ Before merging, run these checks:
 
 The final DWG test consumes DeepL API quota.
 
+## v1.9.3 secure automatic-update acceptance
+
+1. Mock a newer GitHub Release with a matching `Honsen_DrawTranslate_vX.Y.Z_Setup.exe` asset and `sha256:` digest; confirm it is offered.
+2. Confirm an equal/older version, prerelease, missing installer, mismatched filename, or missing digest is not offered.
+3. Confirm downloaded bytes must match the published SHA-256, and a mismatch leaves no installer behind.
+4. Confirm the native Windows bridge launches only an approved installer with silent Inno Setup flags, then closes the app; macOS returns an unsupported result.
+
 ## v1.9.0 language-asset acceptance
 
 1. Verify provider-success records include direction, provider, drawing filename, timestamps, hit count, and manual status; glossary and cache hits do not create provider records.
@@ -26,7 +33,7 @@ The final DWG test consumes DeepL API quota.
 
 ## v1.9.1 professional-classification acceptance
 
-1. Verify all four directions accept `general`, `electrical`, `hvac`, `plumbing`, `architecture`, and `decoration`; invalid values are rejected.
+1. Verify all four directions accept `general`, `electrical`, `hvac`, `plumbing`, `architecture`, `decoration`, and `facade`; invalid values are rejected.
 2. Verify the selected professional user term, built-in term, and record each override their general counterpart according to the v1.9.1 priority order.
 3. Verify a general term and record provide the fallback for a selected professional, but a record for another professional does not.
 4. Verify legacy SQLite terms and records migrate once to `general`, without data loss.

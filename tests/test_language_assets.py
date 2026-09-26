@@ -21,6 +21,9 @@ with tempfile.TemporaryDirectory() as tmp:
     assets.upsert_term("zh_to_fr", "控制", "régulation", profession="hvac")
     assert assets.lookup_term("控制", "zh_to_fr", "hvac") == "régulation"
     assert assets.lookup_term("控制", "zh_to_fr", "electrical") == "CMD"
+    assets.upsert_term("zh_to_fr", "立柱", "montant de façade", profession="facade")
+    assert assets.lookup_term("立柱", "zh_to_fr", "facade") == "montant de façade"
+    assert assets.lookup_term("立柱", "zh_to_fr", "architecture") is None
 
     assets.record_provider_result("service label", "接口译文", "fr_to_zh", "deepl", "first.dxf")
     assert assets.lookup_record("SERVICE LABEL", "fr_to_zh", "second.dwg") == "接口译文"

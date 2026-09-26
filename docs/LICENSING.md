@@ -29,4 +29,4 @@ SUPPORT_ALIPAY_QR_URL = "https://assets.example.com/honsen-cad/alipay.png"
 
 “购买许可”始终提供激活码输入框；即使当前授权还未到期，也可输入新码续期。授权开启且没有有效试用/许可时，启动会直接打开该窗口、阻止全部主体操作；关闭窗口会退出桌面程序，只有成功激活才解除限制。
 
-当前构建使用 Gitee 的固定 raw 链接 `qr_wx.jpg` 与 `qr_ali.jpg`；实测返回 `image/jpeg`，缓存时间为 60 秒，因此覆盖同名文件后通常一分钟内生效。软件启动时会后台下载它们到用户目录的 `.cad_translator_qr_cache/wechat.bin` 与 `alipay.bin`，仅保存二进制内容而非图片文件；本地缓存每 7 天刷新一次，弹窗始终优先读取本地缓存。
+当前构建使用 Gitee 的固定 raw 链接 `qr_wx.jpg` 与 `qr_ali.jpg`。优先访问 `raw.giteeusercontent.com`；该地址不可用时，自动回退到 `gitee.com/<用户>/<仓库>/raw/<分支>/<文件>`。软件启动时会后台下载它们到用户目录的 `.cad_translator_qr_cache/wechat.bin` 与 `alipay.bin`，仅保存二进制内容而非图片文件；本地缓存每 7 天刷新一次，弹窗始终优先读取本地缓存。对于需要面向不同网络环境稳定分发的商业版本，仍建议改用自有对象存储/CDN 域名。

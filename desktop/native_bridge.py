@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import threading
 from datetime import datetime
 
 import webview
@@ -103,3 +104,16 @@ class NativeBridge:
         if webview.windows:
             webview.windows[0].destroy()
         os._exit(0)
+
+    def install_update(self, installer_path: str) -> dict:
+        """Run a verified Inno Setup package after this process has closed."""
+        path = os.path.abspath(installer_path)
+        name = os.path.basename(path)
+        if sys.platform != "win32" or not os.path.isfile(path) or not (name.startswith("Honsen_DrawTranslate_v") or name.startswith("HonsenCAD.v")):
+            return {"error": "自动更新仅支持经过校验的 Windows 安装包"}
+        try:
+            subprocess.Popen([path, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"], cwd=os.path.dirname(path))
+            threading.Timer(0.4, self.close_window).start()
+            return {"ok": True}
+        except OSError as exc:
+            return {"error": f"无法启动更新安装包: {exc}"}

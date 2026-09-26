@@ -27,7 +27,7 @@ const modes = [
   ["zh_to_en", "中文 → 英语"],
   ["en_to_zh", "英语 → 中文"],
 ];
-const professions = [["general", "通用"], ["electrical", "电气"], ["hvac", "暖通"], ["plumbing", "给排水"], ["architecture", "建筑"], ["decoration", "装饰"]];
+const professions = [["general", "通用"], ["electrical", "电气"], ["hvac", "暖通"], ["plumbing", "给排水"], ["architecture", "建筑"], ["decoration", "装饰"], ["facade", "幕墙"]];
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
@@ -130,6 +130,9 @@ export default function App() {
   const [activationError, setActivationError] = useState("");
   const [support, setSupport] = useState({ licensing_enabled: false });
   const [showSupport, setShowSupport] = useState(false);
+  const [update, setUpdate] = useState({ current_version: "1.9.4", message: "尚未检查更新" });
+  const [showUpdate, setShowUpdate] = useState(false);
+  const [updateState, setUpdateState] = useState("");
   const [draggingFiles, setDraggingFiles] = useState(false);
   const logRef = useRef();
   const refresh = useCallback(
@@ -148,6 +151,20 @@ export default function App() {
   useEffect(() => {
     api("/api/support").then(setSupport).catch(() => {});
   }, []);
+  const checkUpdate = useCallback(async (open = true) => {
+    setUpdateState("checking");
+    try {
+      const result = await api("/api/update");
+      setUpdate(result);
+      if (open || result.available) setShowUpdate(true);
+    } catch (error) {
+      setUpdate({ current_version: "1.9.4", message: error.message });
+      if (open) setShowUpdate(true);
+    } finally {
+      setUpdateState("");
+    }
+  }, []);
+  useEffect(() => { checkUpdate(false); }, [checkUpdate]);
   useEffect(() => {
     api("/api/system-theme")
       .then((result) => {
@@ -234,6 +251,19 @@ export default function App() {
     if (recordDrawing) query.set("drawing", recordDrawing);
     const result = await api(`/api/language-assets?${query}`);
     setAssets(result);
+  };
+  const installUpdate = async () => {
+    setUpdateState("downloading");
+    try {
+      const result = await api("/api/update/download", { method: "POST" });
+      const install = await pyApi?.install_update?.(result.installer_path);
+      if (install?.error) throw new Error(install.error);
+      if (!install) throw new Error("自动安装仅支持桌面应用");
+      setUpdateState("installing");
+    } catch (error) {
+      setUpdateState("");
+      setUpdate((current) => ({ ...current, message: error.message }));
+    }
   };
   const openAssets = async (tab = "terms") => {
     setAssetTab(tab);
@@ -443,6 +473,22 @@ export default function App() {
           </div>
         </div>
       )}
+      {showUpdate && (
+        <div className="support-overlay" onClick={() => !updateState && setShowUpdate(false)}>
+          <div className="support-card update-card" role="dialog" aria-modal="true" aria-labelledby="update-title" onClick={(event) => event.stopPropagation()}>
+            <button className="support-close" aria-label="关闭更新窗口" disabled={Boolean(updateState)} onClick={() => setShowUpdate(false)}>×</button>
+            <h2 id="update-title">软件更新</h2>
+            {update.available ? <>
+              <p>发现 v{update.latest_version}，当前版本为 v{update.current_version}。</p>
+              {update.notes && <pre className="update-notes">{update.notes}</pre>}
+              <button className="btn primary" disabled={Boolean(updateState)} onClick={installUpdate}>{updateState === "downloading" ? "正在下载并校验…" : updateState === "installing" ? "正在安装…" : "立即更新"}</button>
+            </> : <>
+              <p role="status">{updateState === "checking" ? "正在检查更新…" : update.message}</p>
+              <button className="btn ghost" disabled={Boolean(updateState)} onClick={() => checkUpdate(true)}>重新检查</button>
+            </>}
+          </div>
+        </div>
+      )}
       {support.licensing_enabled && license.checking && (
         <div className="license-overlay">
           <div className="license-card">
@@ -472,6 +518,9 @@ export default function App() {
             </div>
           </div>
           <div className="topbar-spacer" />
+          <button className="support-button" onClick={() => checkUpdate(true)}>
+            检查更新
+          </button>
           <button className="support-button" onClick={() => setShowSupport(true)}>
             {support.licensing_enabled ? "购买许可" : "赞助作者"}
           </button>
@@ -745,7 +794,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.9.2 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
+        <span className="footer-meta">v1.9.4 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
       </motion.footer>
     </div>
   );

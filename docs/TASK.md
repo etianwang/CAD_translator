@@ -22,7 +22,15 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 - No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
-## Current task: v1.9.2 intelligent split-text merging
+## Current task: v1.9.4 facade professional classification
+
+Implement [PRD_v1.9.4.md](PRD_v1.9.4.md): add the fixed local `facade`/“幕墙” classification to the existing professional-aware terminology, records, single/batch settings, and language-assets UI. Keep one direction glossary/library/record store, preserve general fallback, and never send the classification to providers.
+
+## Previous task: v1.9.3 secure automatic updates
+
+Implement [PRD_v1.9.3.md](PRD_v1.9.3.md): check the stable GitHub Release in the background, accept only a newer SHA-256-digested Inno Setup installer, and let the Windows desktop application download, verify, close, install, and restart. Do not self-overwrite the running EXE or auto-install macOS DMGs.
+
+## Previous task: v1.9.2 intelligent split-text merging
 
 Implement the confirmed optional CAD label preprocessor in [PRD_v1.9.2.md](PRD_v1.9.2.md). It is disabled by default, only joins conservatively matched short standalone `TEXT` lines, translates the joined label once, and reflows the result back to the original entities. It must work with the existing professional-classification lookup and batch settings snapshot.
 

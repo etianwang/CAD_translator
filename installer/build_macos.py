@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_APP = ROOT / "dist" / "Honsen CAD Translator.app"
-VERSION = "1.9.2"
+VERSION = "1.9.4"
 APP_EXECUTABLE = OUTPUT_APP / "Contents" / "MacOS" / f"Honsen_CAD_Translator_v{VERSION}"
 ODA_DMG_RESOURCE = OUTPUT_APP / "Contents" / "Resources" / "ODAFileConverter.dmg"
 ODA_EXECUTABLE = Path("Contents/MacOS/ODAFileConverter")

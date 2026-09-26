@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 
 
-CURRENT_VERSION = "1.9.4"
+CURRENT_VERSION = "1.9.5"
 RELEASE_API_URL = "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
 UPDATE_DIR = Path(tempfile.gettempdir()) / "Honsen CAD Translator Updates"
 _INSTALLER = re.compile(r"^Honsen_DrawTranslate_v(\d+\.\d+\.\d+)_Setup\.exe$", re.IGNORECASE)

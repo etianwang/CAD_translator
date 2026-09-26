@@ -3,9 +3,9 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.9.4"
+#define MyAppVersion "1.9.5"
 #define MyAppPublisher "Honsen-Etienne"
-#define MyAppExeName "Honsen DrawTranslate v1.9.4.exe"
+#define MyAppExeName "Honsen DrawTranslate v1.9.5.exe"
 #define MyAppURL "https://github.com/etianwang/CAD_translator"
 
 [Setup]
@@ -59,7 +59,8 @@ Name: "{group}\卸载 {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
+; Must run during /VERYSILENT updates too; start unelevated when Setup used UAC.
+Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait runasoriginaluser
 
 [UninstallDelete]
 ; 卸载时清理可能产生的运行时缓存（如有）

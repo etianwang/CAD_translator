@@ -130,7 +130,7 @@ export default function App() {
   const [activationError, setActivationError] = useState("");
   const [support, setSupport] = useState({ licensing_enabled: false });
   const [showSupport, setShowSupport] = useState(false);
-  const [update, setUpdate] = useState({ current_version: "1.9.4", message: "尚未检查更新" });
+  const [update, setUpdate] = useState({ current_version: "1.9.5", message: "尚未检查更新" });
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateState, setUpdateState] = useState("");
   const [draggingFiles, setDraggingFiles] = useState(false);

@@ -22,7 +22,11 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 - No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
-## Current task: v1.9.4 facade professional classification
+## Current task: v1.9.5 automatic-update restart repair
+
+Implement the accepted restart requirement in [PRD_v1.9.3.md](PRD_v1.9.3.md): a `/VERYSILENT` Inno Setup update must launch the installed new version after replacing files. Keep the launch unelevated for the original user, retain silent operation, and add a regression that rejects `postinstall` / `skipifsilent` on the update launch entry.
+
+## Previous task: v1.9.4 facade professional classification
 
 Implement [PRD_v1.9.4.md](PRD_v1.9.4.md): add the fixed local `facade`/“幕墙” classification to the existing professional-aware terminology, records, single/batch settings, and language-assets UI. Keep one direction glossary/library/record store, preserve general fallback, and never send the classification to providers.
 

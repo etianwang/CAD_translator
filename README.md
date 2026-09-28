@@ -1,4 +1,4 @@
-# Honsen CAD 中法英互译工具 v1.9.7
+# Honsen CAD 中法英互译工具 v1.9.8
 
 面向建筑、结构和机电图纸的 Windows/macOS 桌面翻译工具。它读取 CAD 图纸文字，使用 DeepL 或 Azure Translator F0 与工程术语表生成独立的译文图纸，支持单文件和可恢复的批量翻译队列。
 
@@ -105,7 +105,7 @@ cd frontend
 npm install
 npm run build
 cd ..
-pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.9.7.spec
+pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.9.8.spec
 ```
 
 生成文件为固定路径 `dist/Honsen DrawTranslate.exe`。如需开箱支持 DWG，请将完整 ODA 目录放在 `dist/ODAFileConverter/`；版本号只存在于安装包名和应用内元数据，不能加入 EXE 文件名，否则升级无法替换旧文件。

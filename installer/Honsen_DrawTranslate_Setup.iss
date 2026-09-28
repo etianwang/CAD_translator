@@ -3,9 +3,9 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.9.5"
+#define MyAppVersion "1.9.6"
 #define MyAppPublisher "Honsen-Etienne"
-#define MyAppExeName "Honsen DrawTranslate v1.9.5.exe"
+#define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyAppURL "https://github.com/etianwang/CAD_translator"
 
 [Setup]
@@ -47,9 +47,16 @@ Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: 
 
 [Files]
 ; 主程序
-Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\Honsen DrawTranslate.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; ODA File Converter 及依赖（完整子目录）
 Source: "..\dist\ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 仅在安装期间运行，用于将现有用户的固定任务栏链接迁移到稳定 EXE 名称。
+Source: "migrate_shortcuts.vbs"; DestDir: "{tmp}"; Flags: deleteafterinstall
+
+[InstallDelete]
+; 只删除本产品历史版本的 EXE；绝不使用宽泛的 {app}\*.exe 通配符。
+Type: files; Name: "{app}\Honsen DrawTranslate v*.exe"
+Type: files; Name: "{app}\Honsen_CAD_Translator_v*.exe"
 
 [Icons]
 ; 开始菜单
@@ -59,6 +66,8 @@ Name: "{group}\卸载 {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; 以启动安装器的用户迁移桌面/任务栏中仍指向旧版 EXE 的链接。
+Filename: "{sys}\cscript.exe"; Parameters: "//nologo ""{tmp}\migrate_shortcuts.vbs"" ""{app}"" ""{app}\{#MyAppExeName}"""; Flags: runasoriginaluser
 ; Must run during /VERYSILENT updates too; start unelevated when Setup used UAC.
 Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait runasoriginaluser
 

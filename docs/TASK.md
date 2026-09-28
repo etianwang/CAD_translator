@@ -22,7 +22,11 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 - No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
-## Current task: release and automatic-update documentation
+## Current task: v1.9.6 stable executable and shortcut migration
+
+Implement the v1.9.3 update acceptance rule for one stable Windows EXE name. The installer must remove only legacy product EXEs, recreate standard icons, and migrate the current user's desktop/taskbar links that target an old product EXE in `{app}`. It must not delete arbitrary executables or modify unrelated links.
+
+## Previous task: release and automatic-update documentation
 
 Document the repeatable Windows release workflow and the GitHub Release-backed automatic-update contract in [RELEASE_AND_AUTO_UPDATE.md](RELEASE_AND_AUTO_UPDATE.md). It must let a new agent safely publish a higher version, package ODA, push GitHub/Gitee tags, verify the release digest, and preserve silent-update relaunch behavior.
 

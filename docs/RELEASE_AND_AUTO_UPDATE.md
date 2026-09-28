@@ -22,8 +22,8 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    - `backend/updater.py` 的 `CURRENT_VERSION`；
    - `backend/translator.py`、`desktop/launcher.py`、`frontend/package*.json`、`frontend/src/App.jsx`；
    - `changelog.json`；
-   - `installer/Honsen_DrawTranslate_Setup.iss` 的 `MyAppVersion` 与 `MyAppExeName`；
-   - `installer/build_installer.ps1` 的 spec、EXE 和安装包文件名；
+   - `installer/Honsen_DrawTranslate_Setup.iss` 的 `MyAppVersion`（`MyAppExeName` 必须固定为 `Honsen DrawTranslate.exe`）；
+   - `installer/build_installer.ps1` 的 spec 和安装包文件名；
    - 新建对应的 `Honsen_CAD_Translator_vX.Y.Z.spec`，并更新 README 的 Windows 构建命令。
 2. 运行最低检查：
 
@@ -36,7 +36,7 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    ```
 
    `build_installer.ps1` 会重新构建前端、EXE 和 Inno 安装包；它必须发现 `dist\ODAFileConverter\ODAFileConverter.exe`，否则不得作为完整 DWG 发行包发布。
-3. 确认 `installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 存在，计算本地 SHA-256。安装包只作为 Release 资产，`installer/Output/` 必须保持 Git 忽略，绝不能提交二进制文件。
+3. 确认 `dist\Honsen DrawTranslate.exe` 与 `installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 存在，计算安装包本地 SHA-256。安装包只作为 Release 资产，`installer/Output/` 必须保持 Git 忽略，绝不能提交二进制文件。
 4. 提交源代码，创建带注释的 `vX.Y.Z` 标签，并将 `main` 与标签同时推送到 GitHub `origin` 和 Gitee `gitee`。
 5. 在 GitHub 创建**非 draft、非 prerelease**的 Release，上传上一步的安装包；随后调用 GitHub API/CLI 检查资产 `digest`，它必须等于本地 SHA-256。例如：
 
@@ -57,5 +57,7 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser
 ```
 
 禁止在该项加入 `postinstall` 或 `skipifsilent`：它们会使 `/VERYSILENT` 更新完成后不启动新版本。`runasoriginaluser` 保证 UAC 安装完成后主程序以原登录用户而非管理员身份运行。`tests.test_updater` 中的静态回归检查必须保留。
+
+主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。安装器内置的 `migrate_shortcuts.vbs` 只会把当前用户桌面及任务栏固定项中、目标位于 `{app}` 且符合上述旧文件名模式的 `.lnk` 指向固定 EXE；开始菜单和标准桌面图标由 `[Icons]` 重建。不要改写不匹配该模式的用户快捷方式。
 
 真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。没有该环境时，至少完成 updater 单测、Inno 编译和 Release digest 核验，并在 Memory 中明确真实安装 E2E 未执行。

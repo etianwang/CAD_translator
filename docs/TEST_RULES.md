@@ -21,7 +21,7 @@ The final DWG test consumes DeepL API quota.
 2. Confirm an equal/older version, prerelease, missing installer, mismatched filename, or missing digest is not offered.
 3. Confirm downloaded bytes must match the published SHA-256, and a mismatch leaves no installer behind.
 4. Confirm the native Windows bridge launches only an approved installer with silent Inno Setup flags, then closes the app; macOS returns an unsupported result.
-5. Confirm the Inno script installs a fixed `Honsen DrawTranslate.exe`, deletes only the two explicit legacy product EXE patterns, and the shortcut-migration script targets only legacy product links in the current user's desktop/taskbar locations.
+5. Confirm the Inno script installs a fixed `Honsen DrawTranslate.exe`, deletes only the two explicit legacy product EXE patterns, and contains no script or `[Run]` action that scans or rewrites user desktop, Start Menu, or taskbar shortcuts.
 
 ## v1.9.0 language-asset acceptance
 

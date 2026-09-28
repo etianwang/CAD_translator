@@ -12,7 +12,7 @@ from backend import updater
 from desktop.native_bridge import NativeBridge
 
 
-def release(version="1.9.7", *, digest=True, prerelease=False, name=None):
+def release(version="1.9.8", *, digest=True, prerelease=False, name=None):
     asset_name = name or f"Honsen_DrawTranslate_v{version}_Setup.exe"
     payload = b"installer"
     return {
@@ -33,15 +33,15 @@ class UpdaterTests(unittest.TestCase):
         with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release()).encode())):
             update = updater.check_for_update()
         self.assertTrue(update["available"])
-        self.assertEqual(update["latest_version"], "1.9.7")
+        self.assertEqual(update["latest_version"], "1.9.8")
 
     def test_invalid_or_non_newer_releases_are_refused(self):
         for payload in (
             release("1.9.4"),
-            release("1.9.6"),
-            release("1.9.7", prerelease=True),
-            release("1.9.7", digest=False),
-            release("1.9.7", name="HonsenCAD.v1.9.exe"),
+            release("1.9.7"),
+            release("1.9.8", prerelease=True),
+            release("1.9.8", digest=False),
+            release("1.9.8", name="HonsenCAD.v1.9.exe"),
         ):
             with self.subTest(payload=payload), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(payload).encode())):
                 self.assertFalse(updater.check_for_update()["available"])
@@ -75,7 +75,7 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn("自动更新仅支持", NativeBridge().install_update("missing.exe")["error"])
 
     def test_existing_honsencad_installer_name_is_accepted(self):
-        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.9.7.exe")).encode())):
+        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.9.8.exe")).encode())):
             self.assertTrue(updater.check_for_update()["available"])
 
     def test_inno_setup_restarts_after_a_silent_update(self):
@@ -85,15 +85,13 @@ class UpdaterTests(unittest.TestCase):
         self.assertNotIn("postinstall", run_line)
         self.assertNotIn("skipifsilent", run_line)
 
-    def test_inno_setup_migrates_only_legacy_app_shortcuts(self):
+    def test_inno_setup_never_rewrites_user_shortcuts(self):
         root = Path(__file__).resolve().parents[1]
         script = (root / "installer" / "Honsen_DrawTranslate_Setup.iss").read_text(encoding="utf-8")
-        migration = (root / "installer" / "migrate_shortcuts.vbs").read_text(encoding="utf-8")
         self.assertIn('Source: "..\\dist\\Honsen DrawTranslate.exe"', script)
         self.assertIn('Name: "{app}\\Honsen DrawTranslate v*.exe"', script)
-        self.assertIn('User Pinned\\TaskBar', migration)
-        self.assertIn('honsen drawtranslate v*.exe', migration.lower())
-        self.assertIn('honsen_cad_translator_v*.exe', migration.lower())
+        self.assertNotIn("cscript.exe", script.lower())
+        self.assertNotIn("migrate_shortcuts", script.lower())
 
 
 if __name__ == "__main__":

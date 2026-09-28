@@ -58,6 +58,6 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser
 
 禁止在该项加入 `postinstall` 或 `skipifsilent`：它们会使 `/VERYSILENT` 更新完成后不启动新版本。`runasoriginaluser` 保证 UAC 安装完成后主程序以原登录用户而非管理员身份运行。`tests.test_updater` 中的静态回归检查必须保留。
 
-主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。安装器内置的 `migrate_shortcuts.vbs` 只会把当前用户桌面及任务栏固定项中、目标位于 `{app}` 且符合上述旧文件名模式的 `.lnk` 指向固定 EXE；开始菜单和标准桌面图标由 `[Icons]` 重建。不要改写不匹配该模式的用户快捷方式。
+主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。桌面、开始菜单和任务栏固定项属于用户数据：安装器只能通过 `[Icons]` 更新它自己创建的标准快捷方式，绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。旧版任务栏固定项由用户取消固定后，再从新的固定文件名 EXE 重新固定。
 
 真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。没有该环境时，至少完成 updater 单测、Inno 编译和 Release digest 核验，并在 Memory 中明确真实安装 E2E 未执行。

@@ -118,6 +118,8 @@ pyinstaller --clean --noconfirm Honsen_CAD_Translator_v1.9.5.spec
 
 发布 Windows 版时，把 Inno Setup 安装包作为 GitHub Release 资产上传。自动更新接受现行的 `HonsenCAD.vX.Y.Z.exe`，也兼容 `Honsen_DrawTranslate_vX.Y.Z_Setup.exe`；两者都必须有 GitHub 标注的 SHA-256 digest，不能使用可变的 `latest.exe`。
 
+完整的发布顺序、双远端同步、Release digest 核验及静默更新重启约束见 [docs/RELEASE_AND_AUTO_UPDATE.md](docs/RELEASE_AND_AUTO_UPDATE.md)。
+
 ## 打包 macOS 应用
 
 macOS 使用独立 spec，不会读取或改写 Windows 打包配置：

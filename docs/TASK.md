@@ -22,7 +22,11 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 - No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
-## Current task: v1.9.5 automatic-update restart repair
+## Current task: release and automatic-update documentation
+
+Document the repeatable Windows release workflow and the GitHub Release-backed automatic-update contract in [RELEASE_AND_AUTO_UPDATE.md](RELEASE_AND_AUTO_UPDATE.md). It must let a new agent safely publish a higher version, package ODA, push GitHub/Gitee tags, verify the release digest, and preserve silent-update relaunch behavior.
+
+## Previous task: v1.9.5 automatic-update restart repair
 
 Implement the accepted restart requirement in [PRD_v1.9.3.md](PRD_v1.9.3.md): a `/VERYSILENT` Inno Setup update must launch the installed new version after replacing files. Keep the launch unelevated for the original user, retain silent operation, and add a regression that rejects `postinstall` / `skipifsilent` on the update launch entry.
 

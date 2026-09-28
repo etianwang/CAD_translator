@@ -162,45 +162,9 @@ with tempfile.TemporaryDirectory() as tmp:
     TranslationService.export_logs(log_service, str(log_path))
     assert log_path.read_text(encoding="utf-8-sig") == "second log\nthird log"
 
-    original_cache_dir, original_download = web_api.QR_CACHE_DIR, web_api._download_qr
-    try:
-        web_api.QR_CACHE_DIR = Path(tmp) / "qr-cache"
-        web_api._download_qr = lambda _: b"qr-binary"
-        web_api.preload_support_qrcodes()
-        assert (web_api.QR_CACHE_DIR / "wechat.bin").read_bytes() == b"qr-binary"
-        assert not list(web_api.QR_CACHE_DIR.glob("*.jpg"))
-    finally:
-        web_api.QR_CACHE_DIR, web_api._download_qr = original_cache_dir, original_download
-
-    assert web_api._qr_urls("wechat") == [
-        "https://raw.giteeusercontent.com/etianwang/qrcode/raw/main/qr_wx.jpg",
-        "https://gitee.com/etianwang/qrcode/raw/main/qr_wx.jpg",
-    ]
-    original_urlopen, calls = web_api.urllib.request.urlopen, []
-    try:
-        class FallbackResponse:
-            headers = SimpleNamespace(get_content_type=lambda: "image/jpeg")
-
-            def read(self):
-                return b"qr-binary"
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_):
-                return None
-
-        def fallback_urlopen(request, timeout):
-            calls.append(request.full_url)
-            if len(calls) == 1:
-                raise OSError("primary unavailable")
-            return FallbackResponse()
-
-        web_api.urllib.request.urlopen = fallback_urlopen
-        assert web_api._download_qr("wechat") == b"qr-binary"
-        assert calls == web_api._qr_urls("wechat")
-    finally:
-        web_api.urllib.request.urlopen = original_urlopen
+    for kind in ("wechat", "alipay"):
+        path = web_api.support_qr_path(kind)
+        assert path and path.is_file() and path.read_bytes().startswith(b"\xff\xd8\xff")
 
     # Task status becomes terminal immediately before its final durable state save.
     # Keep the temporary test directory alive until those daemon workers exit.

@@ -24,9 +24,9 @@ from backend.providers.azure import AzureFreeQuotaExceededError
 from backend.queue import BatchQueue
 from backend.cad import ODA_OUTPUT_VERSIONS, analyze_source, dwg_unavailable_short, odafc_available, odafc_status, output_path_for
 from backend.translator import CADChineseTranslator, CONFIG_PATH, load_yaml_data, output_prefix, resource_path
-from backend.licensing import LICENSE_ENFORCEMENT_ENABLED, SUPPORT_ALIPAY_QR_URL, SUPPORT_WECHAT_QR_URL, LicenseManager
+from backend.licensing import LICENSE_ENFORCEMENT_ENABLED, LicenseManager, support_qr_path
 from backend.language_assets import LanguageAssets
-from backend.storage import atomic_write_bytes, atomic_write_json, quarantine_corrupt_file
+from backend.storage import atomic_write_json, quarantine_corrupt_file
 from backend.updater import UpdateError, check_for_update, download_update
 
 
@@ -41,9 +41,6 @@ FRONTEND_DIST = _frontend_dist()
 API_PORT = 8765
 SSE_QUEUE_SIZE = 500
 DROPPED_FILE_RETENTION_SECONDS = 30 * 24 * 60 * 60
-QR_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
-QR_CACHE_DIR = Path.home() / ".cad_translator_qr_cache"
-_QR_CACHE_LOCK = threading.Lock()
 BUILTIN_GLOSSARIES = {"zh_to_fr": "glossaries/translation_context_zh_to_fr.yaml", "fr_to_zh": "glossaries/translation_context_fr_to_zh.yaml", "zh_to_en": "glossaries/translation_context_zh_to_en.yaml", "en_to_zh": "glossaries/translation_context_en_to_zh.yaml"}
 PROFESSIONS = {"general", "electrical", "hvac", "plumbing", "architecture", "decoration", "facade"}
 SYSTEM_ACCENT_FALLBACK = (0.56, 0.56, 0.58)  # macOS Graphite-like neutral fallback
@@ -62,51 +59,6 @@ def system_accent_theme() -> dict:
         except Exception:
             pass
     return {"color": [round(channel, 4) for channel in rgb]}
-
-
-def _qr_cache_path(kind: str) -> Path:
-    return QR_CACHE_DIR / f"{kind}.bin"
-
-
-def _qr_urls(kind: str) -> list[str]:
-    url = {"wechat": SUPPORT_WECHAT_QR_URL, "alipay": SUPPORT_ALIPAY_QR_URL}.get(kind)
-    if not url:
-        return []
-    urls = [url]
-    if url.startswith("https://raw.giteeusercontent.com/"):
-        urls.append(url.replace("https://raw.giteeusercontent.com/", "https://gitee.com/", 1))
-    return urls
-
-
-def _download_qr(kind: str) -> bytes:
-    urls = _qr_urls(kind)
-    if not urls:
-        raise ValueError("未配置收款码")
-    errors = []
-    for url in urls:
-        try:
-            request = urllib.request.Request(url, headers={"User-Agent": "HonsenCADTranslator/1"})
-            with urllib.request.urlopen(request, timeout=10) as remote:
-                content = remote.read()
-                content_type = remote.headers.get_content_type()
-            if not content_type.startswith("image/"):
-                raise ValueError("未返回图片")
-            return content
-        except Exception as exc:
-            errors.append(f"{url}: {exc}")
-    raise RuntimeError("；".join(errors))
-
-
-def preload_support_qrcodes() -> None:
-    with _QR_CACHE_LOCK:
-        for kind in ("wechat", "alipay"):
-            path = _qr_cache_path(kind)
-            if path.is_file() and time.time() - path.stat().st_mtime < QR_CACHE_MAX_AGE_SECONDS:
-                continue
-            try:
-                atomic_write_bytes(path, _download_qr(kind))
-            except Exception:
-                pass  # Retain any existing binary cache when the remote is unavailable.
 
 
 def builtin_terms() -> list[dict]:
@@ -204,7 +156,6 @@ class TranslationService:
         self.dropped_files_dir.mkdir(exist_ok=True)
         self.batch = BatchQueue(self._run_batch, self.emit_log, lambda task: self.load_config().get(f"{task.get('provider', 'deepl')}_key", ""))
         self.cleanup_dropped_files()
-        threading.Thread(target=preload_support_qrcodes, daemon=True).start()
 
     def save_dropped_files(self, files: list[UploadFile]) -> list[str]:
         paths = []
@@ -485,23 +436,16 @@ def activate_license(body: ActivationBody):
 def support_info():
     return {
         "licensing_enabled": LICENSE_ENFORCEMENT_ENABLED,
-        "wechat_qr_url": SUPPORT_WECHAT_QR_URL,
-        "alipay_qr_url": SUPPORT_ALIPAY_QR_URL,
+        "wechat_qr_url": "/api/support/qrcode/wechat" if (path := support_qr_path("wechat")) and path.is_file() else "",
+        "alipay_qr_url": "/api/support/qrcode/alipay" if (path := support_qr_path("alipay")) and path.is_file() else "",
     }
 
 
 @app.get("/api/support/qrcode/{kind}")
 def support_qrcode(kind: str):
-    if kind not in {"wechat", "alipay"}:
+    path = support_qr_path(kind)
+    if path is None or not path.is_file():
         raise HTTPException(status_code=404, detail="未配置收款码")
-    path = _qr_cache_path(kind)
-    if not path.is_file():
-        try:
-            atomic_write_bytes(path, _download_qr(kind))
-        except Exception as exc:
-            raise HTTPException(status_code=503, detail=f"收款码加载失败: {exc}") from exc
-    elif time.time() - path.stat().st_mtime >= QR_CACHE_MAX_AGE_SECONDS:
-        threading.Thread(target=preload_support_qrcodes, daemon=True).start()
     return Response(path.read_bytes(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
 

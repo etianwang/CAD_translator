@@ -12,6 +12,7 @@ glossary_files = [
     "translation_context_en_to_zh.yaml", "translation_corrections.yaml",
 ]
 datas = [(os.path.join(spec_dir, name), ".") for name in data_files]
+datas += [(os.path.join(spec_dir, "images", "support", name), os.path.join("images", "support")) for name in ("qr_wx.jpg", "qr_ali.jpg")]
 datas += [(os.path.join(spec_dir, "glossaries", name), "glossaries") for name in glossary_files]
 for folder, _, names in os.walk(os.path.join(spec_dir, "frontend", "dist")):
     for name in names:

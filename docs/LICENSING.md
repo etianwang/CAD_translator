@@ -18,15 +18,8 @@ python -m tools.license_issuer issue --private-key "$env:USERPROFILE\Documents\H
 
 ## 赞助收款码
 
-收费开关关闭时，标题栏的“赞助作者”会读取 `backend/licensing.py` 内的 `SUPPORT_WECHAT_QR_URL` 和 `SUPPORT_ALIPAY_QR_URL`。推荐使用 Cloudflare R2 绑定自己的域名，例如：
-
-```python
-SUPPORT_WECHAT_QR_URL = "https://assets.example.com/honsen-cad/wechat.png"
-SUPPORT_ALIPAY_QR_URL = "https://assets.example.com/honsen-cad/alipay.png"
-```
-
-将新二维码上传为相同 object key 即可保持 URL 不变；若该自定义域名启用 CDN 缓存，替换后清除该 URL 的缓存或设置短 TTL。收费开关开启时，同一位置改为“购买许可”，显示当前试用或授权的到期日与套餐。
+收费开关关闭时，标题栏的“赞助作者”读取随应用打包的 `images/support/qr_wx.jpg` 和 `images/support/qr_ali.jpg`。收费开关开启时，同一位置改为“购买许可”，显示当前试用或授权的到期日与套餐。
 
 “购买许可”始终提供激活码输入框；即使当前授权还未到期，也可输入新码续期。授权开启且没有有效试用/许可时，启动会直接打开该窗口、阻止全部主体操作；关闭窗口会退出桌面程序，只有成功激活才解除限制。
 
-当前构建使用 Gitee 的固定 raw 链接 `qr_wx.jpg` 与 `qr_ali.jpg`。优先访问 `raw.giteeusercontent.com`；该地址不可用时，自动回退到 `gitee.com/<用户>/<仓库>/raw/<分支>/<文件>`。软件启动时会后台下载它们到用户目录的 `.cad_translator_qr_cache/wechat.bin` 与 `alipay.bin`，仅保存二进制内容而非图片文件；本地缓存每 7 天刷新一次，弹窗始终优先读取本地缓存。对于需要面向不同网络环境稳定分发的商业版本，仍建议改用自有对象存储/CDN 域名。
+二维码不再在运行时访问网络，也不再写入用户目录缓存。若要替换收款码，直接替换这两个 JPG 后重新打包即可。

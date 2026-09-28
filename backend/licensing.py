@@ -26,14 +26,17 @@ LICENSE_PATH = Path.home() / ".cad_translator_license.json"
 TIME_SOURCES = ("https://www.microsoft.com", "https://www.cloudflare.com/cdn-cgi/trace")
 # Set True only in a separately licensed build. False skips every licence check.
 LICENSE_ENFORCEMENT_ENABLED = False
-# Fixed R2/custom-domain object URLs, e.g. https://assets.example.com/honsen-cad/wechat.png.
-# Upload a replacement under the same key; leave blank to hide its QR code.
-SUPPORT_WECHAT_QR_URL = "https://raw.giteeusercontent.com/etianwang/qrcode/raw/main/qr_wx.jpg"
-SUPPORT_ALIPAY_QR_URL = "https://raw.giteeusercontent.com/etianwang/qrcode/raw/main/qr_ali.jpg"
-
-
 def _resource_path(name: str) -> Path:
-    return Path(getattr(sys, "_MEIPASS", Path(__file__).parent)) / name
+    return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / name
+
+
+# Bundled payment codes keep sponsorship available without a network request.
+SUPPORT_WECHAT_QR_PATH = _resource_path("images/support/qr_wx.jpg")
+SUPPORT_ALIPAY_QR_PATH = _resource_path("images/support/qr_ali.jpg")
+
+
+def support_qr_path(kind: str) -> Path | None:
+    return {"wechat": SUPPORT_WECHAT_QR_PATH, "alipay": SUPPORT_ALIPAY_QR_PATH}.get(kind)
 
 
 def _b64decode(value: str) -> bytes:

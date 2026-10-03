@@ -1,6 +1,15 @@
 {
   "changelog": [
     {
+      "version": "1.9.9",
+      "date": "2026年10月",
+      "title": "离线收款码与统一安装目录",
+      "content": [
+        "[优化] 微信和支付宝收款码随程序内置，赞助作者窗口无需联网即可显示",
+        "[优化] 默认安装到 Program Files\\Honsen Program\\Honsen DrawTranslate"
+      ]
+    },
+    {
       "version": "1.9.8",
       "date": "2026年9月",
       "title": "标准快捷方式命名",

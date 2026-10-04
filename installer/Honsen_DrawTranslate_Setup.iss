@@ -3,11 +3,13 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.9.9"
+#define MyAppVersion "1.10.0"
 #define MyAppPublisher "Honsen-Etienne"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
 #define MyAppURL "https://github.com/etianwang/CAD_translator"
+#define MyHonsenAppId "honsen.cad-translator"
+#define MyHonsenUpdateURL "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
 
 [Setup]
 AppId={{A7B3C9E1-4D2F-4A8B-9C1E-6F5D8A2B3C4E}
@@ -69,6 +71,16 @@ Name: "{group}\{#MyShortcutName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\卸载 {#MyShortcutName}"; Filename: "{uninstallexe}"
 ; 桌面快捷方式（由 Tasks 控制）
 Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Registry]
+; Honsen Program unified application identity. This installer is per-machine
+; (PrivilegesRequired=admin), so the shared HKLM location is authoritative.
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "AppId"; ValueData: "{#MyHonsenAppId}"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "DisplayName"; ValueData: "{#MyAppName}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "InstallLocation"; ValueData: "{app}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "ExecutablePath"; ValueData: "{app}\{#MyAppExeName}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "UpdateUrl"; ValueData: "{#MyHonsenUpdateURL}"
 
 [Run]
 ; Must run during /VERYSILENT updates too; start unelevated when Setup used UAC.

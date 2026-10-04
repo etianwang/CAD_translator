@@ -23,6 +23,12 @@ The final DWG test consumes DeepL API quota.
 4. Confirm the native Windows bridge launches only an approved installer with silent Inno Setup flags, then closes the app; macOS returns an unsupported result.
 5. Confirm the Inno script installs a fixed `Honsen DrawTranslate.exe`, deletes only the two explicit legacy product EXE patterns, and contains no script or `[Run]` action that scans or rewrites user desktop, Start Menu, or taskbar shortcuts.
 
+## Honsen Program 应用识别验收
+
+1. 全电脑安装包只写入 `HKLM\Software\Honsen Program\Apps\honsen.cad-translator`，且不依赖应用显示名称或 EXE 扫描。
+2. 该键包含固定 `AppId`、`InstallLocation`、`ExecutablePath`、`Version` 和 `UpdateUrl` 字符串值；版本和更新地址须分别与安装包版本和应用内 GitHub Release 更新源同步。
+3. 卸载时删除该专用 appId 键；未来的当前用户安装包只能改写对应 HKCU 键，不能同时保留 HKLM 记录。
+
 ## v1.9.0 language-asset acceptance
 
 1. Verify provider-success records include direction, provider, drawing filename, timestamps, hit count, and manual status; glossary and cache hits do not create provider records.

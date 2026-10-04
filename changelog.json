@@ -1,6 +1,15 @@
 {
   "changelog": [
     {
+      "version": "1.10.0",
+      "date": "2026年10月",
+      "title": "Honsen 工具箱应用识别",
+      "content": [
+        "[新增] Windows 安装器登记永久 appId honsen.cad-translator，供 Honsen 工具箱精确识别",
+        "[新增] 登记安装位置、主程序路径、当前版本与安全更新地址；卸载时自动清理专用记录"
+      ]
+    },
+    {
       "version": "1.9.9",
       "date": "2026年10月",
       "title": "离线收款码与统一安装目录",

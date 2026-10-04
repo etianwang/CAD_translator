@@ -22,7 +22,11 @@ Extend the CAD translator from Chinese ↔ French to Chinese ↔ English, with t
 - No Google Cloud provider, automatic terminology extraction, or generic dictionary. Azure support is limited to Translator Text v3 with F0 quota handling.
 - Do not change the source DWG or DXF; translated files remain separate outputs.
 
-## Current task: v1.9.9 offline sponsorship codes and shared Honsen installation directory
+## Current task: Honsen Program unified application identity
+
+Use the permanent appId `honsen.cad-translator`. The administrator-scoped Windows installer must register the exact `HKLM\Software\Honsen Program\Apps\honsen.cad-translator` key, with install location, executable path, version, and the stable GitHub Release update endpoint. It must remove only that key on uninstall; Honsen ToolBox must not infer this product from its display name or scan executables.
+
+## Previous task: v1.9.9 offline sponsorship codes and shared Honsen installation directory
 
 Set the installer-owned desktop and Start Menu shortcut label to `Honsen CAD 翻译器`. Keep the stable EXE target and only replace known installer-owned paths; do not reintroduce any user shortcut scan or taskbar modification.
 

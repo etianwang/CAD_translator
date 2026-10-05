@@ -1,5 +1,7 @@
 # Windows 发布与自动更新规范
 
+> 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；该文件是更新与发布方案的最高优先级规范。
+
 本规范是 Windows 版本发布的唯一操作顺序。发布者和后续 agent 必须同时阅读本文件、[PRD_v1.10.1.md](PRD_v1.10.1.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[TEST_RULES.md](TEST_RULES.md) 与 `installer/` 下的两个脚本。
 
 ## 自动更新链路

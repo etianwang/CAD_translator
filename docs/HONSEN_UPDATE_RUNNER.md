@@ -1,5 +1,7 @@
 # HonsenUpdateRunner 更新协议
 
+> 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；该文件是 Runner、工具箱、安装器和发布方案的最高优先级规范。
+
 `HonsenUpdateRunner.exe` 是 Windows 应用更新的唯一安装、替换、验证和重启执行者。Runner 的 `launch` 可以自行检查、下载并校验更新；主程序和 Honsen 工具箱也可以下载，但必须先校验 SHA-256，随后只调用同一个 Runner。`--source` 只记录发起方，不改变任何安全校验或替换逻辑。
 
 Runner 使用 Windows 无控制台子系统：从快捷方式启动或自动更新时不得显示命令提示符窗口；诊断信息写入结果 JSON 和 Inno 日志，而非标准输出。

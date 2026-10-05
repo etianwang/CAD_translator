@@ -1,5 +1,7 @@
 # Honsen Program 应用识别协议
 
+> 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；新 agent 与新对话必须先阅读该强制契约。
+
 Windows 安装包使用永久 appId `honsen.cad-translator`。发布后不得修改该值。
 
 当前安装器是全电脑安装（`PrivilegesRequired=admin`），因此安装完成后写入：

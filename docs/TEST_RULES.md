@@ -1,5 +1,7 @@
 # Test rules
 
+> 更新、工具箱、安装器和发布相关验证必须先遵守 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md)。
+
 Before merging, run these checks:
 
 1. Compile the Python modules containing translation, DWG conversion, and API logic.

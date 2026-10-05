@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Added `docs/UPDATE_RELEASE_CONTRACT.md` as the highest-priority, mandatory update/toolbox/installer/uninstall/release contract. `AGENTS.md` now requires every new agent and conversation to read it before any task, alongside Memory and task-relevant docs. Linked it from the Runner, release, current integration, protocol, PRD and test documents. It locks the v1.11.8 verified protocol: standard manifest/registry contract, operation-scoped results, unified Runner entry points/security, single-window UX and GitHub/Gitee release sequence. No runtime behavior changed.
+
 - 2026-10-05: Corrected v1.11.8 GitHub Release notes: the original CLI text rendered literal `\n`; the Release body now uses real Markdown line breaks and lists the protocol and single-window/Publisher changes correctly. No binary or source changed.
 
 - 2026-10-05: Published [v1.11.8 on GitHub](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.8), asset `Honsen_DrawTranslate_v1.11.8_Setup.exe` (81,347,778 bytes, SHA-256 `c7087d7d0224a69a947c681a9da07027d7ead74fd9c55dd33d1f6d3304c07611`). The Release is public stable and GitHub's asset digest matches the local hash. Tag `v1.11.8` points to `a046e0f`; source and tag are synchronized to Gitee. Gitee Release asset publication remains blocked by browser local-file access permission.

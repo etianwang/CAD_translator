@@ -1,5 +1,7 @@
 # 当前更新逻辑与 Honsen 工具箱联动
 
+> 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；任何更新、工具箱、安装器或发布任务必须先阅读该强制契约。
+
 本文记录 Honsen CAD 图纸中法英翻译器当前的 Windows 更新实现与工具箱集成契约。它描述的是已发布/已实现的行为；跨应用通用设计参考 [UPDATE_RUNNER_REFERENCE.md](UPDATE_RUNNER_REFERENCE.md)。
 
 ## 固定身份与责任边界

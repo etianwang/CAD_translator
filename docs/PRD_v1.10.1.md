@@ -1,5 +1,7 @@
 # v1.10.1 PRD：统一更新执行器
 
+> 历史 PRD。当前更新、工具箱、安装器、卸载和发布的强制规范以 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 为准；每个新 agent 与新对话必须先阅读该文件。
+
 ## 固定应用标识
 
 - appId：`honsen.cad-translator`

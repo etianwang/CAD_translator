@@ -1,5 +1,9 @@
 # Project memory
 
+- 2026-10-05: Prepared v1.11.6 for the Runner “later” and “skip this version” E2E test. The installer carries matching `1.11.6` EXE metadata, `honsen.app.json`, registry version and frontend label. It was built successfully and updater unit tests passed. Shortcuts still launch `HonsenUpdateRunner.exe launch`, but now explicitly use `Honsen DrawTranslate.exe` as `IconFilename`; this prevents the Runner resource or Windows icon cache from changing the visible application logo. Package SHA-256 before GitHub upload: `4521CE94E7D8963070171153775018E153DBF33F064E7CD25D8457B413C7B8D4`.
+
+- 2026-10-05: v1.11.5 was packaged and published after the formerly pending Runner visible-progress, release-note, choice and constrained-shutdown work. The older “pending v1.11.5” entries below are historical notes, not current release status.
+
 - 2026-10-05: Added `docs/UPDATE_RUNNER_REFERENCE.md`, a reusable independent-updater architecture and incident-reference document for other application agents. It records required commands, registry/path validation, temporary Runner execution, constrained process termination, visible progress UX, result/error contracts, shared-directory uninstall safety, known failures and release/E2E sequence. No product runtime behavior changed in this documentation task.
 
 - 2026-10-05: Added pending controlled shutdown support to Runner: after a 30-second graceful wait, it may terminate only the requested PID after `QueryFullProcessImageNameW` confirms the exact registered main-EXE path; it then requires process exit before installation. Path mismatch or termination failure aborts. Pending v1.11.5 packaging/release.

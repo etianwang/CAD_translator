@@ -3,7 +3,7 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.11.5"
+#define MyAppVersion "1.11.6"
 #define MyAppPublisher "Honsen-Etienne"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
@@ -69,10 +69,10 @@ Type: dirifempty; Name: "{autoprograms}\Honsen CAD Translator"
 
 [Icons]
 ; 开始菜单
-Name: "{group}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"
+Name: "{group}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\卸载 {#MyShortcutName}"; Filename: "{uninstallexe}"
 ; 桌面快捷方式（由 Tasks 控制）
-Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
 ; Honsen Program unified application identity. This installer is per-machine

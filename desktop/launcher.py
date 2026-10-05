@@ -14,7 +14,7 @@ from desktop.native_bridge import NativeBridge
 from backend.api import API_PORT, FRONTEND_DIST, app, service
 from backend.cad import unmount_embedded_odafc
 
-TITLE = "Honsen CAD 中法英互译工具 v1.11.5"
+TITLE = "Honsen CAD 中法英互译工具 v1.11.6"
 _INSTANCE_MUTEX = None
 
 

@@ -21,7 +21,7 @@ const versions = [
   ["ACAD2013", "AutoCAD 2013"],
   ["ACAD2018", "AutoCAD 2018"],
 ];
-const APP_VERSION = "1.11.5";
+const APP_VERSION = "1.11.6";
 const modes = [
   ["zh_to_fr", "中文 → 法语"],
   ["fr_to_zh", "法语 → 中文"],

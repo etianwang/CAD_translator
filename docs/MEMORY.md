@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Delivered a concise user-facing consolidation of the v1.11.5 updater requirements. The canonical reusable handoff remains `docs/UPDATE_RUNNER_REFERENCE.md`; no runtime or release decision changed.
+
 - 2026-10-05: Published the formal [v1.11.6 GitHub Release](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.6), asset `Honsen_DrawTranslate_v1.11.6_Setup.exe` (81,355,486 bytes, SHA-256 `4521ce94e7d8963070171153775018e153dbf33f064e7cd25d8457b413c7b8d4`). Tag `v1.11.6` points to release commit `b0ce55e`.
 
 - 2026-10-05: Prepared v1.11.6 for the Runner “later” and “skip this version” E2E test. The installer carries matching `1.11.6` EXE metadata, `honsen.app.json`, registry version and frontend label. It was built successfully and updater unit tests passed. Shortcuts still launch `HonsenUpdateRunner.exe launch`, but now explicitly use `Honsen DrawTranslate.exe` as `IconFilename`; this prevents the Runner resource or Windows icon cache from changing the visible application logo. Package SHA-256 before GitHub upload: `4521CE94E7D8963070171153775018E153DBF33F064E7CD25D8457B413C7B8D4`.

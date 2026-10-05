@@ -1,6 +1,10 @@
 {
+  "schemaVersion": 1,
   "appId": "honsen.cad-translator",
   "version": "1.11.6",
+  "executable": "Honsen DrawTranslate.exe",
+  "updateRunner": "HonsenUpdateRunner.exe",
+  "updateManifestUrl": "https://api.github.com/repos/etianwang/CAD_translator/releases/latest",
   "executableName": "Honsen DrawTranslate.exe",
   "updateRunnerName": "HonsenUpdateRunner.exe"
 }

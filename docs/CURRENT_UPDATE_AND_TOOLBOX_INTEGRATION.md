@@ -10,9 +10,9 @@
 | 主程序 | `Honsen DrawTranslate.exe` |
 | 唯一更新执行器 | `HonsenUpdateRunner.exe` |
 | 安装描述文件 | `<InstallLocation>\honsen.app.json` |
-| 更新结果 | `%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator.json` |
+| 更新结果 | `%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json` |
 
-`HonsenUpdateRunner.exe` 是唯一可以下载更新包、校验 SHA-256、等待/结束主程序、启动 Inno、覆盖安装目录、验证安装结果和重启主程序的组件。
+`HonsenUpdateRunner.exe` 是唯一可以等待/结束主程序、启动 Inno、覆盖安装目录、验证安装结果、重启主程序并写入结果的组件。Runner 的 `launch` 可自行下载；主程序和工具箱也可下载，但必须先校验 SHA-256，且不得自行安装或替换文件。
 
 主程序与 Honsen 工具箱都不得直接启动 Inno、移动/删除/覆盖应用文件，且不得自行猜测安装路径。
 
@@ -35,6 +35,8 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 | `UpdateRunnerPath` | Runner 的绝对路径；工具箱“更新”使用它 |
 | `UpdateManifestUrl` | 当前稳定更新源的 GitHub `releases/latest` API |
 | `UpdateUrl` | 兼容字段，指向同一更新源 |
+
+`honsen.app.json` 的标准字段为 `schemaVersion: 1`、`appId`、`version`、`executable`、`updateRunner`、`updateManifestUrl`。CAD 当前还保留 `executableName`、`updateRunnerName` 作为旧版本兼容字段；读取方必须优先使用标准字段。
 
 工具箱必须按精确 `appId` 读取这个键。禁止通过显示名称、快捷方式、磁盘扫描或固定目录定位应用。
 
@@ -87,6 +89,8 @@ HonsenUpdateRunner.exe apply
   --target-dir <主程序实际运行目录>
   --expected-version <目标版本>
   --restart true
+  --operation-id <GUID>
+  --result-path "%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<GUID>.json"
 ```
 
 主程序另有 `update_service_status()` 用于检测 Runner 是否存在；异常时应提示“更新服务异常，请通过 Honsen工具箱修复”。`restart_update_service()` 只在 Runner 存在时调用 `launch`，不会由主程序下载或替换自身文件。
@@ -101,7 +105,9 @@ HonsenUpdateRunner.exe apply
 $appId = 'honsen.cad-translator'
 $key = "HKLM:\Software\Honsen Program\Apps\$appId"
 $app = Get-ItemProperty $key
-& $app.LauncherPath launch
+$operationId = [guid]::NewGuid().ToString()
+$resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$operationId.json"
+& $app.LauncherPath launch --source toolbox --operation-id $operationId --result-path $resultPath
 ```
 
 工具箱不直接启动旧桌面快捷方式或硬编码的主 exe 路径。
@@ -114,6 +120,8 @@ $app = Get-ItemProperty $key
 $appId = 'honsen.cad-translator'
 $key = "HKLM:\Software\Honsen Program\Apps\$appId"
 $app = Get-ItemProperty $key
+$operationId = [guid]::NewGuid().ToString()
+$resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$operationId.json"
 
 & $app.UpdateRunnerPath apply `
   --source toolbox `
@@ -123,16 +131,18 @@ $app = Get-ItemProperty $key
   --sha256 '<已校验的 SHA-256>' `
   --target-dir $app.InstallLocation `
   --expected-version 'X.Y.Z' `
-  --restart false
+  --restart false `
+  --operation-id $operationId `
+  --result-path $resultPath
 ```
 
 工具箱等待 Runner 退出后读取结果文件，而不是根据进程启动成功或安装包存在来判断成功：
 
 ```text
-%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator.json
+%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json
 ```
 
-`status: success` 表示成功；`status: failed` 会包含 `failureStep`、`installerExitCode`、`logPath` 和 `error`。工具箱以 `--restart false` 更新时，成功后显示“更新完成，可打开”；如果确实需要自动打开，可以明确传 `--restart true`。
+工具箱只能读取自己生成的 `$resultPath`，不得读取共享的“最新结果”。结果字段固定为 `appId`、`status`、`source`、`fromVersion`、`toVersion`、`step`、`installerExitCode`、`installerLogPath`、`message`、`completedAtUtc`，并附带 `operationId`。工具箱以 `--restart false` 更新时，成功后显示“更新完成，可打开”；如果确实需要自动打开，可以明确传 `--restart true`。
 
 ## Runner apply 的安全流程
 

@@ -70,6 +70,8 @@ class UpdaterTests(unittest.TestCase):
             runner.write_bytes(b"runner")
             (app_dir / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
+                "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
+                "updateManifestUrl": "https://example.test/latest",
                 "executableName": executable.name, "updateRunnerName": runner.name,
             }), encoding="utf-8")
             installer = Path(directory) / "HonsenCAD.v1.9.4.exe"
@@ -80,12 +82,17 @@ class UpdaterTests(unittest.TestCase):
                 patch("desktop.native_bridge.subprocess.Popen") as popen,
                 patch("desktop.native_bridge.threading.Thread") as thread,
             ):
-                self.assertEqual(NativeBridge().install_update(str(installer), "a" * 64, "1.10.1"), {"ok": True})
+                result = NativeBridge().install_update(str(installer), "a" * 64, "1.10.1")
+            self.assertTrue(result["ok"])
+            self.assertRegex(result["operationId"], r"^[0-9a-f-]{36}$")
+            self.assertTrue(result["resultPath"].endswith(result["operationId"] + ".json"))
             command = popen.call_args.args[0]
             self.assertEqual(Path(command[0]).resolve(), runner.resolve())
             self.assertEqual(command[1:3], ["apply", "--source"])
             self.assertIn("--wait-pid", command)
             self.assertEqual(Path(command[command.index("--target-dir") + 1]).resolve(), app_dir.resolve())
+            self.assertEqual(command[command.index("--operation-id") + 1], result["operationId"])
+            self.assertEqual(command[command.index("--result-path") + 1], result["resultPath"])
             thread.assert_called_once()
 
         self.assertIn("更新助手", NativeBridge().install_update("missing.exe", "", "")["error"])
@@ -139,7 +146,7 @@ class UpdaterTests(unittest.TestCase):
         runner = (root / "desktop" / "update_runner.py").read_text(encoding="utf-8")
         self.assertIn('"Honsen Program" / "UpdateRunner"', runner)
         self.assertIn('"--relocated"', runner)
-        self.assertIn('"status": "success"', runner)
+        self.assertIn('_result(args, "success"', runner)
 
     def test_runner_rejects_mismatched_registry_or_manifest_target(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -150,7 +157,8 @@ class UpdaterTests(unittest.TestCase):
             runner.write_bytes(b"runner")
             (target / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
-                "executableName": executable.name, "updateRunnerName": runner.name,
+                "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
+                "updateManifestUrl": "https://example.test/latest",
             }), encoding="utf-8")
             good = {"AppId": "honsen.cad-translator", "InstallLocation": str(target), "ExecutablePath": str(executable), "UpdateRunnerPath": str(runner), "UpdateManifestUrl": "https://example.test/latest", "Version": "1.10.0"}
             with patch("desktop.update_runner._registries", return_value=[good]):
@@ -158,6 +166,17 @@ class UpdaterTests(unittest.TestCase):
             with patch("desktop.update_runner._registries", return_value=[{**good, "InstallLocation": str(target / "other")}]):
                 with self.assertRaises(update_runner.UpdateFailure):
                     update_runner._validate_target("honsen.cad-translator", target)
+
+    def test_runner_uses_operation_scoped_result_paths_and_standard_result_fields(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(update_runner, "RESULTS_DIR", Path(directory)):
+            first_id, first_path = update_runner._result_location("honsen.cad-translator", "123e4567-e89b-12d3-a456-426614174000", None)
+            second_id, second_path = update_runner._result_location("honsen.cad-translator", "123e4567-e89b-12d3-a456-426614174001", None)
+            self.assertNotEqual(first_path, second_path)
+            self.assertEqual(first_path.name, f"{first_id}.json")
+            with self.assertRaises(update_runner.UpdateFailure):
+                update_runner._result_location("honsen.cad-translator", first_id, str(Path(directory) / "other.json"))
+            result = update_runner._result(type("Args", (), {"app_id": "honsen.cad-translator", "source": "toolbox", "operation_id": first_id})(), "failed", step="sha256", message="校验失败")
+            self.assertEqual(set(result), {"appId", "status", "source", "operationId", "fromVersion", "toVersion", "step", "installerExitCode", "installerLogPath", "message"})
 
 
 if __name__ == "__main__":

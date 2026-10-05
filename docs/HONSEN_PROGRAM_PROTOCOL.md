@@ -8,6 +8,21 @@ Windows 安装包使用永久 appId `honsen.cad-translator`。发布后不得修
 HKLM\Software\Honsen Program\Apps\honsen.cad-translator
 ```
 
+安装目录中的 `honsen.app.json` 使用以下通用字段：
+
+```json
+{
+  "schemaVersion": 1,
+  "appId": "honsen.cad-translator",
+  "version": "X.Y.Z",
+  "executable": "Honsen DrawTranslate.exe",
+  "updateRunner": "HonsenUpdateRunner.exe",
+  "updateManifestUrl": "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
+}
+```
+
+CAD 暂时同时保留旧的 `executableName`、`updateRunnerName`，供已安装旧版 Runner/主程序兼容；新接入方只应依赖标准字段。
+
 工具箱应只读取此精确键，不按名称模糊匹配，也不扫描可执行文件。键包含以下字符串值：
 
 | 值名 | 含义 |

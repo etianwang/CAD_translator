@@ -74,9 +74,16 @@ def _metadata(target: Path) -> dict:
         data = json.loads((target / "honsen.app.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise UpdateFailure("目标目录缺少有效的 honsen.app.json") from exc
-    required = ("appId", "version", "executableName", "updateRunnerName")
-    if not all(isinstance(data.get(key), str) and data[key] for key in required):
+    executable = data.get("executable") or data.get("executableName")
+    runner = data.get("updateRunner") or data.get("updateRunnerName")
+    if not all(isinstance(data.get(key), str) and data[key] for key in ("appId", "version")) or not all(isinstance(value, str) and value for value in (executable, runner)):
         raise UpdateFailure("honsen.app.json 字段不完整")
+    if "updateManifestUrl" in data and (not isinstance(data["updateManifestUrl"], str) or not data["updateManifestUrl"]):
+        raise UpdateFailure("honsen.app.json 的 updateManifestUrl 无效")
+    if "schemaVersion" in data and data["schemaVersion"] != 1:
+        raise UpdateFailure("不支持的 honsen.app.json schemaVersion")
+    data["executable"] = executable
+    data["updateRunner"] = runner
     return data
 
 
@@ -103,8 +110,8 @@ def _validate_target(app_id: str, target: Path) -> tuple[dict, dict]:
     if not re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,127}", app_id):
         raise UpdateFailure("appId 格式无效")
     data, records = _metadata(target), _registries(app_id)
-    executable = target / data["executableName"]
-    runner = target / data["updateRunnerName"]
+    executable = target / data["executable"]
+    runner = target / data["updateRunner"]
     matches = [record for record in records if _canonical(record["InstallLocation"]) == _canonical(target)]
     if not matches or any(_canonical(record["InstallLocation"]) != _canonical(target) for record in records):
         raise UpdateFailure("同一 appId 存在冲突的安装目录")
@@ -115,6 +122,8 @@ def _validate_target(app_id: str, target: Path) -> tuple[dict, dict]:
         raise UpdateFailure("目标目录与注册表不一致")
     if _canonical(reg["UpdateRunnerPath"]) != _canonical(runner):
         raise UpdateFailure("更新助手路径与注册表不一致")
+    if data.get("updateManifestUrl") and data["updateManifestUrl"] != reg["UpdateManifestUrl"]:
+        raise UpdateFailure("更新源与注册表不一致")
     if not executable.is_file() or not runner.is_file():
         raise UpdateFailure("目标应用文件不完整")
     return data, reg
@@ -180,10 +189,31 @@ def _file_version(path: Path) -> str:
     return f"{fixed[2] >> 16}.{fixed[2] & 0xffff}.{fixed[3] >> 16}"
 
 
-def _write_result(app_id: str, result: dict) -> Path:
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    destination = RESULTS_DIR / f"{app_id}.json"
-    fd, temporary = tempfile.mkstemp(prefix=f".{app_id}.", suffix=".json", dir=RESULTS_DIR)
+def _result_location(app_id: str, operation_id: str | None, supplied_path: str | None) -> tuple[str, Path]:
+    try:
+        operation_id = str(uuid.UUID(operation_id)) if operation_id else str(uuid.uuid4())
+    except (TypeError, ValueError) as exc:
+        raise UpdateFailure("operationId 必须是 GUID") from exc
+    destination = RESULTS_DIR / app_id / f"{operation_id}.json"
+    if supplied_path and _canonical(supplied_path) != _canonical(destination):
+        raise UpdateFailure("result-path 必须是该 operationId 的受信任结果路径")
+    return operation_id, destination
+
+
+def _result(args: argparse.Namespace, status: str, **values) -> dict:
+    result = {
+        "appId": args.app_id, "status": status, "source": args.source,
+        "operationId": args.operation_id, "fromVersion": None, "toVersion": None,
+        "step": None, "installerExitCode": None, "installerLogPath": None,
+        "message": None,
+    }
+    result.update(values)
+    return result
+
+
+def _write_result(destination: Path, result: dict) -> Path:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{destination.stem}.", suffix=".json", dir=destination.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             json.dump(result, stream, ensure_ascii=False, indent=2)
@@ -240,22 +270,23 @@ def launch(args: argparse.Namespace, ui: ProgressWindow | None = None) -> dict:
     update = _release(reg["Version"], reg["UpdateManifestUrl"])
     if not update:
         subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
-        return {"appId": args.app_id, "status": "success", "action": "launch", "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
+        return _result(args, "success", fromVersion=reg["Version"], toVersion=reg["Version"], message="已启动当前版本")
     if _skipped_version(args.app_id) == update["version"]:
         subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
-        return {"appId": args.app_id, "status": "success", "action": "launch", "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
+        return _result(args, "success", fromVersion=reg["Version"], toVersion=reg["Version"], message="已跳过此版本")
     choice = ui.choose(update["version"], update["notes"]) if ui else "update"
     if choice != "update":
         if choice == "skip": _skip_version(args.app_id, update["version"])
         subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
-        return {"appId": args.app_id, "status": "success", "action": choice, "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
+        return _result(args, "success", fromVersion=reg["Version"], toVersion=reg["Version"], message="稍后提醒" if choice == "later" else "已跳过此版本")
     args.installer, args.sha256, args.target_dir, args.expected_version, args.restart = str(_download(update, ui)), update["sha256"], str(target), update["version"], True
     return apply(args, ui)
 
 
 def apply(args: argparse.Namespace, ui: ProgressWindow | None = None) -> dict:
     target, installer = Path(args.target_dir), Path(args.installer)
-    log = RESULTS_DIR / f"{args.app_id}.inno.log"
+    log = Path(args.result_path).with_suffix(".inno.log")
+    args.installer_log_path = str(log)
     data, reg = _validate_target(args.app_id, target)
     from_version = reg["Version"]
     if _sha256(installer).lower() != args.sha256.lower():
@@ -276,7 +307,7 @@ def apply(args: argparse.Namespace, ui: ProgressWindow | None = None) -> dict:
     if args.restart:
         if ui: ui.set("更新完成，正在启动应用…", 100)
         subprocess.Popen([str(executable)], cwd=str(target))
-    return {"appId": args.app_id, "status": "success", "source": args.source, "fromVersion": from_version, "toVersion": args.expected_version, "installLocation": str(target), "executablePath": str(executable), "installerExitCode": exit_code, "logPath": str(log), "restart": args.restart}
+    return _result(args, "success", fromVersion=from_version, toVersion=args.expected_version, installerExitCode=exit_code, installerLogPath=str(log), message="更新完成")
 
 
 def _mutex(app_id: str):
@@ -293,6 +324,8 @@ def main(argv: list[str] | None = None) -> int:
     launch_parser.add_argument("--app-id", default=APP_ID)
     launch_parser.add_argument("--source", choices=("app", "toolbox"), default="app")
     launch_parser.add_argument("--wait-pid", type=int, default=0)
+    launch_parser.add_argument("--operation-id")
+    launch_parser.add_argument("--result-path")
     launch_parser.add_argument("--relocated", action="store_true", help=argparse.SUPPRESS)
     apply_parser = sub.add_parser("apply")
     apply_parser.add_argument("--source", choices=("app", "toolbox"), required=True)
@@ -303,14 +336,24 @@ def main(argv: list[str] | None = None) -> int:
     apply_parser.add_argument("--target-dir", required=True)
     apply_parser.add_argument("--expected-version", required=True)
     apply_parser.add_argument("--restart", choices=("true", "false"), required=True)
+    apply_parser.add_argument("--operation-id")
+    apply_parser.add_argument("--result-path")
     apply_parser.add_argument("--relocated", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     args.restart = getattr(args, "restart", False) == "true"
-    result = {"appId": args.app_id, "status": "failed", "source": args.source, "failureStep": "startup", "installerExitCode": None, "logPath": str(RESULTS_DIR / f"{args.app_id}.inno.log")}
+    operation_error = None
+    try:
+        args.operation_id, args.result_path = _result_location(args.app_id, args.operation_id, args.result_path)
+    except UpdateFailure as exc:
+        operation_error = exc
+        args.operation_id, args.result_path = _result_location(args.app_id, None, None)
+    result = _result(args, "failed", step="startup")
     handle = None
     handed_off = False
     ui = None
     try:
+        if operation_error:
+            raise operation_error
         if sys.platform != "win32":
             raise UpdateFailure("HonsenUpdateRunner 仅支持 Windows")
         if not args.relocated:
@@ -321,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
             copied = Path(tempfile.gettempdir()) / "Honsen Program" / "UpdateRunner" / str(uuid.uuid4()) / "HonsenUpdateRunner.exe"
             copied.parent.mkdir(parents=True, exist_ok=False)
             copied.write_bytes(Path(sys.executable).read_bytes())
-            command = [str(copied), args.command, "--source", args.source, "--app-id", args.app_id, "--wait-pid", str(args.wait_pid), "--relocated"]
+            command = [str(copied), args.command, "--source", args.source, "--app-id", args.app_id, "--wait-pid", str(args.wait_pid), "--operation-id", args.operation_id, "--result-path", str(args.result_path), "--relocated"]
             if args.command == "apply": command += ["--installer", args.installer, "--sha256", args.sha256, "--target-dir", args.target_dir, "--expected-version", args.expected_version, "--restart", "true" if args.restart else "false"]
             subprocess.Popen(command, cwd=str(copied.parent))
             handed_off = True
@@ -330,20 +373,21 @@ def main(argv: list[str] | None = None) -> int:
         ui = ProgressWindow()
         result = launch(args, ui) if args.command == "launch" else apply(args, ui)
     except (OSError, UpdateFailure) as exc:
-        result["error"] = str(exc)
+        result["message"] = str(exc)
         result["installerExitCode"] = getattr(args, "installer_exit_code", None)
+        result["installerLogPath"] = getattr(args, "installer_log_path", None)
         if "SHA-256" in str(exc):
-            result["failureStep"] = "sha256"
+            result["step"] = "sha256"
         elif "安装包" in str(exc):
-            result["failureStep"] = "installer"
+            result["step"] = "installer"
         else:
-            result["failureStep"] = "validation"
+            result["step"] = "validation"
     finally:
         if ui: ui.close()
         result["completedAtUtc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         try:
             if args.relocated or (result["status"] == "failed" and not handed_off):
-                _write_result(args.app_id, result)
+                _write_result(Path(args.result_path), result)
         finally:
             if handle:
                 ctypes.windll.kernel32.ReleaseMutex(handle)

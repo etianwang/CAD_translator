@@ -4,7 +4,7 @@
 
 ## 推荐职责划分
 
-只有 `ProductUpdateRunner.exe` 可以检查更新、下载、校验 SHA-256、等待/结束旧进程、运行安装器、验证结果、重启应用和写结果文件。主程序与工具箱不得直接覆盖、移动、删除或安装应用文件。
+只有 `ProductUpdateRunner.exe` 可以等待/结束旧进程、运行安装器、覆盖、验证、重启和写结果文件。Runner 可以自行检查、下载和校验 SHA-256；主程序与工具箱也可下载，但必须先校验 SHA-256，且不得直接覆盖、移动、删除或安装应用文件。
 
 主程序可调用 Runner 的 `check` 并读取其结果文件来展示更新内容；用户确认更新后，主程序调用 `launch`/`apply --wait-pid <pid>` 并正常退出。Runner 等待 PID 后执行更新。主程序若提前退出失败，Runner 可在有限条件下强制退出，见下文。
 
@@ -13,7 +13,7 @@
 ```text
 ProductUpdateRunner.exe check  --app-id <appId>
 ProductUpdateRunner.exe launch --app-id <appId> --wait-pid <pid>
-ProductUpdateRunner.exe apply  --source app|toolbox --app-id <appId> --wait-pid <pid> --installer <absolute-path> --sha256 <hex> --target-dir <install-dir> --expected-version <version> --restart true|false
+ProductUpdateRunner.exe apply  --source app|toolbox --app-id <appId> --wait-pid <pid> --installer <absolute-path> --sha256 <hex> --target-dir <install-dir> --expected-version <version> --restart true|false --operation-id <GUID> --result-path <absolute-result-path>
 ProductUpdateRunner.exe repair --app-id <appId>
 ```
 
@@ -68,10 +68,10 @@ Runner 应为 `console=False`，避免闪黑框。使用自身原生进度窗口
 结果必须原子写入：
 
 ```text
-%LOCALAPPDATA%\Vendor\UpdateResults\<appId>.json
+%LOCALAPPDATA%\Vendor\UpdateResults\<appId>\<operationId>.json
 ```
 
-成功至少包含 appId、fromVersion、toVersion、installLocation、executablePath、completedAtUtc。失败必须有 `status: failed`、failureStep、installerExitCode、logPath 和可读 error。捕获所有异常；不要让未处理异常只表现为“黑框闪退”。
+每个发起方生成 GUID，并只读取自己传入的结果路径，不能读取共享“最新结果”。结果固定包含 `appId`、`status`、`source`、`fromVersion`、`toVersion`、`step`、`installerExitCode`、`installerLogPath`、`message`、`completedAtUtc`（以及 `operationId`）。捕获所有异常；不要让未处理异常只表现为“黑框闪退”。
 
 主程序只检查 Runner/manifest/注册表一致性，读取结果展示状态，并提供“重新启动更新服务”入口。Runner 缺失、损坏或上次失败时提示用户通过工具箱修复；主程序自身不得退化为直接安装器。
 

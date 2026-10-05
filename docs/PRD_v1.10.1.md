@@ -8,7 +8,7 @@
 
 ## 目标与边界
 
-Runner 是唯一可以检查更新、下载、校验 SHA-256、提权运行 Inno、覆盖文件、验证版本、重启应用、写更新结果的程序。主程序和 Honsen 工具箱不得直接下载、移动、删除或覆盖应用文件。
+Runner 是唯一可以提权运行 Inno、覆盖文件、验证版本、重启应用、写更新结果的程序。Runner 的 `launch` 可以检查、下载和校验 SHA-256；主程序和 Honsen 工具箱也可以下载，但必须先校验 SHA-256，且不得移动、删除、覆盖或安装应用文件。
 
 Runner 支持 `launch` 与 `apply`。所有标准桌面/开始菜单快捷方式及工具箱“打开”必须调用 `LauncherPath launch`。`launch` 检查公开稳定 GitHub Release：无更新时启动注册表 `ExecutablePath`；有更新时下载、校验并在原目录静默安装后验证并启动新版。`apply` 供工具箱对已验证安装包发起更新。
 
@@ -22,7 +22,7 @@ Inno 参数固定为 `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="<Insta
 
 `HKLM\Software\Honsen Program\Apps\honsen.cad-translator`（当前全电脑安装）或对应 HKCU 键必须包含 `AppId`、`Version`、`InstallLocation`、`ExecutablePath`、`LauncherPath`、`UpdateRunnerPath`、`UpdateManifestUrl`。`LauncherPath` 与 `UpdateRunnerPath` 均是 Runner 的绝对路径。
 
-最终结果原子写入 `%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator.json`。成功包含 appId、fromVersion、toVersion、installLocation、executablePath、completedAtUtc；失败包含 `status: failed`、失败步骤、安装器退出码和日志路径。
+每次调用必须携带 `operationId` 和受信任的结果路径；最终结果原子写入 `%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json`。结果字段统一为 appId、status、source、fromVersion、toVersion、step、installerExitCode、installerLogPath、message、completedAtUtc（以及 operationId）。
 
 ## 主程序兜底与迁移
 

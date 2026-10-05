@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import threading
+import uuid
 from pathlib import Path
 from datetime import datetime
 
@@ -114,19 +115,22 @@ class NativeBridge:
         try:
             metadata = json.loads((app_dir / "honsen.app.json").read_text(encoding="utf-8"))
             app_id = metadata["appId"]
-            runner = app_dir / metadata["updateRunnerName"]
+            runner = app_dir / (metadata.get("updateRunner") or metadata["updateRunnerName"])
         except (OSError, ValueError, KeyError, TypeError):
             return {"error": "当前安装缺少 HonsenUpdateRunner，请手动安装包含更新助手的新版本一次"}
         if sys.platform != "win32" or not os.path.isfile(path) or not runner.is_file() or not sha256 or not expected_version:
             return {"error": "自动更新仅支持经过校验的 Windows 安装包"}
         try:
+            operation_id = str(uuid.uuid4())
+            result_path = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Honsen Program" / "UpdateResults" / app_id / f"{operation_id}.json"
             subprocess.Popen([
                 str(runner), "apply", "--source", "app", "--app-id", str(app_id),
                 "--wait-pid", str(os.getpid()), "--installer", path, "--sha256", sha256,
                 "--target-dir", str(app_dir), "--expected-version", expected_version, "--restart", "true",
+                "--operation-id", operation_id, "--result-path", str(result_path),
             ], cwd=str(app_dir))
             threading.Thread(target=self.close_window, daemon=True).start()
-            return {"ok": True}
+            return {"ok": True, "operationId": operation_id, "resultPath": str(result_path)}
         except OSError as exc:
             return {"error": f"无法启动更新安装包: {exc}"}
 
@@ -134,7 +138,7 @@ class NativeBridge:
         app_dir = Path(sys.executable).resolve().parent
         try:
             meta = json.loads((app_dir / "honsen.app.json").read_text(encoding="utf-8"))
-            runner = app_dir / meta["updateRunnerName"]
+            runner = app_dir / (meta.get("updateRunner") or meta["updateRunnerName"])
             if not runner.is_file(): raise OSError()
             return {"ok": True, "message": "更新服务正常"}
         except (OSError, ValueError, KeyError):

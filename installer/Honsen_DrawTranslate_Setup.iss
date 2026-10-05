@@ -3,7 +3,7 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.10.0"
+#define MyAppVersion "1.11.0"
 #define MyAppPublisher "Honsen-Etienne"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
@@ -41,7 +41,7 @@ VersionInfoProductVersion={#MyAppVersion}
 ; 显示“准备安装”页，便于确认路径与快捷方式选项
 DisableReadyPage=no
 DisableDirPage=no
-UsePreviousAppDir=no
+UsePreviousAppDir=yes
 UsePreviousGroup=no
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -52,6 +52,8 @@ Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: 
 [Files]
 ; 主程序
 Source: "..\dist\Honsen DrawTranslate.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\HonsenUpdateRunner.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\honsen.app.json"; DestDir: "{app}"; Flags: ignoreversion
 ; ODA File Converter 及依赖（完整子目录）
 Source: "..\dist\ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -67,10 +69,10 @@ Type: dirifempty; Name: "{autoprograms}\Honsen CAD Translator"
 
 [Icons]
 ; 开始菜单
-Name: "{group}\{#MyShortcutName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"
 Name: "{group}\卸载 {#MyShortcutName}"; Filename: "{uninstallexe}"
 ; 桌面快捷方式（由 Tasks 控制）
-Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; Tasks: desktopicon
 
 [Registry]
 ; Honsen Program unified application identity. This installer is per-machine
@@ -79,12 +81,40 @@ Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: 
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "DisplayName"; ValueData: "{#MyAppName}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "InstallLocation"; ValueData: "{app}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "ExecutablePath"; ValueData: "{app}\{#MyAppExeName}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "UpdateRunnerPath"; ValueData: "{app}\HonsenUpdateRunner.exe"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "LauncherPath"; ValueData: "{app}\HonsenUpdateRunner.exe"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "UpdateManifestUrl"; ValueData: "{#MyHonsenUpdateURL}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "UpdateUrl"; ValueData: "{#MyHonsenUpdateURL}"
 
+[Code]
+var
+  ExistingInstallLocation: String;
+
+function ReadExistingInstallLocation(): String;
+begin
+  Result := '';
+  if not RegQueryStringValue(HKLM, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallLocation', Result) then
+    RegQueryStringValue(HKCU, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallLocation', Result);
+end;
+
+procedure InitializeWizard();
+begin
+  ExistingInstallLocation := ReadExistingInstallLocation();
+  if ExistingInstallLocation <> '' then
+    WizardForm.DirEdit.Text := ExistingInstallLocation;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if (ExistingInstallLocation <> '') and (CompareText(RemoveBackslashUnlessRoot(WizardDirValue), RemoveBackslashUnlessRoot(ExistingInstallLocation)) <> 0) then
+    Result := '已安装的 Honsen CAD Translator 只能更新原目录：' + ExistingInstallLocation;
+end;
+
 [Run]
-; Must run during /VERYSILENT updates too; start unelevated when Setup used UAC.
-Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait runasoriginaluser
+; Manual installs may offer launch. Silent updates are restarted only by HonsenUpdateRunner.
+Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait runasoriginaluser postinstall
 
 [UninstallDelete]
 ; 卸载时清理可能产生的运行时缓存（如有）

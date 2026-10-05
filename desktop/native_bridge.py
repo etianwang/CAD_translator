@@ -1,9 +1,11 @@
 """Native file dialogs exposed to the React UI via pywebview."""
 
 import os
+import json
 import subprocess
 import sys
 import threading
+from pathlib import Path
 from datetime import datetime
 
 import webview
@@ -105,15 +107,43 @@ class NativeBridge:
             webview.windows[0].destroy()
         os._exit(0)
 
-    def install_update(self, installer_path: str) -> dict:
-        """Run a verified Inno Setup package after this process has closed."""
+    def install_update(self, installer_path: str, sha256: str, expected_version: str) -> dict:
+        """Hand the verified package to the installed shared update runner."""
         path = os.path.abspath(installer_path)
-        name = os.path.basename(path)
-        if sys.platform != "win32" or not os.path.isfile(path) or not (name.startswith("Honsen_DrawTranslate_v") or name.startswith("HonsenCAD.v")):
+        app_dir = Path(sys.executable).resolve().parent
+        try:
+            metadata = json.loads((app_dir / "honsen.app.json").read_text(encoding="utf-8"))
+            app_id = metadata["appId"]
+            runner = app_dir / metadata["updateRunnerName"]
+        except (OSError, ValueError, KeyError, TypeError):
+            return {"error": "当前安装缺少 HonsenUpdateRunner，请手动安装包含更新助手的新版本一次"}
+        if sys.platform != "win32" or not os.path.isfile(path) or not runner.is_file() or not sha256 or not expected_version:
             return {"error": "自动更新仅支持经过校验的 Windows 安装包"}
         try:
-            subprocess.Popen([path, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"], cwd=os.path.dirname(path))
-            threading.Timer(0.4, self.close_window).start()
+            subprocess.Popen([
+                str(runner), "apply", "--source", "app", "--app-id", str(app_id),
+                "--wait-pid", str(os.getpid()), "--installer", path, "--sha256", sha256,
+                "--target-dir", str(app_dir), "--expected-version", expected_version, "--restart", "true",
+            ], cwd=str(app_dir))
+            threading.Thread(target=self.close_window, daemon=True).start()
             return {"ok": True}
         except OSError as exc:
             return {"error": f"无法启动更新安装包: {exc}"}
+
+    def update_service_status(self) -> dict:
+        app_dir = Path(sys.executable).resolve().parent
+        try:
+            meta = json.loads((app_dir / "honsen.app.json").read_text(encoding="utf-8"))
+            runner = app_dir / meta["updateRunnerName"]
+            if not runner.is_file(): raise OSError()
+            return {"ok": True, "message": "更新服务正常"}
+        except (OSError, ValueError, KeyError):
+            return {"ok": False, "message": "更新服务异常，请通过 Honsen工具箱修复"}
+
+    def restart_update_service(self) -> dict:
+        status = self.update_service_status()
+        if not status["ok"]: return {"error": status["message"]}
+        runner = Path(sys.executable).resolve().parent / "HonsenUpdateRunner.exe"
+        subprocess.Popen([str(runner), "launch", "--wait-pid", str(os.getpid())])
+        threading.Thread(target=self.close_window, daemon=True).start()
+        return {"ok": True}

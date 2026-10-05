@@ -1,12 +1,12 @@
 # Windows 发布与自动更新规范
 
-本规范是 Windows 版本发布的唯一操作顺序。发布者和后续 agent 必须同时阅读本文件、[PRD_v1.9.3.md](PRD_v1.9.3.md)、[TEST_RULES.md](TEST_RULES.md) 与 `installer/` 下的两个脚本。
+本规范是 Windows 版本发布的唯一操作顺序。发布者和后续 agent 必须同时阅读本文件、[PRD_v1.10.1.md](PRD_v1.10.1.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[TEST_RULES.md](TEST_RULES.md) 与 `installer/` 下的两个脚本。
 
 ## 自动更新链路
 
 ```text
-已安装客户端 → GitHub releases/latest → 下载 Release 安装包 → SHA-256 校验
-→ /VERYSILENT 启动 Inno Setup → 关闭旧进程 → 替换 EXE 与 ODA 目录 → 自动启动新 EXE
+快捷方式/工具箱 → HonsenUpdateRunner.exe → GitHub releases/latest → 下载并校验
+→ 等待目标进程退出 → /DIR 覆盖原安装目录 → 验证 → 按请求启动主程序
 ```
 
 客户端只接受比内置版本号更高的**公开稳定版** GitHub Release，并且该 Release 必须带有与版本号完全一致的 Windows 资产：
@@ -23,6 +23,7 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    - `backend/translator.py`、`desktop/launcher.py`、`frontend/package*.json`、`frontend/src/App.jsx`；
    - `changelog.json`；
    - `installer/Honsen_DrawTranslate_Setup.iss` 的 `MyAppVersion`（`MyAppExeName` 必须固定为 `Honsen DrawTranslate.exe`）；
+   - `honsen.app.json` 的 `version` 和 `Honsen_DrawTranslate_version_info.txt` 的文件/产品版本；
    - `installer/build_installer.ps1` 的 spec 和安装包文件名；
    - 新建对应的 `Honsen_CAD_Translator_vX.Y.Z.spec`，并更新 README 的 Windows 构建命令。
 2. 运行最低检查：
@@ -48,15 +49,23 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    只有 GitHub Release 是自动更新源；Gitee 用于仓库和标签同步，不替代 GitHub Release。
 6. 在 `docs/MEMORY.md` 记录版本、提交、标签、Release URL、安装包大小、SHA-256、通过的检查和未执行的 E2E 项；如该记录在 Release 后新增，再将它作为独立文档提交推送。
 
-## 静默更新重启不可破坏的约束
+## 共享更新助手不可破坏的约束
 
-`desktop/native_bridge.py` 会以 `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS` 启动已校验的安装包，再关闭旧程序。因此 `installer/Honsen_DrawTranslate_Setup.iss` 的主程序 `[Run]` 项必须：
+完整协议见 [HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)。主程序不得直接启动 Inno：它只启动同目录、由 `honsen.app.json` 声明的 `HonsenUpdateRunner.exe`，传入当前 PID、下载器返回的 SHA-256、目标版本和自身真实运行目录。工具箱必须从固定 appId 注册表键读取 `UpdateRunnerPath` 与 `InstallLocation` 后调用同一文件。
 
-```iss
-Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser
+安装器必须安装 `HonsenUpdateRunner.exe` 和 `honsen.app.json`，并在 `HKLM\Software\Honsen Program\Apps\honsen.cad-translator` 写入 `UpdateRunnerPath`。Runner 是唯一有权启动 Inno 的组件，且固定传入：
+
+```text
+/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="<target-dir>" /LOG="<result-log>"
 ```
 
-禁止在该项加入 `postinstall` 或 `skipifsilent`：它们会使 `/VERYSILENT` 更新完成后不启动新版本。`runasoriginaluser` 保证 UAC 安装完成后主程序以原登录用户而非管理员身份运行。`tests.test_updater` 中的静态回归检查必须保留。
+静默更新的重启由 Runner 在全部验证成功后完成。因此 `installer/Honsen_DrawTranslate_Setup.iss` 的主程序 `[Run]` 项只能供手动安装使用：
+
+```iss
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser postinstall
+```
+
+`postinstall` 确保 `/VERYSILENT` 不会越过 Runner 自行启动程序；`runasoriginaluser` 保证手动安装的启动使用原登录用户。`tests.test_updater` 中的静态回归检查必须保留。
 
 主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。安装器自身创建的标准桌面和开始菜单快捷方式固定命名为 `Honsen CAD 翻译器`，由 `[Icons]` 在该已知路径替换。桌面、开始菜单和任务栏固定项其余部分属于用户数据：安装器绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。用户固定 `Honsen CAD 翻译器` 后，因 EXE 路径稳定，后续升级无需更改任务栏链接。
 

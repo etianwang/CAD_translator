@@ -20,7 +20,7 @@ The final DWG test consumes DeepL API quota.
 1. Mock a newer GitHub Release with a matching `Honsen_DrawTranslate_vX.Y.Z_Setup.exe` asset and `sha256:` digest; confirm it is offered.
 2. Confirm an equal/older version, prerelease, missing installer, mismatched filename, or missing digest is not offered.
 3. Confirm downloaded bytes must match the published SHA-256, and a mismatch leaves no installer behind.
-4. Confirm the native Windows bridge launches only an approved installer with silent Inno Setup flags, then closes the app; macOS returns an unsupported result.
+4. Confirm the native Windows bridge launches only the installed `HonsenUpdateRunner.exe`, passing the verified installer SHA-256, current PID and actual executable directory; macOS returns an unsupported result.
 5. Confirm the Inno script installs a fixed `Honsen DrawTranslate.exe`, deletes only the two explicit legacy product EXE patterns, and contains no script or `[Run]` action that scans or rewrites user desktop, Start Menu, or taskbar shortcuts.
 
 ## Honsen Program 应用识别验收
@@ -28,6 +28,15 @@ The final DWG test consumes DeepL API quota.
 1. 全电脑安装包只写入 `HKLM\Software\Honsen Program\Apps\honsen.cad-translator`，且不依赖应用显示名称或 EXE 扫描。
 2. 该键包含固定 `AppId`、`InstallLocation`、`ExecutablePath`、`Version` 和 `UpdateUrl` 字符串值；版本和更新地址须分别与安装包版本和应用内 GitHub Release 更新源同步。
 3. 卸载时删除该专用 appId 键；未来的当前用户安装包只能改写对应 HKCU 键，不能同时保留 HKLM 记录。
+4. 该键还必须包含 `UpdateRunnerPath`，并与 `{app}\HonsenUpdateRunner.exe` 和 `honsen.app.json` 的 appId 一致。
+
+## HonsenUpdateRunner 验收
+
+1. 应用入口和工具箱入口均调用注册的同一个 Runner；两者只允许在 `source`、PID 和 restart 值上不同。
+2. Runner 拒绝 SHA-256、appId、目标目录、注册表、manifest 或 EXE 版本中任一不一致的任务，并为每个任务写结果 JSON。
+3. Runner 只通过指定 `/DIR` 覆盖目标目录，等待指定 PID 退出并以 appId 锁串行化；不得扫描、迁移或创建另一应用目录。
+4. `launch` 无更新时只能启动注册表 `ExecutablePath`；有更新时必须从临时 Runner 副本下载、校验、安装、验证后启动新版。
+5. 验证三种桌面结果：成功更新、安装失败（结果 JSON 包含步骤/退出码/日志）、Runner 缺失（主程序显示工具箱修复提示）。在隔离环境完成真实更新和工具箱 `apply` 前，禁止删除遗留主程序更新代码。
 
 ## v1.9.0 language-asset acceptance
 

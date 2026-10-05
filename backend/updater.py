@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 
 
-CURRENT_VERSION = "1.10.0"
+CURRENT_VERSION = "1.11.0"
 RELEASE_API_URL = "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
 UPDATE_DIR = Path(tempfile.gettempdir()) / "Honsen CAD Translator Updates"
 _INSTALLER = re.compile(r"^Honsen_DrawTranslate_v(\d+\.\d+\.\d+)_Setup\.exe$", re.IGNORECASE)
@@ -94,4 +94,9 @@ def download_update() -> dict:
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-    return {"version": update["latest_version"], "installer_path": str(target), "asset_type": update["asset_type"]}
+    return {
+        "version": update["latest_version"],
+        "installer_path": str(target),
+        "sha256": update["sha256"],
+        "asset_type": update["asset_type"],
+    }

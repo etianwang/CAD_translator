@@ -130,7 +130,7 @@ export default function App() {
   const [activationError, setActivationError] = useState("");
   const [support, setSupport] = useState({ licensing_enabled: false });
   const [showSupport, setShowSupport] = useState(false);
-  const [update, setUpdate] = useState({ current_version: "1.10.0", message: "尚未检查更新" });
+  const [update, setUpdate] = useState({ current_version: "1.11.0", message: "尚未检查更新" });
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateState, setUpdateState] = useState("");
   const [draggingFiles, setDraggingFiles] = useState(false);
@@ -256,7 +256,7 @@ export default function App() {
     setUpdateState("downloading");
     try {
       const result = await api("/api/update/download", { method: "POST" });
-      const install = await pyApi?.install_update?.(result.installer_path);
+      const install = await pyApi?.install_update?.(result.installer_path, result.sha256, result.version);
       if (install?.error) throw new Error(install.error);
       if (!install) throw new Error("自动安装仅支持桌面应用");
       setUpdateState("installing");

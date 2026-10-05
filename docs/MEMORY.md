@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Accepted the no-console Runner requirement for the pending v1.11.3 update-test release. `HonsenUpdateRunner.spec` now builds with `console=False`; user-facing launch/update no longer opens a transient command-prompt window. Runner diagnostics remain in the result JSON and Inno log. The changed Runner has not yet been packaged or released in this entry.
+
 - 2026-10-05: At user request, deleted the GitHub Release objects and uploaded assets for defective `v1.11.0` and `v1.11.1`; their Git tags and source commits remain for traceability. Do not use either release for installation or update testing. A corrected release must supersede them after Runner verification.
 
 - 2026-10-05: Published v1.11.1, the Runner update-verification target. Commit `46cb11b` and annotated tag `v1.11.1` are on GitHub `origin`. Public Release: `https://github.com/etianwang/CAD_translator/releases/tag/v1.11.1`; `Honsen_DrawTranslate_v1.11.1_Setup.exe` is 78,277,211 bytes, SHA-256 `a81b4571f107a1388bc09f176ed7d5ab235682496dc41536aff3b3b6bc6a40db`, matching GitHub's published digest. It is a non-draft, non-prerelease Release. Test next: manually install v1.11.0 in an isolated Windows environment, then launch its Runner and verify automatic update to v1.11.1.

@@ -2,6 +2,8 @@
 
 `HonsenUpdateRunner.exe` 是 Windows 应用更新的唯一执行者。应用自身和 Honsen 工具箱只负责下载并校验安装包，随后调用同一个 Runner；`--source` 只记录发起方，不改变任何安全校验或替换逻辑。
 
+Runner 使用 Windows 无控制台子系统：从快捷方式启动或自动更新时不得显示命令提示符窗口；诊断信息写入结果 JSON 和 Inno 日志，而非标准输出。
+
 ## 命令
 
 ```text

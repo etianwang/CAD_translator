@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Added `docs/CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md` as the project-specific current-state guide for Runner launch/apply flows, the registry contract, main-program handoff, toolbox commands, result files, process safety, installer/shortcut/uninstall constraints and the GitHub-versus-Gitee update-source distinction. No runtime behavior changed.
+
 - 2026-10-05: Synchronized `main` (through `4a0642b`) and tag `v1.11.6` to the configured Gitee remote `etianwang/CAD-translator`. The Gitee v1.11.6 release form is filled with matching notes and SHA-256, but asset upload is blocked until the Chrome ChatGPT extension is granted local-file access; no Gitee Release object has been created yet.
 
 - 2026-10-05: Delivered a concise user-facing consolidation of the v1.11.5 updater requirements. The canonical reusable handoff remains `docs/UPDATE_RUNNER_REFERENCE.md`; no runtime or release decision changed.

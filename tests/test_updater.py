@@ -71,7 +71,7 @@ class UpdaterTests(unittest.TestCase):
             (app_dir / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
                 "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
-                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen-Etienne",
+                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen",
                 "updateManifestUrl": "https://example.test/latest",
                 "executableName": executable.name, "updateRunnerName": runner.name,
             }), encoding="utf-8")
@@ -130,6 +130,7 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn('ExistingInstallLocation := ReadExistingInstallLocation()', script)
         self.assertIn('只能更新原目录', script)
         self.assertIn('ValueName: "Version"; ValueData: "{#MyAppVersion}"', script)
+        self.assertIn('ValueName: "Publisher"; ValueData: "{#MyAppPublisher}"', script)
         self.assertIn('ValueName: "UpdateUrl"; ValueData: "{#MyHonsenUpdateURL}"', script)
         self.assertIn('ValueData: "{#MyHonsenAppId}"; Flags: uninsdeletekey', script)
 
@@ -147,7 +148,7 @@ class UpdaterTests(unittest.TestCase):
         self.assertEqual(manifest["executable"], "Honsen DrawTranslate.exe")
         self.assertEqual(manifest["updateRunner"], "HonsenUpdateRunner.exe")
         self.assertTrue(manifest["displayName"])
-        self.assertTrue(manifest["publisher"])
+        self.assertEqual(manifest["publisher"], "Honsen")
         self.assertIn('"--sha256", sha256', bridge)
         runner = (root / "desktop" / "update_runner.py").read_text(encoding="utf-8")
         self.assertIn('"Honsen Program" / "UpdateRunner"', runner)
@@ -164,13 +165,16 @@ class UpdaterTests(unittest.TestCase):
             (target / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
                 "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
-                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen-Etienne",
+                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen",
                 "updateManifestUrl": "https://example.test/latest",
             }), encoding="utf-8")
-            good = {"AppId": "honsen.cad-translator", "InstallLocation": str(target), "ExecutablePath": str(executable), "UpdateRunnerPath": str(runner), "UpdateManifestUrl": "https://example.test/latest", "Version": "1.10.0"}
+            good = {"AppId": "honsen.cad-translator", "InstallLocation": str(target), "ExecutablePath": str(executable), "UpdateRunnerPath": str(runner), "UpdateManifestUrl": "https://example.test/latest", "Publisher": "Honsen", "Version": "1.10.0"}
             with patch("desktop.update_runner._registries", return_value=[good]):
                 update_runner._validate_target("honsen.cad-translator", target)
             with patch("desktop.update_runner._registries", return_value=[{**good, "InstallLocation": str(target / "other")}]):
+                with self.assertRaises(update_runner.UpdateFailure):
+                    update_runner._validate_target("honsen.cad-translator", target)
+            with patch("desktop.update_runner._registries", return_value=[{**good, "Publisher": "Other"}]):
                 with self.assertRaises(update_runner.UpdateFailure):
                     update_runner._validate_target("honsen.cad-translator", target)
 

@@ -5,7 +5,7 @@
   "version": "1.11.7",
   "executable": "Honsen DrawTranslate.exe",
   "updateRunner": "HonsenUpdateRunner.exe",
-  "publisher": "Honsen-Etienne",
+  "publisher": "Honsen",
   "updateManifestUrl": "https://api.github.com/repos/etianwang/CAD_translator/releases/latest",
   "executableName": "Honsen DrawTranslate.exe",
   "updateRunnerName": "HonsenUpdateRunner.exe"

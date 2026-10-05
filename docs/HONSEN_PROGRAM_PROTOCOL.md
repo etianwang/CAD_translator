@@ -18,7 +18,7 @@ HKLM\Software\Honsen Program\Apps\honsen.cad-translator
   "version": "X.Y.Z",
   "executable": "Honsen DrawTranslate.exe",
   "updateRunner": "HonsenUpdateRunner.exe",
-  "publisher": "Honsen-Etienne",
+  "publisher": "Honsen",
   "updateManifestUrl": "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
 }
 ```
@@ -34,6 +34,7 @@ CAD 暂时同时保留旧的 `executableName`、`updateRunnerName`，供已安�
 | `InstallLocation` | 安装目录 |
 | `ExecutablePath` | 主程序完整路径 |
 | `Version` | 已安装版本 |
+| `Publisher` | 发布者；必须与 manifest 的 `publisher` 一致（当前为 `Honsen`） |
 | `UpdateUrl` | GitHub `releases/latest` API；与应用内更新检查使用同一稳定更新源 |
 
 卸载时安装器删除整个专用 appId 键，因此该键的存在即表示该安装范围内的应用仍由安装器管理。若未来增加当前用户安装包，它必须改为写入同一相对路径的 `HKCU` 键，且不得同时写入 HKLM。

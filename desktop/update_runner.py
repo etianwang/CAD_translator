@@ -105,7 +105,7 @@ def _registries(app_id: str) -> list[dict]:
         for root, scope in ((winreg.HKEY_LOCAL_MACHINE, "HKLM"), (winreg.HKEY_CURRENT_USER, "HKCU")):
             try:
                 with winreg.OpenKey(root, APP_KEY + "\\" + app_id) as key:
-                    record = {name: winreg.QueryValueEx(key, name)[0] for name in ("AppId", "InstallLocation", "ExecutablePath", "Version", "UpdateRunnerPath", "UpdateManifestUrl")}
+                    record = {name: winreg.QueryValueEx(key, name)[0] for name in ("AppId", "InstallLocation", "ExecutablePath", "Version", "Publisher", "UpdateRunnerPath", "UpdateManifestUrl")}
                     record["scope"] = scope
                     records.append(record)
             except OSError:
@@ -135,6 +135,8 @@ def _validate_target(app_id: str, target: Path) -> tuple[dict, dict]:
         raise UpdateFailure("更新助手路径与注册表不一致")
     if data.get("updateManifestUrl") and data["updateManifestUrl"] != reg["UpdateManifestUrl"]:
         raise UpdateFailure("更新源与注册表不一致")
+    if data.get("publisher") and data["publisher"] != reg["Publisher"]:
+        raise UpdateFailure("发布者与注册表不一致")
     if not executable.is_file() or not runner.is_file():
         raise UpdateFailure("目标应用文件不完整")
     return data, reg

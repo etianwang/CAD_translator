@@ -29,6 +29,7 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 | --- | --- |
 | `AppId` | 必须为 `honsen.cad-translator` |
 | `Version` | 当前已安装版本 |
+| `Publisher` | 发布者；必须与 manifest 的 `publisher` 一致（当前为 `Honsen`） |
 | `InstallLocation` | 唯一允许被更新覆盖的目录 |
 | `ExecutablePath` | 位于 `InstallLocation` 内的主程序绝对路径 |
 | `LauncherPath` | Runner 的绝对路径；工具箱“打开”使用它 |

@@ -4,7 +4,7 @@
 
 #define MyAppName "Honsen CAD Translator"
 #define MyAppVersion "1.11.7"
-#define MyAppPublisher "Honsen-Etienne"
+#define MyAppPublisher "Honsen"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
 #define MyAppURL "https://github.com/etianwang/CAD_translator"
@@ -79,6 +79,7 @@ Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe
 ; (PrivilegesRequired=admin), so the shared HKLM location is authoritative.
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "AppId"; ValueData: "{#MyHonsenAppId}"; Flags: uninsdeletekey
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "DisplayName"; ValueData: "{#MyAppName}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "Publisher"; ValueData: "{#MyAppPublisher}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "InstallLocation"; ValueData: "{app}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "ExecutablePath"; ValueData: "{app}\{#MyAppExeName}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "UpdateRunnerPath"; ValueData: "{app}\HonsenUpdateRunner.exe"

@@ -20,7 +20,7 @@ Inno 参数固定为 `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="<Insta
 
 ## 注册表与结果
 
-`HKLM\Software\Honsen Program\Apps\honsen.cad-translator`（当前全电脑安装）或对应 HKCU 键必须包含 `AppId`、`Version`、`InstallLocation`、`ExecutablePath`、`LauncherPath`、`UpdateRunnerPath`、`UpdateManifestUrl`。`LauncherPath` 与 `UpdateRunnerPath` 均是 Runner 的绝对路径。
+`HKLM\Software\Honsen Program\Apps\honsen.cad-translator`（当前全电脑安装）或对应 HKCU 键必须包含 `AppId`、`Version`、`Publisher`、`InstallLocation`、`ExecutablePath`、`LauncherPath`、`UpdateRunnerPath`、`UpdateManifestUrl`。`Publisher` 必须与 manifest 的 `publisher` 一致；`LauncherPath` 与 `UpdateRunnerPath` 均是 Runner 的绝对路径。
 
 每次调用必须携带 `operationId` 和受信任的结果路径；最终结果原子写入 `%LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json`。结果字段统一为 appId、status、source、fromVersion、toVersion、step、installerExitCode、installerLogPath、message、completedAtUtc（以及 operationId）。
 

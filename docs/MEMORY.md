@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Completed the final Publisher protocol field in source: manifest publisher, Inno `MyAppPublisher`, and `HKLM\Software\Honsen Program\Apps\honsen.cad-translator\Publisher` are now uniformly `Honsen`. Runner reads and verifies registry Publisher against manifest publisher before acting. Added installer and mismatch regression assertions; `python -m unittest tests.test_updater` passes 12 tests and Python compilation/diff checks pass. This change is post-v1.11.7 and requires the next packaged installer to migrate existing registry entries.
+
 - 2026-10-05: Replaced Runner's nested tkinter `messagebox` update prompt with three buttons in the existing visible progress window: immediate update, later reminder, and skip this version. Closing the prompt window behaves as later reminder. Added a regression check that prevents reintroducing `messagebox`; `python -m unittest tests.test_updater` now passes 12 tests. This source change is post-v1.11.7 and has not yet been packaged or released.
 
 - 2026-10-05: Published [v1.11.7 on GitHub](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.7), asset `Honsen_DrawTranslate_v1.11.7_Setup.exe` (81,351,042 bytes, SHA-256 `e535a3a38c26735703c4a6c18dd1621a3758b93fab7d4657adb93a1933ff9fd3`). The non-draft, non-prerelease Release has the expected GitHub asset digest. Release tag `v1.11.7` points to commit `9bca3f9`; source and tag were synchronized to Gitee. Gitee Release asset publication remains blocked by the browser extension's local-file permission.

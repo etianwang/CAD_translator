@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Corrected v1.11.8 GitHub Release notes: the original CLI text rendered literal `\n`; the Release body now uses real Markdown line breaks and lists the protocol and single-window/Publisher changes correctly. No binary or source changed.
+
 - 2026-10-05: Published [v1.11.8 on GitHub](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.8), asset `Honsen_DrawTranslate_v1.11.8_Setup.exe` (81,347,778 bytes, SHA-256 `c7087d7d0224a69a947c681a9da07027d7ead74fd9c55dd33d1f6d3304c07611`). The Release is public stable and GitHub's asset digest matches the local hash. Tag `v1.11.8` points to `a046e0f`; source and tag are synchronized to Gitee. Gitee Release asset publication remains blocked by browser local-file access permission.
 
 - 2026-10-05: Prepared v1.11.8 for release. It packages the single-window Runner update choice UI and the `Publisher = Honsen` manifest/registry consistency protocol. Local installer `installer/Output/Honsen_DrawTranslate_v1.11.8_Setup.exe` built successfully (81,347,778 bytes, SHA-256 `c7087d7d0224a69a947c681a9da07027d7ead74fd9c55dd33d1f6d3304c07611`). Unit tests (12), Python compilation, frontend build and Inno compilation passed. Pending release publication.

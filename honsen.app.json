@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "appId": "honsen.cad-translator",
   "displayName": "Honsen CAD 翻译器",
-  "version": "1.11.7",
+  "version": "1.11.8",
   "executable": "Honsen DrawTranslate.exe",
   "updateRunner": "HonsenUpdateRunner.exe",
   "publisher": "Honsen",

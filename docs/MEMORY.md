@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Prepared v1.11.8 for release. It packages the single-window Runner update choice UI and the `Publisher = Honsen` manifest/registry consistency protocol. Local installer `installer/Output/Honsen_DrawTranslate_v1.11.8_Setup.exe` built successfully (81,347,778 bytes, SHA-256 `c7087d7d0224a69a947c681a9da07027d7ead74fd9c55dd33d1f6d3304c07611`). Unit tests (12), Python compilation, frontend build and Inno compilation passed. Pending release publication.
+
 - 2026-10-05: Completed the final Publisher protocol field in source: manifest publisher, Inno `MyAppPublisher`, and `HKLM\Software\Honsen Program\Apps\honsen.cad-translator\Publisher` are now uniformly `Honsen`. Runner reads and verifies registry Publisher against manifest publisher before acting. Added installer and mismatch regression assertions; `python -m unittest tests.test_updater` passes 12 tests and Python compilation/diff checks pass. This change is post-v1.11.7 and requires the next packaged installer to migrate existing registry entries.
 
 - 2026-10-05: Replaced Runner's nested tkinter `messagebox` update prompt with three buttons in the existing visible progress window: immediate update, later reminder, and skip this version. Closing the prompt window behaves as later reminder. Added a regression check that prevents reintroducing `messagebox`; `python -m unittest tests.test_updater` now passes 12 tests. This source change is post-v1.11.7 and has not yet been packaged or released.

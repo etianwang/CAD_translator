@@ -60,7 +60,7 @@ if (-not $iscc) {
 Write-Host "==> Inno Setup 鐢熸垚瀹夎鍖?.." -ForegroundColor Cyan
 & $iscc (Join-Path $Root "installer\Honsen_DrawTranslate_Setup.iss")
 
-$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.11.7_Setup.exe"
+$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.11.8_Setup.exe"
 if (Test-Path $setup) {
     Write-Host "瀹屾垚: $setup" -ForegroundColor Green
 } else {

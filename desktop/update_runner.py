@@ -57,7 +57,7 @@ def _registries(app_id: str) -> list[dict]:
         for root, scope in ((winreg.HKEY_LOCAL_MACHINE, "HKLM"), (winreg.HKEY_CURRENT_USER, "HKCU")):
             try:
                 with winreg.OpenKey(root, APP_KEY + "\\" + app_id) as key:
-                    record = {name: winreg.QueryValueEx(key, name)[0] for name in ("AppId", "InstallLocation", "ExecutablePath", "Version", "UpdateRunnerPath")}
+                    record = {name: winreg.QueryValueEx(key, name)[0] for name in ("AppId", "InstallLocation", "ExecutablePath", "Version", "UpdateRunnerPath", "UpdateManifestUrl")}
                     record["scope"] = scope
                     records.append(record)
             except OSError:

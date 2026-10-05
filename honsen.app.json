@@ -1,6 +1,6 @@
 {
   "appId": "honsen.cad-translator",
-  "version": "1.11.1",
+  "version": "1.11.2",
   "executableName": "Honsen DrawTranslate.exe",
   "updateRunnerName": "HonsenUpdateRunner.exe"
 }

@@ -13,7 +13,7 @@ from desktop.native_bridge import NativeBridge
 from desktop import update_runner
 
 
-def release(version="1.11.7", *, digest=True, prerelease=False, name=None):
+def release(version="1.11.8", *, digest=True, prerelease=False, name=None):
     asset_name = name or f"Honsen_DrawTranslate_v{version}_Setup.exe"
     payload = b"installer"
     return {
@@ -34,14 +34,14 @@ class UpdaterTests(unittest.TestCase):
         with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release()).encode())):
             update = updater.check_for_update()
         self.assertTrue(update["available"])
-        self.assertEqual(update["latest_version"], "1.11.7")
+        self.assertEqual(update["latest_version"], "1.11.8")
 
     def test_invalid_or_non_newer_releases_are_refused(self):
         for payload in (
             release("1.9.4"),
             release("1.9.8"),
-            release("1.11.7", prerelease=True),
-            release("1.11.7", digest=False),
+            release("1.11.8", prerelease=True),
+            release("1.11.8", digest=False),
             release("1.11.1", name="HonsenCAD.v1.9.exe"),
         ):
             with self.subTest(payload=payload), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(payload).encode())):
@@ -71,6 +71,7 @@ class UpdaterTests(unittest.TestCase):
             (app_dir / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
                 "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
+                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen-Etienne",
                 "updateManifestUrl": "https://example.test/latest",
                 "executableName": executable.name, "updateRunnerName": runner.name,
             }), encoding="utf-8")
@@ -98,7 +99,7 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn("更新助手", NativeBridge().install_update("missing.exe", "", "")["error"])
 
     def test_existing_honsencad_installer_name_is_accepted(self):
-        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.11.7.exe")).encode())):
+        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.11.8.exe")).encode())):
             self.assertTrue(updater.check_for_update()["available"])
 
     def test_inno_setup_leaves_silent_restart_to_the_shared_runner(self):
@@ -142,6 +143,11 @@ class UpdaterTests(unittest.TestCase):
         self.assertIn('Source: "..\\dist\\HonsenUpdateRunner.exe"', installer)
         self.assertIn('Source: "..\\honsen.app.json"', installer)
         self.assertEqual(manifest["appId"], "honsen.cad-translator")
+        self.assertEqual(manifest["schemaVersion"], 1)
+        self.assertEqual(manifest["executable"], "Honsen DrawTranslate.exe")
+        self.assertEqual(manifest["updateRunner"], "HonsenUpdateRunner.exe")
+        self.assertTrue(manifest["displayName"])
+        self.assertTrue(manifest["publisher"])
         self.assertIn('"--sha256", sha256', bridge)
         runner = (root / "desktop" / "update_runner.py").read_text(encoding="utf-8")
         self.assertIn('"Honsen Program" / "UpdateRunner"', runner)
@@ -158,6 +164,7 @@ class UpdaterTests(unittest.TestCase):
             (target / "honsen.app.json").write_text(json.dumps({
                 "appId": "honsen.cad-translator", "version": "1.10.0",
                 "schemaVersion": 1, "executable": executable.name, "updateRunner": runner.name,
+                "displayName": "Honsen CAD 翻译器", "publisher": "Honsen-Etienne",
                 "updateManifestUrl": "https://example.test/latest",
             }), encoding="utf-8")
             good = {"AppId": "honsen.cad-translator", "InstallLocation": str(target), "ExecutablePath": str(executable), "UpdateRunnerPath": str(runner), "UpdateManifestUrl": "https://example.test/latest", "Version": "1.10.0"}

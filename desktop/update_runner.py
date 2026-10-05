@@ -82,6 +82,8 @@ def _metadata(target: Path) -> dict:
         raise UpdateFailure("honsen.app.json 的 updateManifestUrl 无效")
     if "schemaVersion" in data and data["schemaVersion"] != 1:
         raise UpdateFailure("不支持的 honsen.app.json schemaVersion")
+    if data.get("schemaVersion") == 1 and not all(isinstance(data.get(key), str) and data[key] for key in ("displayName", "publisher", "updateManifestUrl")):
+        raise UpdateFailure("标准 honsen.app.json 字段不完整")
     data["executable"] = executable
     data["updateRunner"] = runner
     return data

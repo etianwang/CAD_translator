@@ -36,7 +36,7 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 | `UpdateManifestUrl` | 当前稳定更新源的 GitHub `releases/latest` API |
 | `UpdateUrl` | 兼容字段，指向同一更新源 |
 
-`honsen.app.json` 的标准字段为 `schemaVersion: 1`、`appId`、`version`、`executable`、`updateRunner`、`updateManifestUrl`。CAD 当前还保留 `executableName`、`updateRunnerName` 作为旧版本兼容字段；读取方必须优先使用标准字段。
+`honsen.app.json` 的标准字段为 `schemaVersion: 1`、`appId`、`displayName`、`version`、`executable`、`updateRunner`、`publisher`、`updateManifestUrl`。CAD 当前还保留 `executableName`、`updateRunnerName` 作为旧版本兼容字段；读取方必须优先使用标准字段。
 
 工具箱必须按精确 `appId` 读取这个键。禁止通过显示名称、快捷方式、磁盘扫描或固定目录定位应用。
 

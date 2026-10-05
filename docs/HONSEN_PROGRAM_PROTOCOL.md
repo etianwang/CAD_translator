@@ -14,9 +14,11 @@ HKLM\Software\Honsen Program\Apps\honsen.cad-translator
 {
   "schemaVersion": 1,
   "appId": "honsen.cad-translator",
+  "displayName": "Honsen CAD 翻译器",
   "version": "X.Y.Z",
   "executable": "Honsen DrawTranslate.exe",
   "updateRunner": "HonsenUpdateRunner.exe",
+  "publisher": "Honsen-Etienne",
   "updateManifestUrl": "https://api.github.com/repos/etianwang/CAD_translator/releases/latest"
 }
 ```

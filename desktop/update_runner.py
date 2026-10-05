@@ -38,6 +38,7 @@ class ProgressWindow:
         self.label = ttk.Label(self.tk, text="正在检查更新…", padding=18); self.label.pack()
         self.notes = ttk.Label(self.tk, text="", justify="left", wraplength=440); self.notes.pack(padx=18, pady=(0, 10))
         self.bar = ttk.Progressbar(self.tk, length=330, mode="determinate", maximum=100); self.bar.pack(padx=18, pady=(0, 18))
+        self.actions = ttk.Frame(self.tk)
         self.tk.protocol("WM_DELETE_WINDOW", lambda: None); self.tk.update()
 
     def set(self, text: str, percent: int | None = None, notes: str | None = None):
@@ -51,10 +52,18 @@ class ProgressWindow:
         self.tk.destroy()
 
     def choose(self, version: str, notes: str) -> str:
-        from tkinter import messagebox
         self.set(f"发现 v{version}", 0, notes or "本版本未提供更新说明。")
-        choice = messagebox.askyesnocancel("Honsen CAD 翻译器更新", f"发现 v{version}。\n\n是否立即更新？\n\n是：立即更新\n否：稍后提醒\n取消：跳过此版本", parent=self.tk)
-        return "update" if choice is True else "later" if choice is False else "skip"
+        choice = self.tk.StringVar(value="")
+        self.actions.pack(pady=(0, 18))
+        ttk.Button(self.actions, text="立即更新", command=lambda: choice.set("update")).pack(side="left", padx=4)
+        ttk.Button(self.actions, text="稍后提醒", command=lambda: choice.set("later")).pack(side="left", padx=4)
+        ttk.Button(self.actions, text="跳过此版本", command=lambda: choice.set("skip")).pack(side="left", padx=4)
+        self.tk.protocol("WM_DELETE_WINDOW", lambda: choice.set("later"))
+        self.tk.wait_variable(choice)
+        self.actions.pack_forget()
+        for button in self.actions.winfo_children(): button.destroy()
+        self.tk.protocol("WM_DELETE_WINDOW", lambda: None)
+        return choice.get()
 
 
 def _canonical(path: str | Path) -> str:

@@ -185,6 +185,12 @@ class UpdaterTests(unittest.TestCase):
             result = update_runner._result(type("Args", (), {"app_id": "honsen.cad-translator", "source": "toolbox", "operation_id": first_id})(), "failed", step="sha256", message="校验失败")
             self.assertEqual(set(result), {"appId", "status", "source", "operationId", "fromVersion", "toVersion", "step", "installerExitCode", "installerLogPath", "message"})
 
+    def test_runner_update_choices_stay_in_the_progress_window(self):
+        runner = (Path(__file__).resolve().parents[1] / "desktop" / "update_runner.py").read_text(encoding="utf-8")
+        self.assertNotIn("messagebox", runner)
+        for label in ("立即更新", "稍后提醒", "跳过此版本"):
+            self.assertIn(f'text="{label}"', runner)
+
 
 if __name__ == "__main__":
     unittest.main()

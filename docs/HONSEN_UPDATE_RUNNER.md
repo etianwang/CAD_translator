@@ -6,7 +6,7 @@ Runner 使用 Windows 无控制台子系统：从快捷方式启动或自动更�
 Runner 必须使用与 `Honsen DrawTranslate.exe` 相同的应用图标，因为标准桌面和开始菜单快捷方式指向 Runner。
 Runner 必须显示原生更新进度窗口，至少覆盖检查、下载（有 Content-Length 时显示百分比）、等待退出、安装、验证和启动阶段。Inno 仍以 `/VERYSILENT` 后台执行；这里的“非静默”指用户可见 Runner 状态，而非显示 Inno 向导。
 发现新版时，窗口必须展示 GitHub Release 的版本号和发布说明，再继续下载。
-窗口提供“立即更新”“稍后提醒”“跳过此版本”：稍后仅启动当前程序；跳过版本保存在 `%LOCALAPPDATA%\Honsen Program\UpdatePreferences\<appId>.json`，仅抑制同一目标版本，发现更高版本时必须重新提示。
+同一个 Runner 进度窗口内提供“立即更新”“稍后提醒”“跳过此版本”三个按钮，不得另开系统确认对话框：稍后仅启动当前程序；跳过版本保存在 `%LOCALAPPDATA%\Honsen Program\UpdatePreferences\<appId>.json`，仅抑制同一目标版本，发现更高版本时必须重新提示。
 
 ## 命令
 

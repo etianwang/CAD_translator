@@ -21,6 +21,7 @@ const versions = [
   ["ACAD2013", "AutoCAD 2013"],
   ["ACAD2018", "AutoCAD 2018"],
 ];
+const APP_VERSION = "1.11.5";
 const modes = [
   ["zh_to_fr", "中文 → 法语"],
   ["fr_to_zh", "法语 → 中文"],
@@ -130,7 +131,7 @@ export default function App() {
   const [activationError, setActivationError] = useState("");
   const [support, setSupport] = useState({ licensing_enabled: false });
   const [showSupport, setShowSupport] = useState(false);
-  const [update, setUpdate] = useState({ current_version: "1.11.3", message: "尚未检查更新" });
+  const [update, setUpdate] = useState({ current_version: APP_VERSION, message: "尚未检查更新" });
   const [showUpdate, setShowUpdate] = useState(false);
   const [updateState, setUpdateState] = useState("");
   const [draggingFiles, setDraggingFiles] = useState(false);
@@ -158,7 +159,7 @@ export default function App() {
       setUpdate(result);
       if (open || result.available) setShowUpdate(true);
     } catch (error) {
-      setUpdate({ current_version: "1.9.4", message: error.message });
+      setUpdate({ current_version: APP_VERSION, message: error.message });
       if (open) setShowUpdate(true);
     } finally {
       setUpdateState("");
@@ -794,7 +795,7 @@ export default function App() {
               ? "翻译队列运行中"
               : "就绪"}
         </span>
-        <span className="footer-meta">v1.9.4 · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
+        <span className="footer-meta">v{APP_VERSION} · <a href="https://github.com/etianwang" target="_blank" rel="noreferrer">Etienne</a></span>
       </motion.footer>
     </div>
   );

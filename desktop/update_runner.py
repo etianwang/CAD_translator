@@ -20,11 +20,41 @@ APP_KEY = r"Software\Honsen Program\Apps"
 APP_ID = "honsen.cad-translator"
 INSTALLER = re.compile(r"^Honsen_DrawTranslate_v(\d+\.\d+\.\d+)_Setup\.exe$", re.I)
 RESULTS_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Honsen Program" / "UpdateResults"
-WAIT_TIMEOUT_MS = 30 * 60 * 1000
+PREFERENCES_DIR = RESULTS_DIR.parent / "UpdatePreferences"
+GRACEFUL_EXIT_TIMEOUT_MS = 30 * 1000
+INSTALL_TIMEOUT_MS = 30 * 60 * 1000
 
 
 class UpdateFailure(RuntimeError):
     pass
+
+
+class ProgressWindow:
+    """Visible Runner progress; Inno itself remains non-interactive."""
+    def __init__(self):
+        import tkinter as tk
+        from tkinter import ttk
+        self.tk = tk.Tk(); self.tk.title("Honsen CAD 翻译器更新"); self.tk.resizable(False, False)
+        self.label = ttk.Label(self.tk, text="正在检查更新…", padding=18); self.label.pack()
+        self.notes = ttk.Label(self.tk, text="", justify="left", wraplength=440); self.notes.pack(padx=18, pady=(0, 10))
+        self.bar = ttk.Progressbar(self.tk, length=330, mode="determinate", maximum=100); self.bar.pack(padx=18, pady=(0, 18))
+        self.tk.protocol("WM_DELETE_WINDOW", lambda: None); self.tk.update()
+
+    def set(self, text: str, percent: int | None = None, notes: str | None = None):
+        self.label.configure(text=text)
+        if notes is not None: self.notes.configure(text=notes[:1200])
+        if percent is None: self.bar.configure(mode="indeterminate"); self.bar.start(12)
+        else: self.bar.stop(); self.bar.configure(mode="determinate", value=percent)
+        self.tk.update_idletasks(); self.tk.update()
+
+    def close(self):
+        self.tk.destroy()
+
+    def choose(self, version: str, notes: str) -> str:
+        from tkinter import messagebox
+        self.set(f"发现 v{version}", 0, notes or "本版本未提供更新说明。")
+        choice = messagebox.askyesnocancel("Honsen CAD 翻译器更新", f"发现 v{version}。\n\n是否立即更新？\n\n是：立即更新\n否：稍后提醒\n取消：跳过此版本", parent=self.tk)
+        return "update" if choice is True else "later" if choice is False else "skip"
 
 
 def _canonical(path: str | Path) -> str:
@@ -90,17 +120,30 @@ def _validate_target(app_id: str, target: Path) -> tuple[dict, dict]:
     return data, reg
 
 
-def _wait_for_pid(pid: int) -> None:
+def _process_path(handle) -> str:
+    size = wintypes.DWORD(32768); buffer = ctypes.create_unicode_buffer(size.value)
+    if not ctypes.windll.kernel32.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
+        raise UpdateFailure("无法验证待退出进程路径")
+    return buffer.value
+
+
+def _wait_for_pid(pid: int, expected_executable: Path) -> None:
     if not pid:
         return
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    handle = kernel32.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+    handle = kernel32.OpenProcess(0x00100000 | 0x0400 | 0x0001, False, pid)  # SYNCHRONIZE|QUERY_INFORMATION|TERMINATE
     if not handle:
         return  # The requested process has already exited.
     try:
-        status = kernel32.WaitForSingleObject(handle, WAIT_TIMEOUT_MS)
-        if status != 0:
-            raise UpdateFailure("等待应用退出超时")
+        status = kernel32.WaitForSingleObject(handle, GRACEFUL_EXIT_TIMEOUT_MS)
+        if status == 0: return
+        if status != 258: raise UpdateFailure("等待应用退出失败")
+        if _canonical(_process_path(handle)) != _canonical(expected_executable):
+            raise UpdateFailure("拒绝终止路径不匹配的进程")
+        if not kernel32.TerminateProcess(handle, 1):
+            raise UpdateFailure("无法终止仍在运行的主程序")
+        if kernel32.WaitForSingleObject(handle, GRACEFUL_EXIT_TIMEOUT_MS) != 0:
+            raise UpdateFailure("主程序终止后仍未退出")
     finally:
         kernel32.CloseHandle(handle)
 
@@ -113,7 +156,7 @@ def _run_elevated(installer: Path, target: Path, log: Path) -> int:
     if not ctypes.windll.shell32.ShellExecuteExW(ctypes.byref(info)):
         raise UpdateFailure(f"无法以管理员权限启动安装包（Win32={ctypes.get_last_error()}）")
     try:
-        if ctypes.windll.kernel32.WaitForSingleObject(info.hProcess, WAIT_TIMEOUT_MS) != 0:
+        if ctypes.windll.kernel32.WaitForSingleObject(info.hProcess, INSTALL_TIMEOUT_MS) != 0:
             raise UpdateFailure("安装包执行超时")
         exit_code = wintypes.DWORD()
         ctypes.windll.kernel32.GetExitCodeProcess(info.hProcess, ctypes.byref(exit_code))
@@ -151,6 +194,16 @@ def _write_result(app_id: str, result: dict) -> Path:
     return destination
 
 
+def _skipped_version(app_id: str) -> str:
+    try: return str(json.loads((PREFERENCES_DIR / f"{app_id}.json").read_text(encoding="utf-8")).get("skipVersion", ""))
+    except (OSError, ValueError): return ""
+
+
+def _skip_version(app_id: str, version: str) -> None:
+    PREFERENCES_DIR.mkdir(parents=True, exist_ok=True)
+    (PREFERENCES_DIR / f"{app_id}.json").write_text(json.dumps({"skipVersion": version}), encoding="utf-8")
+
+
 def _release(version: str, url: str) -> dict | None:
     request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json", "User-Agent": "HonsenUpdateRunner"})
     with urllib.request.urlopen(request, timeout=10) as response:
@@ -160,52 +213,68 @@ def _release(version: str, url: str) -> dict | None:
         return None
     for asset in release.get("assets", []):
         if INSTALLER.fullmatch(str(asset.get("name", ""))) and asset["name"].find(latest) >= 0 and str(asset.get("digest", "")).startswith("sha256:"):
-            return {"version": latest, "url": asset["browser_download_url"], "sha256": asset["digest"][7:], "name": asset["name"]}
+            return {"version": latest, "url": asset["browser_download_url"], "sha256": asset["digest"][7:], "name": asset["name"], "notes": str(release.get("body", ""))}
     raise UpdateFailure("未找到可校验的更新安装包")
 
 
-def _download(update: dict) -> Path:
+def _download(update: dict, ui: ProgressWindow | None = None) -> Path:
     directory = Path(tempfile.gettempdir()) / "Honsen Program" / "Updates"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / update["name"]
     with urllib.request.urlopen(update["url"], timeout=60) as response, path.open("wb") as stream:
-        while chunk := response.read(1024 * 1024): stream.write(chunk)
+        total = int(response.headers.get("Content-Length", 0)); received = 0
+        while chunk := response.read(1024 * 1024):
+            stream.write(chunk); received += len(chunk)
+            if ui: ui.set(f"正在下载更新… {received * 100 // total if total else 0}%", received * 100 // total if total else None)
     if _sha256(path).lower() != update["sha256"].lower():
         path.unlink(missing_ok=True); raise UpdateFailure("安装包 SHA-256 校验失败")
     return path
 
 
-def launch(args: argparse.Namespace) -> dict:
+def launch(args: argparse.Namespace, ui: ProgressWindow | None = None) -> dict:
     if args.app_id != APP_ID: raise UpdateFailure("不支持的 appId")
     records = _registries(args.app_id)
     target = Path(records[0]["InstallLocation"])
     data, reg = _validate_target(args.app_id, target)
+    if ui: ui.set("正在检查更新…", None)
     update = _release(reg["Version"], reg["UpdateManifestUrl"])
     if not update:
         subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
         return {"appId": args.app_id, "status": "success", "action": "launch", "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
-    args.installer, args.sha256, args.target_dir, args.expected_version, args.restart = str(_download(update)), update["sha256"], str(target), update["version"], True
-    return apply(args)
+    if _skipped_version(args.app_id) == update["version"]:
+        subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
+        return {"appId": args.app_id, "status": "success", "action": "launch", "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
+    choice = ui.choose(update["version"], update["notes"]) if ui else "update"
+    if choice != "update":
+        if choice == "skip": _skip_version(args.app_id, update["version"])
+        subprocess.Popen([reg["ExecutablePath"]], cwd=str(target))
+        return {"appId": args.app_id, "status": "success", "action": choice, "fromVersion": reg["Version"], "toVersion": reg["Version"], "installLocation": str(target), "executablePath": reg["ExecutablePath"]}
+    args.installer, args.sha256, args.target_dir, args.expected_version, args.restart = str(_download(update, ui)), update["sha256"], str(target), update["version"], True
+    return apply(args, ui)
 
 
-def apply(args: argparse.Namespace) -> dict:
+def apply(args: argparse.Namespace, ui: ProgressWindow | None = None) -> dict:
     target, installer = Path(args.target_dir), Path(args.installer)
     log = RESULTS_DIR / f"{args.app_id}.inno.log"
     data, reg = _validate_target(args.app_id, target)
     from_version = reg["Version"]
     if _sha256(installer).lower() != args.sha256.lower():
         raise UpdateFailure("安装包 SHA-256 校验失败")
-    _wait_for_pid(args.wait_pid)
+    if ui: ui.set("正在等待应用退出…", None)
+    _wait_for_pid(args.wait_pid, Path(reg["ExecutablePath"]))
     log.parent.mkdir(parents=True, exist_ok=True)
+    if ui: ui.set("正在安装更新…", None)
     exit_code = _run_elevated(installer, target, log)
     args.installer_exit_code = exit_code
     if exit_code != 0 or not log.is_file():
         raise UpdateFailure(f"安装包失败，退出码 {exit_code}")
+    if ui: ui.set("正在验证新版本…", None)
     data, reg = _validate_target(args.app_id, target)
     executable = Path(reg["ExecutablePath"])
     if reg["Version"] != args.expected_version or data["version"] != args.expected_version or _file_version(executable) != args.expected_version:
         raise UpdateFailure("安装后的版本验证失败")
     if args.restart:
+        if ui: ui.set("更新完成，正在启动应用…", 100)
         subprocess.Popen([str(executable)], cwd=str(target))
     return {"appId": args.app_id, "status": "success", "source": args.source, "fromVersion": from_version, "toVersion": args.expected_version, "installLocation": str(target), "executablePath": str(executable), "installerExitCode": exit_code, "logPath": str(log), "restart": args.restart}
 
@@ -240,6 +309,7 @@ def main(argv: list[str] | None = None) -> int:
     result = {"appId": args.app_id, "status": "failed", "source": args.source, "failureStep": "startup", "installerExitCode": None, "logPath": str(RESULTS_DIR / f"{args.app_id}.inno.log")}
     handle = None
     handed_off = False
+    ui = None
     try:
         if sys.platform != "win32":
             raise UpdateFailure("HonsenUpdateRunner 仅支持 Windows")
@@ -257,7 +327,8 @@ def main(argv: list[str] | None = None) -> int:
             handed_off = True
             return 0
         handle = _mutex(args.app_id)
-        result = launch(args) if args.command == "launch" else apply(args)
+        ui = ProgressWindow()
+        result = launch(args, ui) if args.command == "launch" else apply(args, ui)
     except (OSError, UpdateFailure) as exc:
         result["error"] = str(exc)
         result["installerExitCode"] = getattr(args, "installer_exit_code", None)
@@ -268,6 +339,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             result["failureStep"] = "validation"
     finally:
+        if ui: ui.close()
         result["completedAtUtc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         try:
             if args.relocated or (result["status"] == "failed" and not handed_off):

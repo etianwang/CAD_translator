@@ -1,5 +1,19 @@
 # Project memory
 
+- 2026-10-05: Added `docs/UPDATE_RUNNER_REFERENCE.md`, a reusable independent-updater architecture and incident-reference document for other application agents. It records required commands, registry/path validation, temporary Runner execution, constrained process termination, visible progress UX, result/error contracts, shared-directory uninstall safety, known failures and release/E2E sequence. No product runtime behavior changed in this documentation task.
+
+- 2026-10-05: Added pending controlled shutdown support to Runner: after a 30-second graceful wait, it may terminate only the requested PID after `QueryFullProcessImageNameW` confirms the exact registered main-EXE path; it then requires process exit before installation. Path mismatch or termination failure aborts. Pending v1.11.5 packaging/release.
+
+- 2026-10-05: Added pending Runner update choice semantics in source: visible dialog offers immediate update, later reminder, or skip this version. Skip persists only the target version under `%LOCALAPPDATA%\Honsen Program\UpdatePreferences`; a later version prompts again. This awaits packaging and test coverage.
+
+- 2026-10-05: Added pending Runner visible release notes: `launch` now displays the discovered GitHub Release version and body in the progress window before download, retaining that text throughout the subsequent progress stages. This source change awaits packaging and E2E verification.
+
+- 2026-10-05: Implemented the pending visible Runner update experience in source: `ProgressWindow` presents native stage/progress UI for checking, downloading, waiting, installing, validating and relaunching; download is determinate when the server provides Content-Length. Inno remains background `/VERYSILENT`, preserving target-directory and verification rules, while the Runner itself remains no-console. This source change awaits packaging and a real update test.
+
+- 2026-10-05: Diagnosed stale in-app version text: the footer in `frontend/src/App.jsx` independently hard-coded `v1.9.4`, so it did not reflect the installed EXE version. Replaced it and the update-error fallback with one `APP_VERSION` constant (`1.11.3`). This source correction is not in the already published v1.11.3 installer and requires a subsequent package/release.
+
+- 2026-10-05: Accepted the pending Runner-icon fix: `HonsenUpdateRunner.spec` now embeds the same `ico.ico` as the main EXE, so Runner-targeted desktop and Start Menu shortcuts retain the Honsen CAD Translator logo. The change awaits the next packaged release.
+
 - 2026-10-05: Accepted the no-console Runner requirement for the pending v1.11.3 update-test release. `HonsenUpdateRunner.spec` now builds with `console=False`; user-facing launch/update no longer opens a transient command-prompt window. Runner diagnostics remain in the result JSON and Inno log. The changed Runner has not yet been packaged or released in this entry.
 
 - 2026-10-05: At user request, deleted the GitHub Release objects and uploaded assets for defective `v1.11.0` and `v1.11.1`; their Git tags and source commits remain for traceability. Do not use either release for installation or update testing. A corrected release must supersede them after Runner verification.

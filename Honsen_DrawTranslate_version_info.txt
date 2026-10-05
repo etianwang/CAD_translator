@@ -1,7 +1,7 @@
 # UTF-8
 VSVersionInfo(
-  ffi=FixedFileInfo(filevers=(1, 11, 3, 0), prodvers=(1, 11, 3, 0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),
+  ffi=FixedFileInfo(filevers=(1, 11, 5, 0), prodvers=(1, 11, 5, 0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),
   kids=[StringFileInfo([StringTable('040904B0', [
     StringStruct('CompanyName', 'Honsen-Etienne'), StringStruct('FileDescription', 'Honsen DrawTranslate'),
-    StringStruct('FileVersion', '1.11.3'), StringStruct('ProductName', 'Honsen CAD Translator'), StringStruct('ProductVersion', '1.11.3')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])]
+    StringStruct('FileVersion', '1.11.5'), StringStruct('ProductName', 'Honsen CAD Translator'), StringStruct('ProductVersion', '1.11.5')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])]
 )

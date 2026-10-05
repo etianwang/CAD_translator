@@ -1,5 +1,7 @@
 # Project memory
 
+- 2026-10-05: Synchronized `main` (through `4a0642b`) and tag `v1.11.6` to the configured Gitee remote `etianwang/CAD-translator`. The Gitee v1.11.6 release form is filled with matching notes and SHA-256, but asset upload is blocked until the Chrome ChatGPT extension is granted local-file access; no Gitee Release object has been created yet.
+
 - 2026-10-05: Delivered a concise user-facing consolidation of the v1.11.5 updater requirements. The canonical reusable handoff remains `docs/UPDATE_RUNNER_REFERENCE.md`; no runtime or release decision changed.
 
 - 2026-10-05: Published the formal [v1.11.6 GitHub Release](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.6), asset `Honsen_DrawTranslate_v1.11.6_Setup.exe` (81,355,486 bytes, SHA-256 `4521ce94e7d8963070171153775018e153dbf33f064e7cd25d8457b413c7b8d4`). Tag `v1.11.6` points to release commit `b0ce55e`.

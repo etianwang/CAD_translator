@@ -1,6 +1,6 @@
 # Project memory
 
-- 2026-10-06: GitHub 仓库简介已更新为当前产品定位：Honsen CAD Translator 是用于建筑、结构与机电 DXF/DWG 图纸中英法文字翻译的 Windows 桌面应用。Gitee 使用相同简介，已填写到仓库设置页，待保存确认后生效。
+- 2026-10-06: GitHub 与 Gitee 仓库简介已统一更新为当前产品定位：Honsen CAD Translator 是用于建筑、结构与机电 DXF/DWG 图纸中英法文字翻译的 Windows 桌面应用；Gitee 页面已重新打开并确认显示新简介。
 
 - 2026-10-06: 固化双远端发布规则：GitHub `origin` 为 `https://github.com/etianwang/CAD_translator.git`，Gitee `gitee` 为 `https://gitee.com/etianwang/CAD-translator.git`。之后每次 `main` 或 `vX.Y.Z` 标签推送必须同时到达两个远端；任一失败即不得宣布发布完成。最高优先级更新/发布契约和发布操作规范已写入精确命令。GitHub Release 仍是 Runner 唯一自动更新源。
 

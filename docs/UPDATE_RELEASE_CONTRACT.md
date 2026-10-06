@@ -151,6 +151,15 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
 
 ## 发布强制流程
 
+发布远端固定如下；`origin` 与 `gitee` 都是每次源代码和版本标签发布的必达远端：
+
+| 远端 | 固定地址 |
+| --- | --- |
+| GitHub `origin` | `https://github.com/etianwang/CAD_translator.git` |
+| Gitee `gitee` | `https://gitee.com/etianwang/CAD-translator.git` |
+
+任何 `main` 或 `vX.Y.Z` 标签推送都必须同时到达两个远端。任一推送失败时，必须修复并重试，不能宣布发布完成。当前 Runner 自动更新源仍只使用 GitHub Release；Gitee 仓库镜像不改变该更新源。
+
 1. 严格递增 `X.Y.Z`，同步版本到后端、桌面标题、前端、`honsen.app.json`、Windows 版本资源、Inno、安装包名称及测试夹具。
 2. 运行：
 
@@ -163,7 +172,16 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
    ```
 
 3. 确认主 exe 文件版本、安装包存在并计算 SHA-256；二进制不得提交 Git。
-4. 提交源代码，创建带注释 `vX.Y.Z` 标签，同步 `main` 与标签到 GitHub `origin` 和 Gitee `gitee`。
+4. 提交源代码，创建带注释 `vX.Y.Z` 标签，并执行：
+
+   ```powershell
+   git push origin main
+   git push gitee main
+   git push origin vX.Y.Z
+   git push gitee vX.Y.Z
+   ```
+
+   四次推送均成功才可进入 Release 步骤。
 5. GitHub 创建公开、非 draft、非 prerelease Release，上传 `Honsen_DrawTranslate_vX.Y.Z_Setup.exe`；核对 GitHub `sha256:` asset digest 与本地摘要完全一致。
 6. Release 说明使用真实 Markdown 换行，不能传入字面量 `\n`。Gitee 作为仓库/标签/Release 镜像；当前 Runner 的自动更新源仍只能是 GitHub Release。
 7. 在 `docs/MEMORY.md` 写入版本、提交、标签、Release URL、文件大小、SHA-256、验证项与未执行 E2E；记录后再提交推送。

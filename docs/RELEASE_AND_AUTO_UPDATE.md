@@ -20,6 +20,8 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
 
 ## 发布新版本
 
+发布远端固定为 GitHub `origin`（`https://github.com/etianwang/CAD_translator.git`）和 Gitee `gitee`（`https://gitee.com/etianwang/CAD-translator.git`）。每次 `main` 或发布标签推送必须同步发送到两者；任一失败即阻断发布完成。GitHub Release 仍是唯一自动更新源。
+
 1. 选择严格递增的 `X.Y.Z` 版本号。至少同步更新：
    - `backend/updater.py` 的 `CURRENT_VERSION`；
    - `backend/translator.py`、`desktop/launcher.py`、`frontend/package*.json`、`frontend/src/App.jsx`；
@@ -40,7 +42,14 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
 
    `build_installer.ps1` 会重新构建前端、EXE 和 Inno 安装包；它必须发现 `dist\ODAFileConverter\ODAFileConverter.exe`，否则不得作为完整 DWG 发行包发布。
 3. 确认 `dist\Honsen DrawTranslate.exe` 与 `installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 存在，计算安装包本地 SHA-256。安装包只作为 Release 资产，`installer/Output/` 必须保持 Git 忽略，绝不能提交二进制文件。
-4. 提交源代码，创建带注释的 `vX.Y.Z` 标签，并将 `main` 与标签同时推送到 GitHub `origin` 和 Gitee `gitee`。
+4. 提交源代码，创建带注释的 `vX.Y.Z` 标签，并依次执行；四次均成功才能继续：
+
+   ```powershell
+   git push origin main
+   git push gitee main
+   git push origin vX.Y.Z
+   git push gitee vX.Y.Z
+   ```
 5. 在 GitHub 创建**非 draft、非 prerelease**的 Release，上传上一步的安装包；随后调用 GitHub API/CLI 检查资产 `digest`，它必须等于本地 SHA-256。例如：
 
    ```powershell

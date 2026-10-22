@@ -383,3 +383,9 @@
 - 使用旧 Runner 能识别的 `Honsen_DrawTranslate_v1.11.11_Setup.exe` 资产名称；新资产命名迁移与 Toolbox 第三方 apply 仍待跨项目处理。所有实际安装、升级、卸载及用户数据保留验收 NOT RUN。
 - 构建使用新建临时目录和复制的构建依赖，不覆盖工作区已有 dist、前端 dist、安装输出或正式安装。完整 unittest 80 项中 79 通过、1 项因本机符号链接权限不足跳过；修正版本升级后测试夹具不再代表新版本的问题。实际发布结果另行记录。
 - 本地正式包编译成功：81,352,580 字节，SHA-256 `c6509fd459c2e5d1892ddbd0fa958944f8b51984e529f0e51df8ca4753b4bef8`；主 EXE、Manifest、安装包版本核验为 1.11.11，Inno 编译成功。Release 与 API digest 核验待执行。
+
+## 2026-10-22 v1.11.11 已发布
+
+- GitHub 稳定 Release：https://github.com/etianwang/CAD_translator/releases/tag/v1.11.11 ，发布源码提交 `8004b29`，带注释标签 `v1.11.11` 已推送 GitHub 与 Gitee；未修改旧 Release。
+- 安装包 `Honsen_DrawTranslate_v1.11.11_Setup.exe` 为 81,352,580 字节，SHA-256 `c6509fd459c2e5d1892ddbd0fa958944f8b51984e529f0e51df8ca4753b4bef8`；同名 .sha256 已上传，正式 Release 的 GitHub API digest 和版本门禁通过。
+- 版本门禁、前端、PyInstaller 主程序与 Runner、Inno 编译及完整 unittest（80 项，1 项权限跳过）通过；符号链接真实测试、完整真实用户翻译验收、真实安装/更新/卸载、旧卸载日志和用户数据保留 NOT RUN。没有操作本机正式安装。旧版卸载日志可能递归删除安装目录，风险在 Release 说明中披露；Toolbox 第三方 apply 尚未实现。

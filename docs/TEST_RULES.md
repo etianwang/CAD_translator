@@ -83,7 +83,7 @@ The final report must list each provider, direction, selected format/version, ou
 
 ## Batch queue tests
 
-Follow the automated and real-DWG acceptance cases in [BATCH_TRANSLATION_HARNESS.md](BATCH_TRANSLATION_HARNESS.md), including queue recovery, pause/resume, retry, output formats and versions, all four language directions, and safe API concurrency.
+Follow the automated and real-DWG acceptance cases in [TRANSLATION_WORKFLOW.md](TRANSLATION_WORKFLOW.md), including queue recovery, pause/resume, retry, output formats and versions, all four language directions, and safe API concurrency.
 
 Status (2026-08-07): completed. Python compilation, translation-mode/glossary tests, batch recovery/queue-operation tests, and React build passed. The specified real DWG completed Chinese → French → Chinese and Chinese → English → Chinese; all four output DWGs were readable and extracted text changed on every pass. API keys were neither logged nor persisted in queue state.
 

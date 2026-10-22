@@ -2,7 +2,7 @@
 
 > 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；该文件是更新与发布方案的最高优先级规范。
 
-本规范是 Windows 版本发布的唯一操作顺序。发布者和后续 agent 必须同时阅读本文件、[PRD_v1.10.1.md](PRD_v1.10.1.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[TEST_RULES.md](TEST_RULES.md) 与 `installer/` 下的两个脚本。
+本规范是 Windows 版本发布的唯一操作顺序。发布者和后续 agent 必须同时阅读本文件、[CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)、[TEST_RULES.md](TEST_RULES.md) 与 `installer/` 下的两个脚本。
 
 ## 自动更新链路
 
@@ -30,7 +30,7 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    - `honsen.app.json` 的 `version` 和 `Honsen_DrawTranslate_version_info.txt` 的文件/产品版本；
    - `installer/build_installer.ps1` 的 spec 和安装包文件名；
    - 新建对应的 `Honsen_CAD_Translator_vX.Y.Z.spec`，并更新 README 的 Windows 构建命令。
-2. 运行最低检查：
+2. 运行以下最低检查，并按 [TEST_RULES.md](TEST_RULES.md) 执行适用的完整发布验收门禁；以下列表不替代其中的要求：
 
    ```powershell
    python -m unittest tests.test_updater
@@ -62,7 +62,7 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
 
 ## 共享更新助手不可破坏的约束
 
-完整协议见 [HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)。主程序不得直接启动 Inno：它只启动同目录、由 `honsen.app.json` 声明的 `HonsenUpdateRunner.exe`，传入当前 PID、下载器返回的 SHA-256、目标版本和自身真实运行目录。工具箱必须从固定 appId 注册表键读取 `UpdateRunnerPath` 与 `InstallLocation` 后调用同一文件。
+完整协议见 [CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)。主程序不得直接启动 Inno：它只启动同目录、由 `honsen.app.json` 声明的 `HonsenUpdateRunner.exe`，传入当前 PID、下载器返回的 SHA-256、目标版本和自身真实运行目录。工具箱必须从固定 appId 注册表键读取 `UpdateRunnerPath` 与 `InstallLocation` 后调用同一文件。
 
 安装器必须安装 `HonsenUpdateRunner.exe` 和 `honsen.app.json`，并在 `HKLM\Software\Honsen Program\Apps\honsen.cad-translator` 写入 `UpdateRunnerPath`。Runner 是唯一有权启动 Inno 的组件，且固定传入：
 
@@ -80,4 +80,4 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser postinstall
 
 主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。安装器自身创建的标准桌面和开始菜单快捷方式固定命名为 `Honsen CAD 翻译器`，由 `[Icons]` 在该已知路径替换。桌面、开始菜单和任务栏固定项其余部分属于用户数据：安装器绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。用户固定 `Honsen CAD 翻译器` 后，因 EXE 路径稳定，后续升级无需更改任务栏链接。
 
-真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。没有该环境时，至少完成 updater 单测、Inno 编译和 Release digest 核验，并在 Memory 中明确真实安装 E2E 未执行。
+真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。若缺少该环境，应记录真实安装 E2E 未执行，并完成可执行的 updater 单测、Inno 编译和 Release digest 核验；这一记录不构成对 [TEST_RULES.md](TEST_RULES.md) 中发布门禁的豁免。

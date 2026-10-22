@@ -1,5 +1,7 @@
 # Windows 独立更新执行器：实施参考与踩坑清单
 
+> 跨项目设计参考，不是 CAD 翻译器的现行协议；示例命令及建议可能尚未实现或与本项目要求不同。本项目以 [强制契约](UPDATE_RELEASE_CONTRACT.md) 和 [当前接入说明](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md) 为准。
+
 适用于多个 Windows 桌面应用共用“独立更新助手 + 主程序轻量展示”的架构。
 
 ## 推荐职责划分

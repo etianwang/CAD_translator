@@ -30,6 +30,7 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 | 值名 | 用途 |
 | --- | --- |
 | `AppId` | 必须为 `honsen.cad-translator` |
+| `DisplayName` | 用户可读的应用名称 |
 | `Version` | 当前已安装版本 |
 | `Publisher` | 发布者；必须与 manifest 的 `publisher` 一致（当前为 `Honsen`） |
 | `InstallLocation` | 唯一允许被更新覆盖的目录 |
@@ -69,7 +70,7 @@ Runner 的 `launch` 流程：
 - **稍后提醒**：只启动当前版本；下次启动仍会提示。
 - **跳过此版本**：只抑制该目标版本；偏好写入 `%LOCALAPPDATA%\Honsen Program\UpdatePreferences\honsen.cad-translator.json`。发布更高版本后必须重新提示。
 
-Runner 是无控制台程序，但有原生进度窗口，显示检查、下载、等待退出、安装、验证与重启阶段；下载响应包含 `Content-Length` 时显示百分比。Inno 仍在后台静默运行。
+Runner 是无控制台程序，使用与主程序相同的应用图标；诊断信息写入结果 JSON 和 Inno 日志。但它有原生进度窗口，显示检查、下载、等待退出、安装、验证与重启阶段；下载响应包含 `Content-Length` 时显示百分比。Inno 仍在后台静默运行。
 
 ## 主程序内的更新入口
 
@@ -145,14 +146,14 @@ $resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$
 %LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json
 ```
 
-工具箱只能读取自己生成的 `$resultPath`，不得读取共享的“最新结果”。结果字段固定为 `appId`、`status`、`source`、`fromVersion`、`toVersion`、`step`、`installerExitCode`、`installerLogPath`、`message`、`completedAtUtc`，并附带 `operationId`。工具箱以 `--restart false` 更新时，成功后显示“更新完成，可打开”；如果确实需要自动打开，可以明确传 `--restart true`。
+工具箱只能读取自己生成的 `$resultPath`，不得读取共享的“最新结果”。结果字段固定为 `appId`、`status`、`source`、`fromVersion`、`toVersion`、`step`、`installerExitCode`、`installerLogPath`、`message`、`completedAtUtc`，并附带 `operationId`。工具箱以 `--restart false` 更新，成功后显示“更新完成，可打开”。
 
 ## Runner apply 的安全流程
 
 ```text
-复制自身到 %TEMP%\Honsen Program\UpdateRunner\<GUID>\
+校验 appId、注册表、target-dir、manifest、主程序与 Runner 路径
+→ 复制自身到 %TEMP%\Honsen Program\UpdateRunner\<GUID>\
 → 获取 Global\HonsenUpdate-honsen_cad-translator 互斥锁
-→ 校验 appId、注册表、target-dir、manifest、主程序与 Runner 路径
 → 校验安装包 SHA-256
 → 等待目标 PID 退出
 → 以 UAC 启动 Inno 覆盖原目录
@@ -193,3 +194,9 @@ Gitee 当前用于 Git 仓库、标签和 Release 镜像同步；**当前 Runner
 
 - Runner 已承担快捷方式启动、自行检查更新和工具箱 `apply` 更新。
 - 主程序遗留的更新检查/下载 UI 仍存在，最终替换动作已交给 Runner；在正式清除遗留逻辑前，应继续完成独立真实安装环境中的 `launch`、工具箱 `apply`、失败结果提示与 Runner 缺失提示 E2E 验证。
+
+## 兼容与回归说明
+
+- 首次从没有 Runner、manifest 或 `UpdateRunnerPath` 的旧安装迁移时，需先手动安装包含这些组件的版本。
+- 更新选择窗口的 Tk 变量使用 tkinter 模块创建，并以 Runner 窗口为 master；三个选择按钮均需在真实 Tk 事件循环中覆盖。
+- 整理前的应用识别协议与 Runner 协议分别保存在 [历史归档](archive/HONSEN_PROGRAM_PROTOCOL.md) 和 [历史归档](archive/HONSEN_UPDATE_RUNNER.md)，其中过时或冲突内容不作为现行规则。

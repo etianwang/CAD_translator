@@ -323,3 +323,24 @@
 - 2026-10-22: Prepared v1.11.10 hotfix for Runner update-prompt crash: `StringVar` must be created from tkinter with the window as master, and ttk must be imported in the choice method. Real Tk event-loop regression exercises all three choices; 13 updater tests, Python compilation, frontend build and Windows installer build passed. Installer is 81,350,820 bytes, SHA-256 `af4ff5cec622ee879503699769602498db41dce813fd2cdf162d310d791d197e`, exe version 1.11.10. Existing installed broken Runner may require manually running this installer; real installed upgrade E2E not performed. Publication pending.
 
 - 2026-10-22: Published GitHub stable [v1.11.10](https://github.com/etianwang/CAD_translator/releases/tag/v1.11.10), source commit `05235ec` and annotated tag synchronized with GitHub/Gitee. Installer `Honsen_DrawTranslate_v1.11.10_Setup.exe` 81,350,820 bytes, GitHub digest verified against local SHA-256 `af4ff5cec622ee879503699769602498db41dce813fd2cdf162d310d791d197e`. 13 updater tests including three real Tk choice actions, Python compilation, frontend and installer builds passed; no real installed upgrade E2E. Gitee Release mirror remains unavailable because browser is signed out; repo and tag are synchronized. Affected users can manually run the new installer targeting their existing install directory.
+
+## 2026-10-22 文档整理检查
+
+- 盘点 `docs/`，识别更新与工具箱文档、历史 PRD、术语及测试文档中的重叠和历史规则；本次仅提出整理建议，未移动、合并或删除文档。
+- `MEMORY.md` 与 `UPDATE_RELEASE_CONTRACT.md` 继续作为必须读取的独立文档；历史材料与当前合同存在差异，整理时须标明权威性并保留历史。
+- `TEST_RULES.md` 仍列有完整真实用户端到端发布门禁；近期发布记录未显示该全部门禁已执行，整理时不得将其静默删除或降级，需明确确认当前适用的验收要求。
+
+## 2026-10-22 更新与翻译文档整理
+
+- 新增 docs/README.md 索引及 TRANSLATION_WORKFLOW.md，归集批量队列、验收和可选拆行文字处理；语言资源和测试门禁继续由原文档维护。
+- 更新与工具箱接入说明归集识别、Runner、安装和兼容要点；发布手册改为引用当前接入说明，并明确最低检查不替代 TEST_RULES 的发布门禁。强制契约内容未改。
+- 原 HONSEN_PROGRAM_PROTOCOL、HONSEN_UPDATE_RUNNER 和 BATCH_TRANSLATION_HARNESS 全文移入 docs/archive，原路径保留跳转；历史 PRD 仍保留。未改产品代码或降低测试要求。
+
+## 2026-10-22 agent 文档可读性检查
+
+- 检查文档入口、优先级、队列描述和发布验收；补充必读顺序及通用 Runner 参考的非权威标记，修正队列暂停状态、并发限制及拆行章节层级的表述。
+- 澄清未执行真实安装 E2E 的记录不豁免 TEST_RULES 的其他发布门禁；未改变发布验收标准。近期发布未完成完整真实用户 E2E 的事实仍见本文件历史记录。
+
+## 2026-10-22 文档整理提交
+
+- 按用户要求将本次更新、工具箱、安装和翻译文档整理及 agent 可读性修正提交到 main，并按更新发布契约同步 GitHub origin 与 Gitee gitee；具体同步结果以 Git 远端记录为准。

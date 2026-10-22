@@ -44,3 +44,6 @@ $resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$
 5. 将成功或失败的最终 JSON 原子写入 `%LOCALAPPDATA%\Honsen Program\UpdateResults\<appId>\<operationId>.json`。结果字段固定为 `appId`、`status`、`source`、`fromVersion`、`toVersion`、`step`、`installerExitCode`、`installerLogPath`、`message`、`completedAtUtc`（并包含 `operationId`）；只有 `--restart true` 的成功任务启动注册表中的 `ExecutablePath`。
 
 安装器在静默模式下不自行重启应用；手动安装仍可显示启动复选项。首个采用本协议的版本必须手动安装一次，因为更早的安装目录不包含 Runner、manifest 或 `UpdateRunnerPath`。
+
+
+2026-10-22: The single-window update choice must create its Tk variable using the tkinter module with the Runner window as master. Exercise all three buttons in a real Tk event loop; do not rely solely on static checks.

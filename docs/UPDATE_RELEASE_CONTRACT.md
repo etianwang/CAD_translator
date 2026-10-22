@@ -196,3 +196,6 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
 4. 在 `docs/MEMORY.md` 记录决策、验证结果和迁移影响。
 
 相关细节见 [CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[RELEASE_AND_AUTO_UPDATE.md](RELEASE_AND_AUTO_UPDATE.md) 和 [TEST_RULES.md](TEST_RULES.md)；本文件优先级最高。
+
+
+更新选择窗口验收补充（2026-10-22）：必须在真实 Tk 事件循环中验证“立即更新 / 稍后提醒 / 跳过此版本”均可返回，不得仅以静态源码检查代替。

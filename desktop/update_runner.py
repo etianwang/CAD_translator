@@ -52,8 +52,11 @@ class ProgressWindow:
         self.tk.destroy()
 
     def choose(self, version: str, notes: str) -> str:
+        import tkinter as tk
+        from tkinter import ttk
+
         self.set(f"发现 v{version}", 0, notes or "本版本未提供更新说明。")
-        choice = self.tk.StringVar(value="")
+        choice = tk.StringVar(master=self.tk, value="")
         self.actions.pack(pady=(0, 18))
         ttk.Button(self.actions, text="立即更新", command=lambda: choice.set("update")).pack(side="left", padx=4)
         ttk.Button(self.actions, text="稍后提醒", command=lambda: choice.set("later")).pack(side="left", padx=4)

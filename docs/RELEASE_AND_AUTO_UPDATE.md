@@ -41,7 +41,7 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    ```
 
    `build_installer.ps1` 会重新构建前端、EXE 和 Inno 安装包；它必须发现 `dist\ODAFileConverter\ODAFileConverter.exe`，否则不得作为完整 DWG 发行包发布。
-3. 确认 `dist\Honsen DrawTranslate.exe` 与 `installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 存在，计算安装包本地 SHA-256。安装包只作为 Release 资产，`installer/Output/` 必须保持 Git 忽略，绝不能提交二进制文件。
+3. 确认 `dist\Honsen DrawTranslate.exe` 与 `installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 存在，计算安装包本地 SHA-256，并生成同名 `.exe.sha256` 校验文件。安装包只作为 Release 资产，`installer/Output/` 必须保持 Git 忽略，绝不能提交二进制文件。
 4. 提交源代码，创建带注释的 `vX.Y.Z` 标签，并依次执行；四次均成功才能继续：
 
    ```powershell
@@ -50,12 +50,14 @@ GitHub API 必须为该资产返回 `sha256:` digest。缺少 digest、资产名
    git push origin vX.Y.Z
    git push gitee vX.Y.Z
    ```
-5. 在 GitHub 创建**非 draft、非 prerelease**的 Release，上传上一步的安装包；随后调用 GitHub API/CLI 检查资产 `digest`，它必须等于本地 SHA-256。例如：
+5. 在 GitHub 创建**非 draft、非 prerelease**的 Release，上传上一步的安装包及其同名 `.sha256` 文件；随后调用 GitHub API/CLI 检查资产 `digest`，它必须等于本地 SHA-256。例如：
 
    ```powershell
-   gh release create vX.Y.Z "installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe#Honsen_DrawTranslate_vX.Y.Z_Setup.exe" --repo etianwang/CAD_translator --title vX.Y.Z --notes "发布说明"
+   gh release create vX.Y.Z "installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe" "installer\Output\Honsen_DrawTranslate_vX.Y.Z_Setup.exe.sha256" --repo etianwang/CAD_translator --title vX.Y.Z --notes "发布说明"
    gh release view vX.Y.Z --repo etianwang/CAD_translator --json url,isDraft,isPrerelease,assets
    ```
+
+   将 GitHub Release API JSON 保存到临时文件，使用 `python installer/release_check.py --exe-version X.Y.Z --tag vX.Y.Z --release-json <临时JSON路径> --setup installer/Output/Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 核对 tag、资产、校验文件和 API digest；此检查不能代替完整发布验收。
 
    只有 GitHub Release 是自动更新源；Gitee 用于仓库和标签同步，不替代 GitHub Release。
 6. 在 `docs/MEMORY.md` 记录版本、提交、标签、Release URL、安装包大小、SHA-256、通过的检查和未执行的 E2E 项；如该记录在 Release 后新增，再将它作为独立文档提交推送。
@@ -78,6 +80,6 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser postinstall
 
 `postinstall` 确保 `/VERYSILENT` 不会越过 Runner 自行启动程序；`runasoriginaluser` 保证手动安装的启动使用原登录用户。`tests.test_updater` 中的静态回归检查必须保留。
 
-主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 只能匹配本产品的 `Honsen DrawTranslate v*.exe` 与 `Honsen_CAD_Translator_v*.exe` 历史文件；禁止使用 `{app}\*.exe`。安装器自身创建的标准桌面和开始菜单快捷方式固定命名为 `Honsen CAD 翻译器`，由 `[Icons]` 在该已知路径替换。桌面、开始菜单和任务栏固定项其余部分属于用户数据：安装器绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。用户固定 `Honsen CAD 翻译器` 后，因 EXE 路径稳定，后续升级无需更改任务栏链接。
+主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 不使用通配符清理安装目录中的历史 EXE；未知文件默认保留。安装器自身创建的标准桌面和开始菜单快捷方式固定命名为 `Honsen CAD 翻译器`，由 `[Icons]` 在该已知路径替换。桌面、开始菜单和任务栏固定项其余部分属于用户数据：安装器绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。用户固定 `Honsen CAD 翻译器` 后，因 EXE 路径稳定，后续升级无需更改任务栏链接。
 
 真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。若缺少该环境，应记录真实安装 E2E 未执行，并完成可执行的 updater 单测、Inno 编译和 Release digest 核验；这一记录不构成对 [TEST_RULES.md](TEST_RULES.md) 中发布门禁的豁免。

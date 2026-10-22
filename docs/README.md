@@ -1,8 +1,10 @@
 # 文档索引
 
-所有任务先读 [项目记忆](MEMORY.md) 和 [强制契约](UPDATE_RELEASE_CONTRACT.md)，再按任务选择下列文档。历史 PRD、归档及通用参考不覆盖现行契约；有冲突时以强制契约为准。
+所有任务先读 [项目记忆](MEMORY.md) 和 [强制契约](UPDATE_RELEASE_CONTRACT.md)，再按任务选择下列文档。历史 PRD、归档及通用参考不覆盖现行契约；有冲突时先遵守跨项目规范及更高优先级指令。
 
 ## 更新、工具箱、安装与发布
+
+所有 Agent 在修改安装、注册表、Manifest、Runner、更新、卸载或发布逻辑前，必须依次阅读 Toolbox 仓库的 `docs/HONSEN_WINDOWS_APPLICATION_STANDARD.md`、`docs/honsen-desktop-update-protocol.md`、`docs/toolbox-integration-contract.md`、`docs/schemas/honsen.app.schema.json`。跨项目规范为事实源；与本地文档冲突须报告并按跨项目流程统一修正，系统及用户指令仍具有更高优先级。
 
 1. [强制契约](UPDATE_RELEASE_CONTRACT.md)：最高优先级，所有任务开始前必读。
 2. [当前更新与工具箱接入](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)：身份、注册表、Runner、安装与卸载的具体说明。

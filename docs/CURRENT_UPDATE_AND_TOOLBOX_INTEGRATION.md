@@ -2,6 +2,8 @@
 
 > 本文受 [UPDATE_RELEASE_CONTRACT.md](UPDATE_RELEASE_CONTRACT.md) 约束；任何更新、工具箱、安装器或发布任务必须先阅读该强制契约。
 
+**审计状态（2026-10-22）：尚不符合完整跨项目规范。** 当前安装器仅写 HKLM，并检查四视图；对于用户或其他视图登记保守拒绝，尚未完成修复迁移验收。新脚本移除了递归卸载，但旧卸载日志的行为尚未验证。Runner 的路径、进程及结果处理仍需安全修正和隔离 E2E。以下流程描述目标与现有部分实现，不代表已通过接入验收。Toolbox 尚无第三方 Runner apply 调用路径。
+
 本文记录 Honsen CAD 图纸中法英翻译器当前的 Windows 更新实现与工具箱集成契约。它描述的是已发布/已实现的行为；跨应用通用设计参考 [UPDATE_RUNNER_REFERENCE.md](UPDATE_RUNNER_REFERENCE.md)。
 
 ## 固定身份与责任边界
@@ -33,6 +35,7 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 | `DisplayName` | 用户可读的应用名称 |
 | `Version` | 当前已安装版本 |
 | `Publisher` | 发布者；必须与 manifest 的 `publisher` 一致（当前为 `Honsen`） |
+| `InstallScope` | `machine` 或 `user`，与注册表根一致 |
 | `InstallLocation` | 唯一允许被更新覆盖的目录 |
 | `ExecutablePath` | 位于 `InstallLocation` 内的主程序绝对路径 |
 | `LauncherPath` | Runner 的绝对路径；工具箱“打开”使用它 |
@@ -49,7 +52,7 @@ HKCU\Software\Honsen Program\Apps\honsen.cad-translator
 桌面快捷方式、开始菜单快捷方式及工具箱“打开”统一执行：
 
 ```text
-<LauncherPath> launch
+<LauncherPath> launch --app-id honsen.cad-translator --source app
 ```
 
 Runner 的 `launch` 流程：
@@ -111,7 +114,7 @@ $key = "HKLM:\Software\Honsen Program\Apps\$appId"
 $app = Get-ItemProperty $key
 $operationId = [guid]::NewGuid().ToString()
 $resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$operationId.json"
-& $app.LauncherPath launch --source toolbox --operation-id $operationId --result-path $resultPath
+& $app.LauncherPath launch --app-id $appId --source toolbox --operation-id $operationId --result-path $resultPath
 ```
 
 工具箱不直接启动旧桌面快捷方式或硬编码的主 exe 路径。
@@ -180,9 +183,9 @@ $resultPath = Join-Path $env:LOCALAPPDATA "Honsen Program\UpdateResults\$appId\$
 ## 安装、卸载与快捷方式
 
 - 首次安装可选目录；发现相同 `appId` 时只能更新已有 `InstallLocation`，不能在其他目录创建第二份。
-- 标准快捷方式目标是 `HonsenUpdateRunner.exe launch`，但图标明确取 `Honsen DrawTranslate.exe`，以保持用户看到的应用图标一致。
+- 标准快捷方式目标是 `HonsenUpdateRunner.exe launch --app-id honsen.cad-translator --source app`，但图标明确取 `Honsen DrawTranslate.exe`，以保持用户看到的应用图标一致。
 - 静默更新后只有 Runner 负责重启；安装器的 `[Run]` 项以 `postinstall` 限制为手动安装场景。
-- 卸载只删除该应用的 `{app}` 目录及 `honsen.cad-translator` 专属注册表键；绝不能删除共享的 `Honsen Program` 根目录、其他 Honsen 应用或它们的数据。
+- 新安装器卸载仅清理 Inno 登记的文件及自身注册表键，未知文件默认保留；旧版卸载记录尚未证明可安全继承，真实升级或卸载前需隔离验证。
 
 ## 发布源与镜像现状
 
@@ -200,3 +203,14 @@ Gitee 当前用于 Git 仓库、标签和 Release 镜像同步；**当前 Runner
 - 首次从没有 Runner、manifest 或 `UpdateRunnerPath` 的旧安装迁移时，需先手动安装包含这些组件的版本。
 - 更新选择窗口的 Tk 变量使用 tkinter 模块创建，并以 Runner 窗口为 master；三个选择按钮均需在真实 Tk 事件循环中覆盖。
 - 整理前的应用识别协议与 Runner 协议分别保存在 [历史归档](archive/HONSEN_PROGRAM_PROTOCOL.md) 和 [历史归档](archive/HONSEN_UPDATE_RUNNER.md)，其中过时或冲突内容不作为现行规则。
+
+
+## 数据与迁移审计（2026-10-22）
+
+当前源码将配置、许可证、队列、术语数据库放在用户主目录的 `.cad_translator_*` 文件；拖入文件在 `cad_translator_dropped_files`，默认输出在用户 Documents，下载临时包在系统 TEMP，Runner 偏好与结果/安装日志在 LOCALAPPDATA。查阅版本历史时，配置路径至少从早期提交到当前版本使用用户主目录；这不是对所有历史构建及用户自定义数据位置的完整证明。翻译输出可由用户选择其他位置，包括安装目录。
+
+新脚本取消对安装目录递归删除及历史 EXE 通配符删除；Inno 自有文件记录的卸载行为和从旧版本继承的卸载日志仍需在隔离 Windows 中验证。未知文件不自动迁移或清理。升级前应备份安装目录中的未知文件和用户数据，保留原件，验证新版本可读取后才考虑复制；失败时保留备份和原文件。旧版卸载器或安装器日志是否仍包含递归删除记录尚未知，未经隔离验证不得对已安装版本宣称卸载安全。
+
+当前安装器仅支持 machine；缺失 `InstallScope` 的既有 HKLM 原生视图记录，在目录及身份安全核对通过后才由后续原目录更新写入 `machine`。HKCU 或其他视图记录、冲突、无法读取和目录缺失须停止并人工处理，不自动写新记录。四视图重复检测、损坏登记、更新和修复尚无隔离实测。
+
+旧 Runner 的资产匹配限定 `Honsen_DrawTranslate_vX.Y.Z_Setup.exe`，不能直接发布仅含新标准名称的资产；必须先按跨项目流程确定并验证兼容过渡版本，让旧版能够获得支持新名称的 Runner，之后再统一切换。本仓库未改变正式资产名称，Toolbox 的第三方 apply 路径仍未实现。

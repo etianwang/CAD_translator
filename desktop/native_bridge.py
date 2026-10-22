@@ -148,6 +148,6 @@ class NativeBridge:
         status = self.update_service_status()
         if not status["ok"]: return {"error": status["message"]}
         runner = Path(sys.executable).resolve().parent / "HonsenUpdateRunner.exe"
-        subprocess.Popen([str(runner), "launch", "--wait-pid", str(os.getpid())])
+        subprocess.Popen([str(runner), "launch", "--app-id", "honsen.cad-translator", "--source", "app", "--wait-pid", str(os.getpid())])
         threading.Thread(target=self.close_window, daemon=True).start()
         return {"ok": True}

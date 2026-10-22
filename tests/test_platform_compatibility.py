@@ -37,7 +37,7 @@ class PlatformCompatibilityTests(unittest.TestCase):
             candidates = cad.odafc_candidate_paths()
         expected_local_app = cad.get_app_dir() / "ODAFileConverter.app" / "Contents" / "MacOS" / "ODAFileConverter"
         self.assertIn(expected_local_app, candidates)
-        self.assertTrue(any(str(path).endswith(".app/Contents/MacOS/ODAFileConverter") for path in candidates))
+        self.assertTrue(any(path.parts[-3:] == ("Contents", "MacOS", "ODAFileConverter") and path.parts[-4].endswith(".app") for path in candidates if len(path.parts) >= 4))
         self.assertTrue(any(path.name == "ODAFileConverter" for path in candidates))
 
     def test_frozen_macos_app_finds_adjacent_oda_app(self):
@@ -53,7 +53,7 @@ class PlatformCompatibilityTests(unittest.TestCase):
             candidates = cad.odafc_candidate_paths()
             self.assertIn(expected, candidates)
             self.assertIn(
-                Path("/private/tmp/cad-dist/Honsen CAD Translator.app/Contents/Helpers/ODAFileConverter.app/Contents/MacOS/ODAFileConverter"),
+                Path(executable).resolve().parents[1] / "Helpers" / "ODAFileConverter.app" / "Contents" / "MacOS" / "ODAFileConverter",
                 candidates,
             )
 

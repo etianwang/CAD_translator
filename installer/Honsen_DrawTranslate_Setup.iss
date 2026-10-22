@@ -3,7 +3,7 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.11.10"
+#define MyAppVersion "1.11.11"
 #define MyAppPublisher "Honsen"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
@@ -34,7 +34,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 DisableProgramGroupPage=no
-VersionInfoVersion={#MyAppVersion}.0.0
+VersionInfoVersion={#MyAppVersion}.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
@@ -58,9 +58,7 @@ Source: "..\honsen.app.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\ODAFileConverter\*"; DestDir: "{app}\ODAFileConverter"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
-; 只删除本产品历史版本的 EXE；绝不使用宽泛的 {app}\*.exe 通配符。
-Type: files; Name: "{app}\Honsen DrawTranslate v*.exe"
-Type: files; Name: "{app}\Honsen_CAD_Translator_v*.exe"
+; 不按通配符删除历史 EXE；未知文件默认保留。
 ; 清理由本安装器旧版本创建的默认英文快捷方式；不扫描用户其他链接。
 Type: files; Name: "{autodesktop}\Honsen CAD Translator.lnk"
 Type: files; Name: "{autoprograms}\Honsen CAD Translator\Honsen CAD Translator.lnk"
@@ -69,16 +67,17 @@ Type: dirifempty; Name: "{autoprograms}\Honsen CAD Translator"
 
 [Icons]
 ; 开始菜单
-Name: "{group}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch --app-id {#MyHonsenAppId} --source app"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\卸载 {#MyShortcutName}"; Filename: "{uninstallexe}"
 ; 桌面快捷方式（由 Tasks 控制）
-Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyShortcutName}"; Filename: "{app}\HonsenUpdateRunner.exe"; Parameters: "launch --app-id {#MyHonsenAppId} --source app"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
 ; Honsen Program unified application identity. This installer is per-machine
 ; (PrivilegesRequired=admin), so the shared HKLM location is authoritative.
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "AppId"; ValueData: "{#MyHonsenAppId}"; Flags: uninsdeletekey
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "DisplayName"; ValueData: "{#MyAppName}"
+Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "InstallScope"; ValueData: "machine"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "Publisher"; ValueData: "{#MyAppPublisher}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "InstallLocation"; ValueData: "{app}"
 Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: string; ValueName: "ExecutablePath"; ValueData: "{app}\{#MyAppExeName}"
@@ -91,32 +90,74 @@ Root: HKLM; Subkey: "Software\Honsen Program\Apps\{#MyHonsenAppId}"; ValueType: 
 [Code]
 var
   ExistingInstallLocation: String;
+  ExistingRegistrationError: String;
+  ExistingIsDamaged: Boolean;
+
+procedure CheckExistingRegistration(RootKey: Integer; MachineNative: Boolean);
+var
+  Location, AppId, ExecutablePath, Scope: String;
+begin
+  if not RegKeyExists(RootKey, 'Software\Honsen Program\Apps\{#MyHonsenAppId}') then
+    exit;
+  if not RegQueryStringValue(RootKey, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallLocation', Location) or (Location = '') then begin
+    ExistingRegistrationError := '发现损坏登记，缺少安装目录；请先人工修复登记。';
+    exit;
+  end;
+  if (ExtractFileDrive(Location) = '') or (CompareText(RemoveBackslashUnlessRoot(Location), RemoveBackslashUnlessRoot(ExpandFileName(Location))) <> 0) then begin
+    ExistingRegistrationError := '安装登记的目录不是规范绝对路径。';
+    exit;
+  end;
+  if (ExistingInstallLocation <> '') and (CompareText(RemoveBackslashUnlessRoot(Location), RemoveBackslashUnlessRoot(ExistingInstallLocation)) <> 0) then begin
+    ExistingRegistrationError := '发现冲突安装目录，请先人工处理：' + Location;
+    exit;
+  end;
+  ExistingInstallLocation := Location;
+  if not MachineNative then begin
+    ExistingRegistrationError := '发现用户或其他注册表视图中的登记；本安装器仅支持全机安装，请先人工处理：' + Location;
+    exit;
+  end;
+  if not RegQueryStringValue(RootKey, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'AppId', AppId) or (AppId <> '{#MyHonsenAppId}') then
+    ExistingRegistrationError := '安装登记的 AppId 无效。';
+  if RegQueryStringValue(RootKey, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallScope', Scope) and (Scope <> 'machine') then
+    ExistingRegistrationError := '安装范围与全机登记不一致。';
+  if not RegQueryStringValue(RootKey, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'ExecutablePath', ExecutablePath) or
+     (CompareText(ExecutablePath, AddBackslash(Location) + '{#MyAppExeName}') <> 0) then begin
+    ExistingRegistrationError := '登记的主程序路径与安装目录不一致。';
+    exit;
+  end;
+  ExistingIsDamaged := not FileExists(ExecutablePath);
+end;
 
 function ReadExistingInstallLocation(): String;
 begin
-  Result := '';
-  if not RegQueryStringValue(HKLM, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallLocation', Result) then
-    RegQueryStringValue(HKCU, 'Software\Honsen Program\Apps\{#MyHonsenAppId}', 'InstallLocation', Result);
+  ExistingInstallLocation := '';
+  ExistingRegistrationError := '';
+  ExistingIsDamaged := False;
+  CheckExistingRegistration(HKLM32, not IsWin64);
+  if IsWin64 then CheckExistingRegistration(HKLM64, True);
+  CheckExistingRegistration(HKCU32, False);
+  if IsWin64 then CheckExistingRegistration(HKCU64, False);
+  Result := ExistingInstallLocation;
 end;
 
 procedure InitializeWizard();
 begin
   ExistingInstallLocation := ReadExistingInstallLocation();
-  if ExistingInstallLocation <> '' then
+  if ExistingInstallLocation <> '' then begin
     WizardForm.DirEdit.Text := ExistingInstallLocation;
+    if (ExistingRegistrationError = '') and ExistingIsDamaged and not WizardSilent then
+      MsgBox('检测到损坏安装，修复只能使用原目录：' + ExistingInstallLocation, mbInformation, MB_OK);
+  end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
-  Result := '';
-  if (ExistingInstallLocation <> '') and (CompareText(RemoveBackslashUnlessRoot(WizardDirValue), RemoveBackslashUnlessRoot(ExistingInstallLocation)) <> 0) then
+  ReadExistingInstallLocation();
+  Result := ExistingRegistrationError;
+  if (Result = '') and (ExistingInstallLocation <> '') and (CompareText(RemoveBackslashUnlessRoot(WizardDirValue), RemoveBackslashUnlessRoot(ExistingInstallLocation)) <> 0) then
     Result := '已安装的 Honsen CAD Translator 只能更新原目录：' + ExistingInstallLocation;
 end;
 
 [Run]
 ; Manual installs may offer launch. Silent updates are restarted only by HonsenUpdateRunner.
 Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait runasoriginaluser postinstall
-
-[UninstallDelete]
-; 卸载时清理可能产生的运行时缓存（如有）
-Type: filesandordirs; Name: "{app}"

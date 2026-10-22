@@ -2,7 +2,7 @@
 
 > **强制阅读。** 任何新 agent、新对话、发布者或工具箱接入者，在执行任何任务前必须先阅读本文件、`docs/MEMORY.md`，再按任务读取相关文档。除非用户明确修改本契约，否则不得另行设计更新、安装、启动、结果回传或发布方式。
 
-本文件是 Honsen CAD 翻译器 Windows 更新、Honsen 工具箱联动和发布流程的唯一规范。当前已由 **v1.11.8** 验证为工具箱首个正式接入应用。
+本文件是本项目的具体契约；跨项目事实源及强制必读顺序见根目录 AGENTS.md。出现冲突须报告并按跨项目流程统一修正，不覆盖系统或用户指令。当前已由 **v1.11.8** 验证为工具箱首个正式接入应用。
 
 ## 固定身份与唯一职责
 
@@ -35,6 +35,7 @@ AppId = honsen.cad-translator
 Version
 Publisher = Honsen
 InstallLocation
+InstallScope = machine 或 user
 ExecutablePath
 LauncherPath
 UpdateRunnerPath
@@ -65,7 +66,7 @@ UpdateManifestUrl
 桌面/开始菜单快捷方式与工具箱“打开”统一调用：
 
 ```text
-<LauncherPath> launch --source toolbox --operation-id <GUID> --result-path <绝对结果路径>
+<LauncherPath> launch --app-id honsen.cad-translator --source toolbox --operation-id <GUID> --result-path <绝对结果路径>
 ```
 
 工具箱“更新”在下载并验证 SHA-256 后统一调用：
@@ -116,7 +117,7 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
 
 ## 操作级结果契约
 
-每次入口都生成一个 GUID，并且只能读取自己传入的结果文件：
+每次入口都生成一个 GUID，并且只能读取自己传入的结果文件。Runner 应在首次进程以独占标记保留 GUID、拒绝复用，结果原子发布且不覆盖已有文件；中断留下的标记保留用于阻止复用，重试必须使用新 GUID：
 
 ```text
 %LOCALAPPDATA%\Honsen Program\UpdateResults\honsen.cad-translator\<operationId>.json
@@ -144,10 +145,10 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
 
 ## 安装、卸载与快捷方式
 
-- 首次安装可选目录；同 appId 已安装时只能更新原 `InstallLocation`。
-- 标准快捷方式目标始终为 `HonsenUpdateRunner.exe launch`，图标明确引用 `Honsen DrawTranslate.exe`。
+- 首次安装可选目录；安装器检查 HKLM/HKCU 两视图，冲突或不完整登记安全失败；当前仅支持 machine，用户登记和非本安装器视图需先人工处理，不能自动迁移。已登记的原目录不可变。
+- 标准快捷方式目标始终为 `HonsenUpdateRunner.exe launch --app-id honsen.cad-translator --source app`，图标明确引用 `Honsen DrawTranslate.exe`。
 - 静默安装不得自行重启；成功重启只由 Runner 完成。
-- 卸载只能删除应用 `{app}` 和 `honsen.cad-translator` 专属注册表键；绝不删除共享 `Honsen Program` 父目录、其他 Honsen 应用或其数据。
+- 卸载只能清理安装器记录的自有文件及 `honsen.cad-translator` 专属注册表键；不得递归删除 `{app}`、未知文件、用户数据、共享父目录或其他应用。旧版卸载日志可能仍含递归删除记录，不得假设升级后已清除，需隔离验证后才能指定安全迁移。
 
 ## 发布强制流程
 
@@ -182,7 +183,7 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
    ```
 
    四次推送均成功才可进入 Release 步骤。
-5. GitHub 创建公开、非 draft、非 prerelease Release，上传 `Honsen_DrawTranslate_vX.Y.Z_Setup.exe`；核对 GitHub `sha256:` asset digest 与本地摘要完全一致。
+5. GitHub 创建公开、非 draft、非 prerelease Release，上传 `Honsen_DrawTranslate_vX.Y.Z_Setup.exe` 和同名 `.sha256`；核对 GitHub `sha256:` asset digest 与本地摘要完全一致。
 6. Release 说明使用真实 Markdown 换行，不能传入字面量 `\n`。Gitee 作为仓库/标签/Release 镜像；当前 Runner 的自动更新源仍只能是 GitHub Release。
 7. 在 `docs/MEMORY.md` 写入版本、提交、标签、Release URL、文件大小、SHA-256、验证项与未执行 E2E；记录后再提交推送。
 
@@ -195,7 +196,7 @@ Runner 为无控制台程序，使用一个原生进度窗口显示检查、下�
 3. 完成构建与相关验证；
 4. 在 `docs/MEMORY.md` 记录决策、验证结果和迁移影响。
 
-相关细节见 [CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[RELEASE_AND_AUTO_UPDATE.md](RELEASE_AND_AUTO_UPDATE.md) 和 [TEST_RULES.md](TEST_RULES.md)；本文件优先级最高。
+相关细节见 [CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md](CURRENT_UPDATE_AND_TOOLBOX_INTEGRATION.md)、[HONSEN_UPDATE_RUNNER.md](HONSEN_UPDATE_RUNNER.md)、[RELEASE_AND_AUTO_UPDATE.md](RELEASE_AND_AUTO_UPDATE.md) 和 [TEST_RULES.md](TEST_RULES.md)；跨项目事实源优先于本地项目文档。
 
 
 更新选择窗口验收补充（2026-10-22）：必须在真实 Tk 事件循环中验证“立即更新 / 稍后提醒 / 跳过此版本”均可返回，不得仅以静态源码检查代替。

@@ -7,6 +7,7 @@ import sys
 import json
 import math
 import threading
+import unicodedata
 import queue
 import urllib.request
 from datetime import datetime
@@ -31,7 +32,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.11.8"
+APP_VERSION = "1.11.9"
 
 # ODA can export legacy SHX/GBK text as ``\M+5C6BD`` rather than Unicode.
 # The leading nibble identifies the legacy codepage; the following four hex
@@ -927,12 +928,22 @@ class CADChineseTranslator:
 
         return True
 
+    def _legacy_dwg_text(self, text):
+        if not getattr(self, "legacy_dwg_unicode_escapes", False):
+            return text
+        # ODA misreads UTF-8 Latin accents with Chinese codepages in 2004 DWG.
+        return "".join(
+            f"\\U+{ord(char):04X}" if 127 < ord(char) <= 0xFFFF
+            and "LATIN" in unicodedata.name(char, "") else char
+            for char in text
+        )
+
     def _write_mtext_entity(self, entity, cleaned_text):
         font = getattr(self, 'default_font', 'SimSun')
         if ';' in font:
             font = "SimSun"
 
-        safe_content = self.cleaner.escape_mtext_special_chars(cleaned_text)
+        safe_content = self._legacy_dwg_text(self.cleaner.escape_mtext_special_chars(cleaned_text))
         formatted_text = r"{\f" + font + r"|b0|i0|c134;" + safe_content + r"}"
 
         self.safe_log(f"构造 MTEXT: {repr(formatted_text[:50])}...")
@@ -956,6 +967,9 @@ class CADChineseTranslator:
                 )
             else:
                 self.safe_log(f"准备写入 [{dxftype}/{field_label}] - 文本为空!")
+
+            if field != 'tag' and not (field == 'text' and dxftype == "MTEXT"):
+                cleaned_text = self._legacy_dwg_text(cleaned_text)
 
             if field == 'text' and dxftype in ("TEXT", "ATTRIB", "ATTDEF", "DIMENSION"):
                 entity.dxf.text = cleaned_text
@@ -1007,6 +1021,7 @@ class CADChineseTranslator:
         self.current_drawing_name = Path(input_file).name
         self.profession = profession
         with CadConversionSession(input_file, self.safe_log, output_format, output_version) as session:
+            self.legacy_dwg_unicode_escapes = session.output_is_dwg and (output_version or session.meta.oda_version) == "ACAD2004"
             work_input = session.work_input
             work_output = session.work_output_path() or output_file
             wait_for_translation(resume_event, cancel_event)

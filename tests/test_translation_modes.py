@@ -26,6 +26,71 @@ class TranslationModeTests(unittest.TestCase):
         self.assets_patch.stop()
         self.assets_tmp.cleanup()
 
+    def test_2004_translation_writes_accented_characters_as_cad_unicode_escapes(self):
+        translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        translator.legacy_dwg_unicode_escapes = True
+        doc = ezdxf.new("R2010")
+        text = doc.modelspace().add_text("箱号")
+        mtext = doc.modelspace().add_mtext("箱号")
+        translator.write_back_translation(text, "Numéro de boîte")
+        translator.write_back_translation(mtext, "Numéro de boîte")
+        self.assertEqual(text.dxf.text, r"Num\U+00E9ro de bo\U+00EEte")
+        self.assertIn(r"Num\U+00E9ro de bo\U+00EEte", mtext.dxf.text)
+        translator.legacy_dwg_unicode_escapes = False
+        translator.write_back_translation(text, "Numéro de boîte")
+        self.assertEqual(text.dxf.text, "Numéro de boîte")
+
+    def test_2004_oda_roundtrip_preserves_accents_in_chinese_shx_text(self):
+        from pathlib import Path
+        from backend.cad import configure_odafc, convert_with_odafc
+        if not configure_odafc():
+            self.skipTest("ODA File Converter is unavailable")
+        translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
+        translator.legacy_dwg_unicode_escapes = True
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            doc = ezdxf.new("R2010")
+            doc.encoding = "gbk"
+            doc.styles.new("chinese", dxfattribs={"font": "_hysz.shx", "bigfont": "_hyfs.shx"})
+            text = doc.modelspace().add_text("箱号", dxfattribs={"style": "chinese"})
+            mtext = doc.modelspace().add_mtext("箱号", dxfattribs={"style": "chinese"})
+            for entity in (text, mtext):
+                translator.write_back_translation(entity, "Numéro de boîte, remplaçant, contrôle")
+            source, dwg, result = path / "input.dxf", path / "output.dwg", path / "result.dxf"
+            doc.saveas(source)
+            convert_with_odafc(str(source), str(dwg), version="ACAD2004")
+            convert_with_odafc(str(dwg), str(result), version="ACAD2010")
+            converted = ezdxf.readfile(result)
+            self.assertEqual(converted.modelspace().query("TEXT").first.dxf.text, "Numéro de boîte, remplaçant, contrôle")
+            self.assertIn("Numéro de boîte, remplaçant, contrôle", converted.modelspace().query("MTEXT").first.dxf.text)
+
+    def test_chinese_french_glossary_uses_general_socket_and_equipment_terms(self):
+        terms = translator.load_glossary_terms("glossaries/translation_context_zh_to_fr.yaml")
+        for source, expected in {
+            "普通插座": "prise de courant", "防水插座": "prise étanche",
+            "网络插座": "prise réseau", "电话插座": "prise téléphonique",
+            "双口信息插座": "prise double de données", "门": "porte",
+            "探测器": "détecteur", "桥架": "chemin de câbles",
+            "断路器": "disjoncteur", "应急灯": "lampe de secours",
+        }.items():
+            with self.subTest(source=source):
+                self.assertTrue(all(value == expected for value in terms[source].values()))
+
+    def test_hvac_plumbing_glossary_avoids_invented_details_and_literal_hints(self):
+        terms = translator.load_glossary_terms("glossaries/translation_context_zh_to_fr.yaml")
+        cases = {
+            ("泵", "hvac"): "pompe", ("模块", "hvac"): "module",
+            ("风管", "plumbing"): "gaine de ventilation", ("底标高", "plumbing"): "cote inférieure",
+            ("分歧管", "hvac"): "tuyau de dérivation", ("高效过滤器", "hvac"): "filtre à haute efficacité",
+            ("噪声", "general"): "bruit", ("回风", "plumbing"): "reprise d’air",
+            ("窗", "hvac"): "fenêtre", ("回水", "hvac"): "retour d’eau",
+            ("风口", "hvac"): "bouche d’air", ("标高", "plumbing"): "cote",
+            ("压力", "electrical"): "pression",
+        }
+        for (source, profession), expected in cases.items():
+            with self.subTest(source=source, profession=profession):
+                self.assertEqual(terms[source][profession], expected)
+
     def test_azure_uses_v3_request_and_language_codes(self):
         class Response:
             def __enter__(self): return self
@@ -89,7 +154,7 @@ class TranslationModeTests(unittest.TestCase):
 
         translator = CADChineseTranslator(log_callback=lambda *args, **kwargs: None)
         translator.deepl_translator = Translator()
-        self.assertEqual(translator.translate_text("天花", "zh_to_fr"), "PLAF.")
+        self.assertEqual(translator.translate_text("天花", "zh_to_fr"), "plafond")
         self.assertEqual(translator.translate_text("PLAFOND", "fr_to_zh"), "天花")
         self.assertEqual(translator.translate_text("剪力墙", "zh_to_fr"), "voile en béton armé")
         self.assertEqual(translator.translate_text("VOILE DE CONTREVENTEMENT", "fr_to_zh"), "剪力墙")

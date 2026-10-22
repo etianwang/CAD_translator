@@ -84,11 +84,11 @@ terms:
     architecture: MUR
     decoration: MUR
   天花:
-    general: PLAF.
+    general: plafond
     electrical: plafond
     hvac: plafond
-    architecture: PLAF.
-    decoration: PLAF.
+    architecture: plafond
+    decoration: plafond
   天花图:
     general: PLAN FP
     architecture: PLAN FP
@@ -123,8 +123,8 @@ terms:
   控制屏:
     general: écran de contrôle
   插座:
-    general: PC
-    electrical: PC
+    general: Prise
+    electrical: Prise
   新风:
     general: AN
     hvac: air neuf
@@ -155,14 +155,14 @@ terms:
     general: CAISSON AN
     hvac: CAISSON AN
   机房:
-    general: LOC. TECH.
-    electrical: local électrique
-    hvac: local CVC
-    plumbing: local pompes
-    architecture: local machinerie
+    general: local technique
+    electrical: local technique
+    hvac: local technique
+    plumbing: local technique
+    architecture: local technique
   桥架:
-    general: CDC
-    electrical: chemin de câbles CFO
+    general: chemin de câbles
+    electrical: chemin de câbles
   楼梯:
     general: ESC.
     architecture: ESC.
@@ -171,7 +171,7 @@ terms:
   消防:
     general: sécurité incendie
   照明:
-    general: ÉCL.
+    general: éclairage
   电梯:
     general: ASC.
     electrical: alimentation ascenseur
@@ -185,20 +185,20 @@ terms:
   管道井:
     general: gaine technique
   设备间:
-    general: LOC. TECH.
-    electrical: local électrique
-    hvac: local CVC
-    plumbing: local plomberie
+    general: local technique
+    electrical: local technique
+    hvac: local technique
+    plumbing: local technique
   走廊:
     general: CIRC.
     architecture: couloir/circulation
   配电箱:
-    general: TD
+    general: tableau électrique
   门窗:
     general: portes et fenêtres
   风口:
     general: BOUCHE
-    hvac: bouche/grille
+    hvac: bouche d’air
     architecture: grille
   风机:
     general: ventilateur
@@ -208,7 +208,7 @@ terms:
   风管:
     general: GAINE
     hvac: GAINE
-    plumbing: gaine de désenfumage
+    plumbing: gaine de ventilation
   楼板:
     general: dalle
     architecture: DALLE
@@ -237,7 +237,7 @@ terms:
     general: NIV.
     electrical: hauteur/niveau
     hvac: niveau/cote
-    plumbing: fil d'eau/cote
+    plumbing: cote
     architecture: NIV.
   轴线:
     general: AXE
@@ -259,11 +259,11 @@ terms:
     plumbing: fourreau
     architecture: FOURREAU
   预留洞:
-    general: RÉSERV.
+    general: réservation
     electrical: réservation
-    hvac: réservation pour gaine
+    hvac: réservation
     plumbing: réservation
-    architecture: RÉSERV.
+    architecture: réservation
   墙体预留洞:
     general: réservation dans mur
     architecture: RÉSERV. MUR
@@ -271,14 +271,14 @@ terms:
     general: réservation dans dalle
     architecture: RÉSERV. DALLE
   洞口:
-    general: OUV.
-    electrical: réservation
-    hvac: réservation
-    architecture: OUV.
+    general: ouverture
+    electrical: ouverture
+    hvac: ouverture
+    architecture: ouverture
   开洞:
     general: PERCEMENT
     electrical: percement
-    hvac: percement pour gaine
+    hvac: percement
     plumbing: carottage/percement
     architecture: PERCEMENT
   墙体开洞:
@@ -296,12 +296,12 @@ terms:
     general: baie de fenêtre
     architecture: BAIE FEN.
   门:
-    general: PORTE
-    electrical: porte contrôlée
-    architecture: PORTE
+    general: porte
+    electrical: porte
+    architecture: porte
   窗:
     general: FEN.
-    hvac: ouvrant/grille selon contexte
+    hvac: fenêtre
     architecture: FEN.
   落地窗:
     general: porte-fenêtre
@@ -428,8 +428,8 @@ terms:
     general: poste de sécurité
     electrical: PC SÉCU.
   消防控制室:
-    general: PC SÉCU.
-    electrical: PC SÉCU.
+    general: poste de sécurité incendie
+    electrical: poste de sécurité incendie
   服务器机房:
     general: S. SERV.
     electrical: S. SERV.
@@ -448,8 +448,8 @@ terms:
   配电室:
     general: LOC. ÉLEC.
   低压配电室:
-    general: LOC. TGBT
-    electrical: LOC. TGBT
+    general: local de distribution basse tension
+    electrical: local de distribution basse tension
   中压配电室:
     general: LOC. MT
     electrical: LOC. MT
@@ -584,7 +584,7 @@ terms:
   回风:
     general: REP.
     hvac: reprise d'air
-    plumbing: retour if hydronic
+    plumbing: reprise d’air
   补风:
     general: AIR COMP.
     hvac: air de compensation
@@ -702,8 +702,8 @@ terms:
   冷凝水排水:
     general: évacuation des condensats
   温控器:
-    general: TH
-    hvac: TH
+    general: thermostat
+    hvac: thermostat
   温度传感器:
     general: ST
     hvac: ST
@@ -972,11 +972,11 @@ terms:
     general: alimentation en eau incendie
     plumbing: EAU INC.
   消火栓:
-    general: RIA
-    plumbing: RIA
+    general: bouche d’incendie
+    plumbing: bouche d’incendie
   室内消火栓:
-    general: RIA
-    plumbing: RIA
+    general: bouche d’incendie intérieure
+    plumbing: bouche d’incendie intérieure
   消防栓箱:
     general: COFFRET RIA
     plumbing: COFFRET RIA
@@ -1060,7 +1060,7 @@ terms:
     general: robinet d'incendie armé
     plumbing: RIA
   灭火器:
-    general: EXT.
+    general: extincteur
   干粉灭火器:
     general: extincteur à poudre
   二氧化碳灭火器:
@@ -1105,8 +1105,8 @@ terms:
     general: compteur électrique
     electrical: CPT
   断路器:
-    general: DJ
-    electrical: DJ
+    general: disjoncteur
+    electrical: disjoncteur
   微型断路器:
     general: disjoncteur modulaire
     electrical: MCB
@@ -1135,8 +1135,8 @@ terms:
     general: SPD
     electrical: SPD
   变压器:
-    general: TRANSFO
-    electrical: TRANSFO
+    general: transformateur
+    electrical: transformateur
   发电机:
     general: GE
     electrical: GE
@@ -1161,8 +1161,8 @@ terms:
     general: conduit électrique
     electrical: CONDUIT
   接线盒:
-    general: BD
-    electrical: BD
+    general: boîte de raccordement
+    electrical: boîte de raccordement
   接地线:
     general: PE
     electrical: PE
@@ -1173,20 +1173,20 @@ terms:
     general: liaison équipotentielle
     electrical: LEP
   普通插座:
-    general: PC
-    electrical: PC
+    general: prise de courant
+    electrical: prise de courant
   防水插座:
-    general: PC ÉT.
-    electrical: PC IP55
+    general: prise étanche
+    electrical: prise étanche
   地插:
-    general: PC SOL
-    electrical: PC SOL
+    general: prise de sol
+    electrical: prise de sol
   双控开关:
     general: interrupteur va-et-vient
     electrical: VV
   灯具:
-    general: LUM.
-    electrical: LUM.
+    general: luminaire
+    electrical: luminaire
   筒灯:
     general: spot encastré
     electrical: SPOT
@@ -1211,8 +1211,8 @@ terms:
     general: circuit d'éclairage
     electrical: CIRC. ÉCL.
   插座回路:
-    general: circuit prises de courant
-    electrical: CIRC. PC
+    general: circuit de prises
+    electrical: circuit de prises
   动力回路:
     general: circuit de puissance
     electrical: CIRC. FORCE
@@ -1220,7 +1220,7 @@ terms:
     general: circuit de réserve
     electrical: RÉSERVE
   电源:
-    general: ALIM.
+    general: alimentation électrique
     electrical: alimentation électrique
   主电源:
     general: alimentation principale
@@ -1259,9 +1259,9 @@ terms:
     general: câblage structuré
     electrical: VDI
   网络:
-    general: RÉSEAU
-    electrical: réseau électrique
-    plumbing: réseau de tuyauterie
+    general: réseau
+    electrical: réseau
+    plumbing: réseau
   网线:
     general: câble réseau
     electrical: CÂBLE DATA
@@ -1272,11 +1272,11 @@ terms:
     general: FO
     electrical: FO
   网络插座:
-    general: RJ45
-    electrical: RJ45
+    general: prise réseau
+    electrical: prise réseau
   信息插座:
-    general: RJ45
-    electrical: RJ45
+    general: prise de données
+    electrical: prise de données
   机柜:
     general: baie informatique
     electrical: BAIE
@@ -1305,11 +1305,11 @@ terms:
     general: CAM. CCTV
     electrical: CAM. CCTV
   摄像机:
-    general: CAM.
-    electrical: CAM.
+    general: caméra
+    electrical: caméra
   门禁:
-    general: CA
-    electrical: CA
+    general: contrôle d’accès
+    electrical: contrôle d’accès
   门禁系统:
     general: CA
     electrical: CA
@@ -1335,12 +1335,12 @@ terms:
     general: téléphone
   电话插座:
     general: prise téléphonique
-    electrical: RJ11
+    electrical: prise téléphonique
   电视:
     general: télévision
   电视插座:
-    general: prise TV
-    electrical: TV
+    general: prise de télévision
+    electrical: prise de télévision
   无线接入点:
     general: AP
     electrical: AP
@@ -1451,9 +1451,9 @@ terms:
     hvac: coffret de régulation
     plumbing: coffret de commande
   控制器:
-    general: CTRL
+    general: contrôleur
     electrical: contrôleur
-    hvac: régulateur
+    hvac: contrôleur
   控制线:
     general: CÂBLE CMD
     electrical: câble de commande
@@ -1534,15 +1534,15 @@ terms:
     general: PT
     electrical: point
     hvac: point
-    plumbing: point d'attente
+    plumbing: point
   终端:
     general: TERM.
     electrical: terminal
     hvac: terminal
   探测器:
-    general: DÉT.
-    electrical: détecteur anti-intrusion
-    hvac: sonde/capteur
+    general: détecteur
+    electrical: détecteur
+    hvac: détecteur
   传感器:
     general: CAPT.
     electrical: capteur
@@ -1550,7 +1550,7 @@ terms:
   模块:
     general: MOD.
     electrical: module
-    hvac: module de régulation
+    hvac: module
   主机:
     general: CENTRALE
     electrical: équipement principal
@@ -1566,7 +1566,7 @@ terms:
     plumbing: vanne
   泵:
     general: PPE
-    hvac: pompe de circulation
+    hvac: pompe
     plumbing: pompe
   水池:
     general: RÉSERVE
@@ -1587,7 +1587,7 @@ terms:
   面板:
     general: PLAQ.
     electrical: plaque de finition
-    hvac: panneau de commande
+    hvac: panneau
     architecture: panneau
   屏:
     general: ÉCRAN
@@ -1632,7 +1632,7 @@ terms:
   底标高:
     general: NIV. BAS
     hvac: cote sous-face
-    plumbing: cote fil d'eau
+    plumbing: cote inférieure
     architecture: cote inférieure
   顶标高:
     general: NIV. HAUT
@@ -1640,11 +1640,11 @@ terms:
     architecture: cote supérieure
   净高:
     general: H LIBRE
-    hvac: hauteur libre sous réseau
+    hvac: hauteur libre
     architecture: H LIBRE
   尺寸:
     general: DIM.
-    hvac: dimensions gaine
+    hvac: dimensions
     plumbing: diamètre/dimension
     architecture: dimension
   直径:
@@ -1658,7 +1658,7 @@ terms:
     plumbing: diamètre nominal
   压力:
     general: P
-    electrical: pression if equipment only
+    electrical: pression
     hvac: pression
     plumbing: pression
   流量:
@@ -1681,7 +1681,7 @@ terms:
     architecture: charge
   回水:
     general: RET.
-    hvac: retour eau glacée/eau chaude
+    hvac: retour d’eau
     plumbing: retour d'eau
   回路编号:
     general: N° CIRC.
@@ -1689,7 +1689,7 @@ terms:
   系统:
     general: SYST.
     electrical: réseau/système
-    hvac: système CVC
+    hvac: système
   总线:
     general: BUS
     electrical: bus de communication
@@ -1831,11 +1831,11 @@ terms:
     general: REF.
     hvac: REF.
   分歧管:
-    general: REFNET
-    hvac: REFNET
+    general: tuyau de dérivation
+    hvac: tuyau de dérivation
   分歧器:
-    general: REFNET
-    hvac: REFNET
+    general: raccord de dérivation
+    hvac: raccord de dérivation
   冷媒分配器:
     general: DIST. FRIGO
     hvac: DIST. FRIGO
@@ -1843,8 +1843,8 @@ terms:
     general: RÉSEAU FRIGO
     hvac: RÉSEAU FRIGO
   组合式空调机组:
-    general: CTA
-    hvac: CTA
+    general: centrale de traitement d’air modulaire
+    hvac: centrale de traitement d’air modulaire
   新风处理机组:
     general: CTA AN
     hvac: CTA AN
@@ -2045,8 +2045,8 @@ terms:
     general: FILTRE MOY.
     hvac: FILTRE MOY.
   高效过滤器:
-    general: HEPA
-    hvac: HEPA
+    general: filtre à haute efficacité
+    hvac: filtre à haute efficacité
   过滤网:
     general: FILTRE
     hvac: FILTRE
@@ -2072,8 +2072,8 @@ terms:
     general: PT
     hvac: PT
   噪声:
-    general: dB(A)
-    hvac: dB(A)
+    general: bruit
+    hvac: bruit
   风速:
     general: V AIR
     hvac: V AIR
@@ -2435,8 +2435,8 @@ terms:
     general: BAT.
     electrical: BAT.
   电池组:
-    general: BAT.
-    electrical: BAT.
+    general: batterie
+    electrical: batterie
   充电器:
     general: CHARGEUR
     electrical: CHARGEUR
@@ -2519,26 +2519,26 @@ terms:
     general: PT TEST
     electrical: PT TEST
   双联插座:
-    general: 2PC
-    electrical: 2PC
+    general: prise double
+    electrical: prise double
   三联插座:
-    general: 3PC
-    electrical: 3PC
+    general: prise triple
+    electrical: prise triple
   空调插座:
-    general: PC CLIM.
-    electrical: PC CLIM.
+    general: prise pour climatiseur
+    electrical: prise pour climatiseur
   冰箱插座:
-    general: PC FRIGO
-    electrical: PC FRIGO
+    general: prise pour réfrigérateur
+    electrical: prise pour réfrigérateur
   洗衣机插座:
-    general: PC LL
-    electrical: PC LL
+    general: prise pour lave-linge
+    electrical: prise pour lave-linge
   热水器插座:
-    general: PC CE
-    electrical: PC CE
+    general: prise pour chauffe-eau
+    electrical: prise pour chauffe-eau
   专用插座:
-    general: PC DÉD.
-    electrical: PC DÉD.
+    general: prise dédiée
+    electrical: prise dédiée
   单联开关:
     general: INT. 1G
     electrical: INT. 1G
@@ -2564,8 +2564,8 @@ terms:
     general: LUM. GRILLE
     electrical: LUM. GRILLE
   应急灯:
-    general: BAES
-    electrical: BAES
+    general: lampe de secours
+    electrical: lampe de secours
   疏散指示灯:
     general: BAES SORTIE
     electrical: BAES SORTIE
@@ -2894,8 +2894,8 @@ terms:
     general: POSTE GARDIEN
     electrical: POSTE GARDIEN
   双口信息插座:
-    general: 2xRJ45
-    electrical: 2xRJ45
+    general: prise double de données
+    electrical: prise double de données
   六类网线:
     general: CAT6
     electrical: CAT6
@@ -3018,8 +3018,8 @@ terms:
     architecture: HSP
     decoration: HSP
   石膏板隔墙:
-    general: CLOISON BA13
-    architecture: CLOISON BA13
+    general: cloison en plaques de plâtre
+    architecture: cloison en plaques de plâtre
   女儿墙:
     general: ACROT.
     architecture: ACROT.
@@ -3236,7 +3236,7 @@ terms:
   安装:
     general: POSE
   安装高度:
-    general: H POSE
+    general: hauteur de pose
   距地高度:
     general: H/SOL
   完成面:
@@ -3256,13 +3256,13 @@ terms:
   图例:
     general: LÉG.
   备注:
-    general: REM.
+    general: remarque
   说明:
     general: NOTE
   编号:
     general: REP.
   设备编号:
-    general: REP. ÉQ.
+    general: numéro d’équipement
   型号:
     general: MOD.
   规格:
@@ -3360,7 +3360,7 @@ terms:
   现有配电箱:
     general: EXIST. TD
   现有插座:
-    general: EXIST. PC
+    general: prise existante
   现有灯具:
     general: EXIST. LUM.
   现有摄像机:
@@ -3408,7 +3408,7 @@ terms:
   新增配电箱:
     general: NOUV. TD
   新增插座:
-    general: NOUV. PC
+    general: nouvelle prise
   新增灯具:
     general: NOUV. LUM.
   新增摄像机:
@@ -3456,7 +3456,7 @@ terms:
   预留配电箱:
     general: RÉSERV. TD
   预留插座:
-    general: RÉSERV. PC
+    general: prise en attente
   预留灯具:
     general: RÉSERV. LUM.
   预留摄像机:
@@ -3504,7 +3504,7 @@ terms:
   拆除配电箱:
     general: DÉPOSE TD
   拆除插座:
-    general: DÉPOSE PC
+    general: dépose de la prise
   拆除灯具:
     general: DÉPOSE LUM.
   拆除摄像机:
@@ -3552,7 +3552,7 @@ terms:
   移位配电箱:
     general: DÉPLAC. TD
   移位插座:
-    general: DÉPLAC. PC
+    general: déplacement de la prise
   移位灯具:
     general: DÉPLAC. LUM.
   移位摄像机:

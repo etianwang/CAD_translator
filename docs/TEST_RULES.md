@@ -116,3 +116,6 @@ ODA legacy-text rule (2026-08-17): decode ODA's `\\M+5xxxx` GBK text escapes bef
 Reliability rule (2026-08-08): automated checks must cover atomic queue/config persistence and corrupted-state recovery, bounded task/upload/SSE retention, atomic output delivery, backend rejection of unknown ODA versions, and preservation of Azure settings by the legacy UI's DeepL-key save action.
 
 Licensing rule (2026-08-08): when `LICENSE_ENFORCEMENT_ENABLED` is enabled, verify a 30-day network-time trial, a valid signed activation code, an expired activation code, and that blocked licences cannot call translation or queue API routes. When disabled, assert that no network-time request occurs. Never place the vendor private key or a customer activation code in source, logs, or test reports.
+
+
+2004 DWG French-accent rule (2026-10-22): for translated text destined for ACAD2004 DWG, encode non-ASCII Latin characters as CAD Unicode escapes before ODA conversion; retain normal Unicode for other output versions and formats. Verify Chinese-codepage SHX TEXT and MTEXT through an ODA 2004 DWG round trip and include a real-drawing check where available. This addresses translated Latin characters, not every possible font or legacy-encoding issue.

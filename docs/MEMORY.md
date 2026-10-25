@@ -404,3 +404,10 @@
 - 最终本地包：`installer/Output/Honsen_DrawTranslate_v1.11.12_Setup.exe`，85,620,656 字节；SHA-256 `7cc02c8f615a18361153210176338c68e58b5ab5d094ae168496b90b6114ab0d`，同名 `.sha256` 已生成核对。
 - 完整真实用户八次翻译 E2E、真实安装/升级/卸载、旧卸载日志及用户数据保留 NOT RUN；未操作当前正式安装。旧卸载日志可能删除安装目录未知文件、旧兼容资产命名与跨项目规范差异仍存在，未声称已满足完整规范或工具箱 apply 接入验收。
 - 用户明确确认“沿用例外，披露限制后直接发布”：本次获准保留旧客户端兼容包名，在发布说明披露未执行真实 E2E、旧卸载日志数据风险，直接创建 GitHub 稳定版并同步 GitHub/Gitee 源码及标签。此批准仅作为本次发布例外，不降低长期验收标准。发布结果及 API digest 核验另行记录。
+
+## 2026-10-25 v1.11.12 已发布
+
+- GitHub 公开稳定版：https://github.com/etianwang/CAD_translator/releases/tag/v1.11.12 ，非 Draft、非 Pre-release，已设置 latest。图标及版本源码提交 `59a0b28`，带注释标签 `v1.11.12` 指向含本次用户例外批准记录的 `feccb76`；源码 main 与标签已成功推送 GitHub origin 和 Gitee gitee。
+- 正式资产仅安装包 `Honsen_DrawTranslate_v1.11.12_Setup.exe`（85,620,656 字节）及同名 `.sha256`。GitHub API 安装包 digest 为 `sha256:7cc02c8f615a18361153210176338c68e58b5ab5d094ae168496b90b6114ab0d`，与本地一致；release_check 的 tag、状态、单一安装包、sidecar 及 API digest 门禁通过，发布说明为真实 Markdown 换行。
+- 前端、PyInstaller、Inno、版本核验、图标资源内容核验、完整 unittest 80 项（1 项权限跳过）通过。未执行完整真实桌面翻译、真实安装/升级/卸载、旧卸载日志及数据保留验收，未操作本机正式安装；相关风险及兼容旧资产名称原因已在 Release 中披露，用户明确批准本次例外。Toolbox 第三方 apply 仍未实现。
+- Gitee 已同步仓库和标签；未创建 Gitee Release 资产镜像，自动更新源保持 GitHub。

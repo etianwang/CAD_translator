@@ -3,6 +3,6 @@
 import os
 
 spec_dir = os.path.dirname(os.path.abspath(SPEC))
-a = Analysis(["desktop/update_runner.py"], pathex=[spec_dir], binaries=[], datas=[], hiddenimports=[])
+a = Analysis(["desktop/update_runner.py"], pathex=[spec_dir], binaries=[], datas=[(os.path.join(spec_dir, "ico.ico"), ".")], hiddenimports=[])
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], name="HonsenUpdateRunner", console=False, icon=[os.path.join(spec_dir, "ico.ico")])

@@ -21,7 +21,7 @@ const versions = [
   ["ACAD2013", "AutoCAD 2013"],
   ["ACAD2018", "AutoCAD 2018"],
 ];
-const APP_VERSION = "1.11.11";
+const APP_VERSION = "1.11.12";
 const modes = [
   ["zh_to_fr", "中文 → 法语"],
   ["fr_to_zh", "法语 → 中文"],
@@ -505,13 +505,7 @@ export default function App() {
       >
         <div className="topbar-inner pywebview-drag-region">
           <div className="brand">
-            <motion.span
-              className="brand-icon"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-            >
-              ⬡
-            </motion.span>
+            <img className="brand-icon" src="/logo.png" alt="" width="36" height="36" />
             <div className="brand-text">
               <h1>
                 Honsen CAD <span className="brand-accent">中法英互译</span>

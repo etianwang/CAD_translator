@@ -11,7 +11,7 @@ if ($LASTEXITCODE -ne 0) { throw "Frontend build failed" }
 Pop-Location
 
 Write-Host "==> PyInstaller 鎵撳寘..." -ForegroundColor Cyan
-pyinstaller Honsen_CAD_Translator_v1.11.11.spec
+pyinstaller Honsen_CAD_Translator_v1.11.12.spec
 if ($LASTEXITCODE -ne 0) { throw "Main executable build failed" }
 pyinstaller HonsenUpdateRunner.spec
 if ($LASTEXITCODE -ne 0) { throw "Runner build failed" }
@@ -60,7 +60,7 @@ Write-Host "==> Inno Setup 鐢熸垚瀹夎鍖?.." -ForegroundColor Cyan
 & $iscc (Join-Path $Root "installer\Honsen_DrawTranslate_Setup.iss")
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
 
-$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.11.11_Setup.exe"
+$setup = Join-Path $Root "installer\Output\Honsen_DrawTranslate_v1.11.12_Setup.exe"
 if (Test-Path $setup) {
     python (Join-Path $Root "installer\release_check.py") --exe-version $exeVersion --product-version (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion --setup-version (Get-Item -LiteralPath $setup).VersionInfo.FileVersion
     if ($LASTEXITCODE -ne 0) { throw "Installer version check failed" }

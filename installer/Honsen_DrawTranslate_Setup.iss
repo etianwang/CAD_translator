@@ -3,7 +3,7 @@
 ; 用 Inno Setup Compiler 打开本脚本并编译即可生成安装包
 
 #define MyAppName "Honsen CAD Translator"
-#define MyAppVersion "1.11.11"
+#define MyAppVersion "1.11.12"
 #define MyAppPublisher "Honsen"
 #define MyAppExeName "Honsen DrawTranslate.exe"
 #define MyShortcutName "Honsen CAD 翻译器"
@@ -29,6 +29,8 @@ OutputBaseFilename=Honsen_DrawTranslate_v{#MyAppVersion}_Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\ico.ico
+WizardSmallImageFile=..\logo.png
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}

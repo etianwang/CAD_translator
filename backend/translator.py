@@ -32,7 +32,7 @@ try:
 except ImportError:
     winreg = None
 
-APP_VERSION = "1.11.11"
+APP_VERSION = "1.11.12"
 
 # ODA can export legacy SHX/GBK text as ``\M+5C6BD`` rather than Unicode.
 # The leading nibble identifies the legacy codepage; the following four hex

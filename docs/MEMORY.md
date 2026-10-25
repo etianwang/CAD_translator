@@ -389,3 +389,18 @@
 - GitHub 稳定 Release：https://github.com/etianwang/CAD_translator/releases/tag/v1.11.11 ，发布源码提交 `8004b29`，带注释标签 `v1.11.11` 已推送 GitHub 与 Gitee；未修改旧 Release。
 - 安装包 `Honsen_DrawTranslate_v1.11.11_Setup.exe` 为 81,352,580 字节，SHA-256 `c6509fd459c2e5d1892ddbd0fa958944f8b51984e529f0e51df8ca4753b4bef8`；同名 .sha256 已上传，正式 Release 的 GitHub API digest 和版本门禁通过。
 - 版本门禁、前端、PyInstaller 主程序与 Runner、Inno 编译及完整 unittest（80 项，1 项权限跳过）通过；符号链接真实测试、完整真实用户翻译验收、真实安装/更新/卸载、旧卸载日志和用户数据保留 NOT RUN。没有操作本机正式安装。旧版卸载日志可能递归删除安装目录，风险在 Release 说明中披露；Toolbox 第三方 apply 尚未实现。
+
+## 2026-10-22 用户反馈：自动更新和启动
+
+- 用户报告自动更新完成且更新后新应用成功打开；所附截图显示 v1.11.11 更新下载过程中 36% 的状态。该结果来自用户反馈，尚未独立核验安装目录或操作结果日志。
+- 旧卸载日志行为、用户数据完整性和 Toolbox 发起第三方更新仍未验证或尚未实现；此前发布时的 NOT RUN 记录反映当时状态。
+
+## 2026-10-25 v1.11.12 新 Logo 发布准备
+
+- 按用户要求，以根目录 `logo.png` 为唯一品牌原图，生成包含 16/24/32/48/64/128/256 像素的 `ico.ico`；前端使用原图副本，替换旋转六边形并设置 favicon。主程序、Runner EXE、Runner Windows Tk 窗口、桌面/开始菜单及卸载列表、安装包与向导小图统一使用新标识。用户原先删除的无引用 `icon.ico` 保持删除。
+- 同步后端、前端、桌面标题、Manifest、Windows 资源、Inno、构建脚本、新 spec、README 及更新测试夹具至 1.11.12。更新图标来源及生成操作文档，未改变安装/更新/卸载安全流程。
+- 最终完整 unittest 80 项：79 通过、1 项因 Windows 符号链接权限不足跳过；Python compileall、React、PyInstaller 主程序与 Runner、Inno 6.7.3、版本一致性与 diff 检查通过。真实 Tk 事件循环覆盖更新三个按钮并成功加载新 ICO；独立代码复核无新增问题。
+- 直接读取三个 EXE 的 PE 资源，确认各自 7 个尺寸的图标内容均与 ICO 完全一致；确认主程序内嵌前端 Logo 与根 PNG 相同、Runner 内嵌 Tk ICO 与根 ICO 相同。
+- 最终本地包：`installer/Output/Honsen_DrawTranslate_v1.11.12_Setup.exe`，85,620,656 字节；SHA-256 `7cc02c8f615a18361153210176338c68e58b5ab5d094ae168496b90b6114ab0d`，同名 `.sha256` 已生成核对。
+- 完整真实用户八次翻译 E2E、真实安装/升级/卸载、旧卸载日志及用户数据保留 NOT RUN；未操作当前正式安装。旧卸载日志可能删除安装目录未知文件、旧兼容资产命名与跨项目规范差异仍存在，未声称已满足完整规范或工具箱 apply 接入验收。
+- 当前已准备发布说明，向用户确认本次是否沿用 v1.11.11 的发布例外（披露风险、沿用旧兼容名直接发布）；确认前不创建正式 Release 或推送发布标签。GitHub/Gitee main 均核实为 df4fb3f，尚无 v1.11.12 标签。

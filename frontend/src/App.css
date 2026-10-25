@@ -204,10 +204,9 @@
 }
 
 .brand-icon {
-  font-size: 26px;
-  line-height: 1;
-  color: #bae6fd;
-  filter: drop-shadow(0 0 14px rgba(125, 211, 252, 0.65));
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

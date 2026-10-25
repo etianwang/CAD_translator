@@ -83,3 +83,13 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser postinstall
 主 EXE 的安装名永久固定为 `Honsen DrawTranslate.exe`，不能再附带版本号。`[InstallDelete]` 不使用通配符清理安装目录中的历史 EXE；未知文件默认保留。安装器自身创建的标准桌面和开始菜单快捷方式固定命名为 `Honsen CAD 翻译器`，由 `[Icons]` 在该已知路径替换。桌面、开始菜单和任务栏固定项其余部分属于用户数据：安装器绝不能扫描、重定向或批量改写用户的 `.lnk` 文件。用户固定 `Honsen CAD 翻译器` 后，因 EXE 路径稳定，后续升级无需更改任务栏链接。
 
 真实覆盖式静默安装会改动本机已安装的软件；优先在隔离测试环境执行。若缺少该环境，应记录真实安装 E2E 未执行，并完成可执行的 updater 单测、Inno 编译和 Release digest 核验；这一记录不构成对 [TEST_RULES.md](TEST_RULES.md) 中发布门禁的豁免。
+
+## 品牌图标（v1.11.12）
+
+根目录 `logo.png` 是品牌原图；`ico.ico` 由它生成，包含 16、24、32、48、64、128、256 像素尺寸，供主程序、Runner（含 Windows Tk 进度窗口）和 Inno `SetupIconFile` 使用；安装向导 `WizardSmallImageFile` 直接使用原 PNG。桌面/开始菜单与卸载列表沿用主程序图标；`frontend/public/logo.png` 为原图副本，用于界面标识和 favicon。替换原图时须同步再生成 ICO 和前端副本，并验证打包 EXE 与安装器的图标资源。
+
+生成命令（现有 Pillow）：
+
+```powershell
+python -c "from PIL import Image; import shutil; Image.open('logo.png').save('ico.ico', format='ICO', sizes=[(n,n) for n in (16,24,32,48,64,128,256)]); shutil.copyfile('logo.png', 'frontend/public/logo.png')"
+```

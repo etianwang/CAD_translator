@@ -35,6 +35,8 @@ class ProgressWindow:
         import tkinter as tk
         from tkinter import ttk
         self.tk = tk.Tk(); self.tk.title("Honsen CAD 翻译器更新"); self.tk.resizable(False, False)
+        if sys.platform == "win32":
+            self.tk.iconbitmap(default=str(Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1])) / "ico.ico"))
         self.label = ttk.Label(self.tk, text="正在检查更新…", padding=18); self.label.pack()
         self.notes = ttk.Label(self.tk, text="", justify="left", wraplength=440); self.notes.pack(padx=18, pady=(0, 10))
         self.bar = ttk.Progressbar(self.tk, length=330, mode="determinate", maximum=100); self.bar.pack(padx=18, pady=(0, 18))

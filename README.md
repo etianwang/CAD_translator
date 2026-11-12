@@ -132,7 +132,7 @@ cd frontend && npm ci && npm run build && cd ..
 python installer/build_macos.py --oda-dmg /path/to/ODAFileConverter_macOS.dmg --dmg
 ```
 
-生成单个 `dist/Honsen CAD Translator.app` 与可分发的 `dist/Honsen_CAD_Translator_v1.9.4_macOS_arm64.dmg`；官方 ODA DMG 会嵌入应用的 `Contents/Resources/ODAFileConverter.dmg`。程序需要 ODA 时将其只读挂载，直接调用官方签名的 `ODAFileConverter.app`，关闭时卸载。构建脚本会校验 DMG 签名、Gatekeeper 状态与架构，拒绝将 x86_64 ODA 搭配 arm64 主程序，反之亦然。
+生成单个 `dist/Honsen CAD Translator.app` 与可分发的 `dist/Honsen_CAD_Translator_v1.11.12_macOS_arm64.dmg`；官方 ODA DMG 会嵌入应用的 `Contents/Resources/ODAFileConverter.dmg`。程序需要 ODA 时将其只读挂载，直接调用官方签名的 `ODAFileConverter.app`，关闭时卸载。构建脚本会校验 DMG 签名、Gatekeeper 状态与架构，拒绝将 x86_64 ODA 搭配 arm64 主程序，反之亦然。
 
 默认 `--identity -` 仅用于本机测试签名。发布时在对应架构的 macOS/Python 环境分别生成 Apple Silicon 和 Intel 版，并传入 `--identity "Developer ID Application: ..."`，然后对成品进行 Apple 公证。当前 Homebrew Python 只有 arm64 切片，不能在本机交叉产出真正的 Intel 主应用。
 

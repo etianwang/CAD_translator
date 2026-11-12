@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 import tempfile
 import urllib.request
 from pathlib import Path
@@ -38,16 +39,23 @@ def _request(url: str):
 
 def check_for_update() -> dict:
     """Return only a newer release with a checksummed Windows update asset."""
+    if sys.platform != "win32":
+        return {
+            "available": False,
+            "supported": False,
+            "current_version": CURRENT_VERSION,
+            "message": "此平台暂不支持应用内自动更新",
+        }
     try:
         with urllib.request.urlopen(_request(RELEASE_API_URL), timeout=8) as response:
             release = json.loads(response.read().decode("utf-8"))
     except Exception as exc:
-        return {"available": False, "current_version": CURRENT_VERSION, "message": f"检查更新失败：{exc}"}
+        return {"available": False, "supported": True, "current_version": CURRENT_VERSION, "message": f"检查更新失败：{exc}"}
 
     try:
         latest = str(release["tag_name"]).lstrip("v")
         if release.get("prerelease") or _version(latest) <= _version(CURRENT_VERSION):
-            return {"available": False, "current_version": CURRENT_VERSION, "latest_version": latest, "message": "已是最新版本"}
+            return {"available": False, "supported": True, "current_version": CURRENT_VERSION, "latest_version": latest, "message": "已是最新版本"}
         asset_type, asset = next(
             ((kind, item) for kind, pattern in (("installer", _INSTALLER), ("installer", _STANDALONE))
              for item in release.get("assets", [])
@@ -58,10 +66,11 @@ def check_for_update() -> dict:
         if not asset or not digest.startswith("sha256:") or not asset.get("browser_download_url"):
             raise UpdateError("新版未附带可校验的 Windows 更新包")
     except (KeyError, UpdateError) as exc:
-        return {"available": False, "current_version": CURRENT_VERSION, "message": str(exc)}
+        return {"available": False, "supported": True, "current_version": CURRENT_VERSION, "message": str(exc)}
 
     return {
         "available": True,
+        "supported": True,
         "current_version": CURRENT_VERSION,
         "latest_version": latest,
         "release_url": release.get("html_url", ""),

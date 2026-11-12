@@ -110,6 +110,8 @@ class NativeBridge:
 
     def install_update(self, installer_path: str, sha256: str, expected_version: str) -> dict:
         """Hand the verified package to the installed shared update runner."""
+        if sys.platform != "win32":
+            return {"error": "此平台暂不支持应用内自动更新"}
         path = os.path.abspath(installer_path)
         app_dir = Path(sys.executable).resolve().parent
         try:
@@ -118,7 +120,7 @@ class NativeBridge:
             runner = app_dir / (metadata.get("updateRunner") or metadata["updateRunnerName"])
         except (OSError, ValueError, KeyError, TypeError):
             return {"error": "当前安装缺少 HonsenUpdateRunner，请手动安装包含更新助手的新版本一次"}
-        if sys.platform != "win32" or not os.path.isfile(path) or not runner.is_file() or not sha256 or not expected_version:
+        if not os.path.isfile(path) or not runner.is_file() or not sha256 or not expected_version:
             return {"error": "自动更新仅支持经过校验的 Windows 安装包"}
         try:
             operation_id = str(uuid.uuid4())

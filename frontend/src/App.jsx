@@ -129,7 +129,7 @@ export default function App() {
   const [license, setLicense] = useState({ checking: true, usable: false });
   const [activationCode, setActivationCode] = useState("");
   const [activationError, setActivationError] = useState("");
-  const [support, setSupport] = useState({ licensing_enabled: false });
+  const [support, setSupport] = useState({ licensing_enabled: false, updates_supported: false });
   const [showSupport, setShowSupport] = useState(false);
   const [update, setUpdate] = useState({ current_version: APP_VERSION, message: "尚未检查更新" });
   const [showUpdate, setShowUpdate] = useState(false);
@@ -165,7 +165,9 @@ export default function App() {
       setUpdateState("");
     }
   }, []);
-  useEffect(() => { checkUpdate(false); }, [checkUpdate]);
+  useEffect(() => {
+    if (support.updates_supported) checkUpdate(false);
+  }, [checkUpdate, support.updates_supported]);
   useEffect(() => {
     api("/api/system-theme")
       .then((result) => {
@@ -474,7 +476,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {showUpdate && (
+      {support.updates_supported && showUpdate && (
         <div className="support-overlay" onClick={() => !updateState && setShowUpdate(false)}>
           <div className="support-card update-card" role="dialog" aria-modal="true" aria-labelledby="update-title" onClick={(event) => event.stopPropagation()}>
             <button className="support-close" aria-label="关闭更新窗口" disabled={Boolean(updateState)} onClick={() => setShowUpdate(false)}>×</button>
@@ -513,9 +515,11 @@ export default function App() {
             </div>
           </div>
           <div className="topbar-spacer" />
-          <button className="support-button" onClick={() => checkUpdate(true)}>
-            检查更新
-          </button>
+          {support.updates_supported && (
+            <button className="support-button" onClick={() => checkUpdate(true)}>
+              检查更新
+            </button>
+          )}
           <button className="support-button" onClick={() => setShowSupport(true)}>
             {support.licensing_enabled ? "购买许可" : "赞助作者"}
           </button>

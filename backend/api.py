@@ -436,6 +436,7 @@ def activate_license(body: ActivationBody):
 def support_info():
     return {
         "licensing_enabled": LICENSE_ENFORCEMENT_ENABLED,
+        "updates_supported": sys.platform == "win32",
         "wechat_qr_url": "/api/support/qrcode/wechat" if (path := support_qr_path("wechat")) and path.is_file() else "",
         "alipay_qr_url": "/api/support/qrcode/alipay" if (path := support_qr_path("alipay")) and path.is_file() else "",
     }

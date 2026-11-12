@@ -22,7 +22,7 @@ The final DWG test consumes DeepL API quota.
 1. Mock a newer GitHub Release with a matching `Honsen_DrawTranslate_vX.Y.Z_Setup.exe` asset and `sha256:` digest; confirm it is offered.
 2. Confirm an equal/older version, prerelease, missing installer, mismatched filename, or missing digest is not offered.
 3. Confirm downloaded bytes must match the published SHA-256, and a mismatch leaves no installer behind.
-4. Confirm the native Windows bridge launches only the installed `HonsenUpdateRunner.exe`, passing the verified installer SHA-256, current PID and actual executable directory; macOS returns an unsupported result.
+4. Confirm the native Windows bridge launches only the installed `HonsenUpdateRunner.exe`, passing the verified installer SHA-256, current PID and actual executable directory. On macOS, confirm the update button/modal is absent and `/api/update` plus `/api/update/download` return the unsupported result without contacting GitHub or writing a downloaded `.exe`.
 5. Confirm the Inno script installs a fixed `Honsen DrawTranslate.exe`, deletes only the two explicit legacy product EXE patterns, and contains no script or `[Run]` action that scans or rewrites user desktop, Start Menu, or taskbar shortcuts.
 
 ## Honsen Program 应用识别验收

@@ -30,6 +30,15 @@ def release(version="1.11.13", *, digest=True, prerelease=False, name=None):
 
 
 class UpdaterTests(unittest.TestCase):
+    def test_non_windows_platform_never_checks_or_downloads_updates(self):
+        with patch("backend.updater.sys.platform", "darwin"), patch("backend.updater.urllib.request.urlopen") as urlopen:
+            update = updater.check_for_update()
+            self.assertFalse(update["supported"])
+            self.assertFalse(update["available"])
+            with self.assertRaises(updater.UpdateError):
+                updater.download_update()
+        urlopen.assert_not_called()
+
     def test_runner_update_choice_buttons_work_in_one_window(self):
         import tkinter
         try:
@@ -55,7 +64,7 @@ class UpdaterTests(unittest.TestCase):
             window.close()
 
     def test_only_newer_checksums_installer_is_offered(self):
-        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release()).encode())):
+        with patch("backend.updater.sys.platform", "win32"), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release()).encode())):
             update = updater.check_for_update()
         self.assertTrue(update["available"])
         self.assertEqual(update["latest_version"], "1.11.13")
@@ -68,11 +77,11 @@ class UpdaterTests(unittest.TestCase):
             release("1.11.13", digest=False),
             release("1.11.1", name="HonsenCAD.v1.9.exe"),
         ):
-            with self.subTest(payload=payload), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(payload).encode())):
+            with self.subTest(payload=payload), patch("backend.updater.sys.platform", "win32"), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(payload).encode())):
                 self.assertFalse(updater.check_for_update()["available"])
 
     def test_download_requires_matching_sha256(self):
-        with tempfile.TemporaryDirectory() as directory, patch.object(updater, "UPDATE_DIR", Path(directory)):
+        with tempfile.TemporaryDirectory() as directory, patch.object(updater, "UPDATE_DIR", Path(directory)), patch("backend.updater.sys.platform", "win32"):
             metadata = io.BytesIO(json.dumps(release()).encode())
             with patch("backend.updater.urllib.request.urlopen", side_effect=[metadata, io.BytesIO(b"installer")]):
                 result = updater.download_update()
@@ -122,8 +131,13 @@ class UpdaterTests(unittest.TestCase):
 
         self.assertIn("更新助手", NativeBridge().install_update("missing.exe", "", "")["error"])
 
+    def test_non_windows_bridge_rejects_update_before_reading_package(self):
+        with patch("desktop.native_bridge.sys.platform", "darwin"):
+            result = NativeBridge().install_update("missing.exe", "", "")
+        self.assertIn("暂不支持", result["error"])
+
     def test_existing_honsencad_installer_name_is_accepted(self):
-        with patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.11.13.exe")).encode())):
+        with patch("backend.updater.sys.platform", "win32"), patch("backend.updater.urllib.request.urlopen", return_value=io.BytesIO(json.dumps(release(name="HonsenCAD.v1.11.13.exe")).encode())):
             self.assertTrue(updater.check_for_update()["available"])
 
     def test_inno_setup_leaves_silent_restart_to_the_shared_runner(self):
